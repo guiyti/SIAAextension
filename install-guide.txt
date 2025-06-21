@@ -1,0 +1,62 @@
+🚀 GUIA RÁPIDO DE INSTALAÇÃO - SIAA Data Extractor
+================================================================
+
+📋 CHECKLIST PRÉ-INSTALAÇÃO:
+[ ] Chrome versão 79 ou superior
+[ ] Acesso ao sistema SIAA da Cruzeiro do Sul
+[ ] Pasta 'extensionSIAA' completa baixada
+
+🔧 PASSOS DE INSTALAÇÃO:
+
+1. Abrir Chrome Extensions:
+   - Digite: chrome://extensions/
+   - OU Menu (⋮) > Mais ferramentas > Extensões
+
+2. Ativar Modo Desenvolvedor:
+   - Canto superior direito: ATIVAR "Modo do desenvolvedor"
+
+3. Carregar Extensão:
+   - Clique: "Carregar sem compactação"
+   - Selecione a pasta: extensionSIAA
+   - Confirme
+
+4. Verificar Instalação:
+   - Extensão aparece na lista
+   - Ícone 📊 na barra de ferramentas
+
+5. Fixar Extensão (Recomendado):
+   - Clique no ícone 🧩 (quebra-cabeça)
+   - Clique no 📌 ao lado de "SIAA Data Extractor"
+
+✅ TESTE DE FUNCIONAMENTO:
+
+1. Acesse: https://siaa.cruzeirodosul.edu.br
+2. Faça login normalmente  
+3. Vá para a página inicial (home.jsf)
+4. Clique no ícone da extensão
+5. Deve aparecer: "Pronto para extrair dados" 🟢
+
+🎯 USAR A EXTENSÃO:
+
+1. Na página home.jsf do SIAA
+2. Clique no ícone da extensão
+3. Clique "🚀 Extrair Dados"
+4. Escolha o curso
+5. Clique "🚀 Iniciar Extração"
+6. Aguarde o download do CSV
+
+❗ PROBLEMAS COMUNS:
+
+- Botão desabilitado? → Verifique se está em home.jsf
+- Erro de conexão? → Recarregue a página
+- Não funciona? → Veja o console (F12)
+
+📞 SUPORTE:
+
+- Pressione F12 → Console para ver logs
+- Procure mensagens com 🚀 ❌ ✅
+- Anote erros exatos para suporte
+
+================================================================
+Desenvolvido para Cruzeiro do Sul - v1.0.0
+================================================================ 

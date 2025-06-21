@@ -1,0 +1,48 @@
+{
+    "manifest_version": 3,
+    "name": "SIAA Data Extractor",
+    "version": "1.0.0",
+    "description": "Extração de dados de ofertas de disciplinas do sistema SIAA da Cruzeiro do Sul",
+    "permissions": [
+        "activeTab",
+        "storage",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://siaa.cruzeirodosul.edu.br/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://siaa.cruzeirodosul.edu.br/novo-siaa/secure/core/home.jsf*"
+            ],
+            "js": ["content.js"],
+            "run_at": "document_idle"
+        }
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "SIAA Data Extractor",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "32": "icons/icon32.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": ["injected.js", "viewer.html", "viewer.js"],
+            "matches": ["https://siaa.cruzeirodosul.edu.br/*", "<all_urls>"]
+        }
+    ]
+} 

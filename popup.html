@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAA Data Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none !important;
+        }
+
+        body {
+            width: 260px;
+            min-height: 180px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(to bottom, #ebb55e 0%, #FFF 100%);
+            border: 1px solid #ebb55e;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            font-size: 12px;
+            border: 1px solid rgba(235, 181, 94, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            transition: background-color 0.3s;
+        }
+
+        .status-dot.active {
+            background: #27ae60;
+        }
+
+        .controls {
+            padding: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #ebb55e;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #d4a755;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin: 10px 15px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .message.error {
+            background: #ffe6e6;
+            color: #d63384;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.success {
+            background: #e6f7e6;
+            color: #198754;
+            border: 1px solid #badbcc;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+            background: #ebb55e;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <span class="icon">S</span>
+            SIAA Extractor
+        </div>
+        
+        <div class="status">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">Verificando...</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="button-group">
+            <button id="captureButton" class="btn btn-primary">
+                🔄 Capturar Dados
+            </button>
+            
+            <button id="downloadButton" class="btn btn-secondary" disabled>
+                📥 Baixar CSV
+            </button>
+            
+            <button id="viewButton" class="btn btn-secondary" disabled>
+                👁️ Visualizar
+            </button>
+        </div>
+        
+        <div id="errorMessage" class="message error hidden"></div>
+        <div id="successMessage" class="message success hidden"></div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html> 
