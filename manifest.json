@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "SIAA Data Extractor",
-    "version": "1.0.0",
-    "description": "Extração de dados de ofertas de disciplinas do sistema SIAA da Cruzeiro do Sul",
+    "version": "1.1.0",
+    "description": "Extração e visualização avançada de dados acadêmicos do SIAA - Cruzeiro do Sul. Interface responsiva, filtros dinâmicos, busca inteligente e headers fixos.",
     "permissions": [
         "activeTab",
         "storage",
@@ -22,7 +22,7 @@
     ],
     "action": {
         "default_popup": "popup.html",
-        "default_title": "SIAA Data Extractor",
+        "default_title": "SIAA Data Extractor - Extração e Análise de Dados Acadêmicos",
         "default_icon": {
             "16": "icons/icon16.png",
             "32": "icons/icon32.png",

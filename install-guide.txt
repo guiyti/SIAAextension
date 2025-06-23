@@ -1,10 +1,14 @@
-🚀 GUIA RÁPIDO DE INSTALAÇÃO - SIAA Data Extractor
+🚀 GUIA RÁPIDO DE INSTALAÇÃO - SIAA Data Extractor v1.1.0
 ================================================================
 
+📱 NOVA VERSÃO: Interface Responsiva e Headers Fixos!
+✨ Design profissional, mobile-friendly e headers sempre visíveis
+
 📋 CHECKLIST PRÉ-INSTALAÇÃO:
-[ ] Chrome versão 79 ou superior
+[ ] Chrome versão 88 ou superior (Manifest V3)
 [ ] Acesso ao sistema SIAA da Cruzeiro do Sul
 [ ] Pasta 'extensionSIAA' completa baixada
+[ ] Verificar se é a versão 1.1.0
 
 🔧 PASSOS DE INSTALAÇÃO:
 
@@ -15,13 +19,16 @@
 2. Ativar Modo Desenvolvedor:
    - Canto superior direito: ATIVAR "Modo do desenvolvedor"
 
-3. Carregar Extensão:
-   - Clique: "Carregar sem compactação"
+3. Carregar/Atualizar Extensão:
+   - Se NOVA instalação: "Carregar sem compactação"
+   - Se ATUALIZANDO: Clique no ícone 🔄 (recarregar)
    - Selecione a pasta: extensionSIAA
    - Confirme
 
-4. Verificar Instalação:
-   - Extensão aparece na lista
+4. Verificar Instalação v1.1.0:
+   - Versão: 1.1.0
+   - Nome: "SIAA Data Extractor"
+   - Descrição: "...Interface responsiva, filtros dinâmicos..."
    - Ícone 📊 na barra de ferramentas
 
 5. Fixar Extensão (Recomendado):
@@ -36,27 +43,67 @@
 4. Clique no ícone da extensão
 5. Deve aparecer: "Pronto para extrair dados" 🟢
 
-🎯 USAR A EXTENSÃO:
+🎯 USAR A EXTENSÃO v1.1.0:
 
-1. Na página home.jsf do SIAA
-2. Clique no ícone da extensão
-3. Clique "🚀 Extrair Dados"
-4. Escolha o curso
-5. Clique "🚀 Iniciar Extração"
-6. Aguarde o download do CSV
+1. CAPTURAR DADOS:
+   - Na página home.jsf do SIAA
+   - Clique no ícone da extensão
+   - Clique "🔄 Capturar Dados"
+   - Escolha o curso
+   - Aguarde processamento
 
-❗ PROBLEMAS COMUNS:
+2. VISUALIZAR (NOVO!):
+   - Clique "👁️ Visualizar"
+   - Interface responsiva moderna
+   - Headers fixos durante scroll
+   - Busca nos campos visíveis
+   - Drag & drop para reordenar
 
-- Botão desabilitado? → Verifique se está em home.jsf
-- Erro de conexão? → Recarregue a página
-- Não funciona? → Veja o console (F12)
+3. MOBILE:
+   - Funciona perfeitamente em celulares
+   - Layout adapta automaticamente
+   - Headers se ajustam por orientação
+
+🆕 NOVIDADES v1.1.0:
+
+📱 RESPONSIVIDADE:
+- Layout mobile/desktop automático
+- Headers sempre visíveis
+- Sidebar deslizante moderna
+
+🔍 BUSCA INTELIGENTE:
+- Placeholder: "🔍 Buscar nos campos visíveis..."
+- Busca apenas nas colunas exibidas
+- Performance otimizada
+
+🎛️ CONTROLES AVANÇADOS:
+- Drag & drop para reordenar colunas
+- Configurações persistem
+- Sidebar organizada por seções
+
+❗ PROBLEMAS COMUNS v1.1.0:
+
+- Headers não fixos? → Force F5, aguarde recálculo
+- Layout mobile quebrado? → Rotate dispositivo
+- Busca não funciona? → Verifique colunas visíveis
+- CSP error? → Extensão já corrigida (v1.1.0)
+
+🔍 DEBUG v1.1.0:
+
+Console (F12) deve mostrar:
+✅ "📱 MOBILE PORTRAIT - Header height: XXX"
+✅ "🖥️ DESKTOP - Header height: XXX" 
+✅ "🔍 Buscando por: TERMO nas colunas visíveis"
+✅ "✅ Main-content padding-top ajustado"
 
 📞 SUPORTE:
 
-- Pressione F12 → Console para ver logs
-- Procure mensagens com 🚀 ❌ ✅
-- Anote erros exatos para suporte
+- Console: F12 → Procure logs com 📱🖥️🔍✅
+- Versão: Deve aparecer 1.1.0
+- Mobile: Teste rotate e resize
+- Email: guiyti@gmail.com
 
 ================================================================
-Desenvolvido para Cruzeiro do Sul - v1.0.0
+🚀 SIAA Data Extractor v1.1.0 - Interface Responsiva Profissional
+🎉 Uma nova era de visualização de dados acadêmicos!
 ================================================================ 

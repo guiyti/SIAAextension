@@ -13,7 +13,8 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 // Função para executar a extração usando chrome.scripting
-async function executeExtraction(tabId) {
+async function executeExtraction(tabId, cursoSelecionado = null) {
+    console.log('⚙️ executeExtraction chamado com cursoSelecionado:', cursoSelecionado);
     try {
         console.log('🚀 Iniciando extração via chrome.scripting para tab:', tabId);
         
@@ -51,16 +52,20 @@ async function executeExtraction(tabId) {
         console.log('🎯 Executando função exportarTabelaSIAA...');
         const results = await chrome.scripting.executeScript({
             target: { tabId: tabId },
-            func: () => {
+            func: (selectedCourse) => {
+                // Tornar disponível globalmente para eventuais fallbacks
+                if (selectedCourse) {
+                    window.__SIAA_SELECTED_COURSE = selectedCourse;
+                }
                 console.log('🔍 Verificando função exportarTabelaSIAA...');
                 
-                // Verificar se a função está disponível
+                console.log('📌 selectedCourse dentro da página:', selectedCourse);
                 if (typeof window.exportarTabelaSIAA === 'function') {
                     console.log('🚀 Executando exportarTabelaSIAA...');
                     
                     // Executar a função
                     try {
-                        window.exportarTabelaSIAA();
+                        window.exportarTabelaSIAA(selectedCourse || null);
                         return { success: true, message: 'Função executada com sucesso' };
                     } catch (execError) {
                         console.error('❌ Erro ao executar função:', execError);
@@ -70,7 +75,8 @@ async function executeExtraction(tabId) {
                     console.error('❌ Função exportarTabelaSIAA não encontrada');
                     return { success: false, error: 'Função exportarTabelaSIAA não encontrada' };
                 }
-            }
+            },
+            args: [cursoSelecionado]
         });
         
         console.log('📊 Resultado da execução:', results);
@@ -101,12 +107,15 @@ async function executeExtraction(tabId) {
 // Listener para mensagens
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('📨 Mensagem recebida no background:', request);
+    if (request.cursoSelecionado) {
+        console.log('📌 cursoSelecionado recebido no background:', request.cursoSelecionado);
+    }
     
     if (request.action === 'executeExtraction') {
         console.log('🎯 Processando solicitação de extração para tab:', request.tabId);
         
         // Executar extração de forma assíncrona
-        executeExtraction(request.tabId)
+        executeExtraction(request.tabId, request.cursoSelecionado)
             .then(result => {
                 console.log('✅ Extração concluída:', result);
                 sendResponse(result);
@@ -125,24 +134,84 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         // Primeiro buscar dados antigos
         chrome.storage.local.get(['siaa_data_csv'], (oldData) => {
-            // Salvar dados antigos para comparação
+            // Funções auxiliares para parse/gerar CSV com suporte mínimo a aspas
+            function parseCSVLine(line) {
+                const values = [];
+                let currentValue = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+                    if (char === '"') {
+                        if (inQuotes && nextChar === '"') {
+                            // Aspas duplas escapadas
+                            currentValue += '"';
+                            i++; // pular próxima
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(currentValue);
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                values.push(currentValue);
+                return values.map(v => v.trim());
+            }
+
+            function csvToObjects(csv) {
+                if (!csv) return [];
+                const lines = csv.split('\n').filter(l => l.trim());
+                if (lines.length < 2) return [];
+                const headers = parseCSVLine(lines[0]);
+                return lines.slice(1).map(line => {
+                    const values = parseCSVLine(line);
+                    const obj = {};
+                    headers.forEach((h, idx) => obj[h] = values[idx] || '');
+                    return obj;
+                });
+            }
+
+            function objectsToCSV(objs, headers) {
+                const headerLine = headers.join(',');
+                const lines = objs.map(obj => headers.map(h => {
+                    const val = String(obj[h] || '').replace(/"/g, '""');
+                    return val.includes(',') ? `"${val}"` : val;
+                }).join(','));
+                return [headerLine, ...lines].join('\n');
+            }
+
+            // Mesclar removendo duplicatas por ID Oferta
+            const oldObjs = csvToObjects(oldData.siaa_data_csv);
+            const newObjs = csvToObjects(request.csv);
+
+            const map = new Map();
+            [...oldObjs, ...newObjs].forEach(obj => {
+                const key = obj['ID Oferta'] || obj['Id Oferta'] || obj['IdOferta'] || obj['idOferta'];
+                if (key) {
+                    map.set(key, obj); // mantém o último (novo) caso de duplicata
+                }
+            });
+
+            const mergedObjs = Array.from(map.values());
+            // Usar cabeçalhos do novo CSV se existirem, senão do antigo
+            const headerLine = request.csv.split('\n')[0] || oldData.siaa_data_csv?.split('\n')[0];
+            const headers = parseCSVLine(headerLine);
+            const mergedCsv = objectsToCSV(mergedObjs, headers);
+
+            // Prefixar BOM para compatibilidade com Excel / UTF-8
+            const csvWithBom = '\uFEFF' + mergedCsv;
+
             const saveData = {
-                siaa_data_csv: request.csv,
+                siaa_data_csv: csvWithBom,
                 siaa_data_timestamp: request.timestamp || Date.now()
             };
-            
-            if (oldData.siaa_data_csv) {
-                saveData.siaa_data_csv_old = oldData.siaa_data_csv;
-                console.log('📂 Dados antigos salvos para comparação');
-            }
-            
+
             chrome.storage.local.set(saveData, () => {
-                console.log('💾 Dados capturados armazenados no storage');
-                
-                // Notificar que dados foram armazenados
-                chrome.runtime.sendMessage({ 
-                    action: 'dataStored' 
-                }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
+                console.log(`💾 Dados armazenados. Total de ofertas: ${mergedObjs.length}`);
+                chrome.runtime.sendMessage({ action: 'dataStored' }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
             });
         });
         

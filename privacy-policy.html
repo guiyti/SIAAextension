@@ -1,24 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Política de Privacidade - SIAA Data Extractor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade - SIAA Data Extractor v1.1.0</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #ebb55e; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .version { background: #f8f9fa; padding: 10px; border-left: 4px solid #ebb55e; margin: 20px 0; }
+    </style>
 </head>
 <body>
-    <h1>Política de Privacidade</h1>
+    <h1>🔒 Política de Privacidade</h1>
+    <div class="version">
+        <strong>SIAA Data Extractor v1.1.0</strong><br>
+        Última atualização: Dezembro 2024<br>
+        Interface Responsiva e Headers Fixos
+    </div>
     
-    <h2>Dados Coletados</h2>
-    <p>Esta extensão NÃO coleta dados pessoais dos usuários.</p>
+    <h2>📋 Resumo</h2>
+    <p>Esta extensão <strong>NÃO coleta, transmite ou compartilha dados pessoais</strong>. Todos os dados processados permanecem exclusivamente no seu navegador.</p>
     
-    <h2>Processamento de Dados</h2>
-    <p>A extensão processa apenas dados acadêmicos públicos do sistema SIAA para gerar relatórios CSV.</p>
+    <h2>🔍 Dados Processados</h2>
+    <p>A extensão processa apenas dados acadêmicos públicos do sistema SIAA:</p>
+    <ul>
+        <li>Informações de disciplinas e ofertas acadêmicas</li>
+        <li>Dados de vagas e disponibilidade</li>
+        <li>Informações de campus e períodos</li>
+        <li>Nomes de professores e disciplinas</li>
+    </ul>
     
-    <h2>Armazenamento</h2>
-    <p>Dados são armazenados temporariamente apenas no navegador do usuário para download de arquivos.</p>
+    <h2>💾 Armazenamento Local</h2>
+    <p>Os dados são armazenados apenas no seu navegador através de:</p>
+    <ul>
+        <li><strong>chrome.storage.local</strong>: Quando usado como extensão</li>
+        <li><strong>localStorage</strong>: Quando acessado como arquivo local</li>
+        <li><strong>Configurações de interface</strong>: Larguras de colunas, ordem, visibilidade</li>
+    </ul>
     
-    <h2>Compartilhamento</h2>
-    <p>Nenhum dado é compartilhado com terceiros ou enviado para servidores externos.</p>
+    <h2>🌐 Transmissão de Dados</h2>
+    <p><strong>NENHUM dado é enviado para servidores externos.</strong> A extensão apenas:</p>
+    <ul>
+        <li>Acessa o sistema SIAA que você já está logado</li>
+        <li>Processa dados localmente no seu navegador</li>
+        <li>Gera arquivos CSV para download local</li>
+    </ul>
     
-    <h2>Contato</h2>
-    <p>Email: guiyti@gmail.com</p>
+    <h2>🔐 Permissões Utilizadas</h2>
+    <ul>
+        <li><strong>activeTab</strong>: Acesso à aba atual do SIAA</li>
+        <li><strong>storage</strong>: Salvamento de dados e configurações localmente</li>
+        <li><strong>scripting</strong>: Execução de scripts para extração (CSP compliance)</li>
+    </ul>
+    
+    <h2>📱 Funcionalidades de Interface</h2>
+    <p>A nova interface responsiva (v1.1.0) processa localmente:</p>
+    <ul>
+        <li>Detecção de dispositivo mobile/desktop</li>
+        <li>Cálculos de altura para headers fixos</li>
+        <li>Configurações de layout responsivo</li>
+        <li>Persistência de preferências do usuário</li>
+    </ul>
+    
+    <h2>🚫 O Que NÃO Fazemos</h2>
+    <ul>
+        <li>❌ Não coletamos dados pessoais</li>
+        <li>❌ Não enviamos dados para servidores</li>
+        <li>❌ Não rastreamos atividade do usuário</li>
+        <li>❌ Não acessamos dados fora do SIAA</li>
+        <li>❌ Não compartilhamos informações com terceiros</li>
+    </ul>
+    
+    <h2>🔄 Atualizações</h2>
+    <p>Esta política é atualizada quando há mudanças significativas na extensão. A versão atual corresponde ao SIAA Data Extractor v1.1.0.</p>
+    
+    <h2>📞 Contato</h2>
+    <p>Para dúvidas sobre privacidade ou funcionamento da extensão:</p>
+    <p><strong>Email:</strong> guiyti@gmail.com</p>
+    
+    <hr>
+    <p><small>SIAA Data Extractor v1.1.0 - Extensão para uso acadêmico na Universidade Cruzeiro do Sul</small></p>
 </body>
 </html>

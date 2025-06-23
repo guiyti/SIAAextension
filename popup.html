@@ -49,6 +49,31 @@
             border-radius: 12px;
             font-size: 12px;
             border: 1px solid rgba(235, 181, 94, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: transparent;
+            z-index: 1;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #27ae60;
+            transition: width 0.3s;
+        }
+
+        .status-dot, #statusText {
+            position: relative;
+            z-index: 2;
         }
 
         .status-dot {
@@ -148,6 +173,23 @@
             font-weight: bold;
             font-size: 10px;
         }
+
+        /* ESTILO PARA O SELECT DO CURSO */
+        .select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #fff;
+            color: #333;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
@@ -158,28 +200,40 @@
         </div>
         
         <div class="status">
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
             <span id="statusDot" class="status-dot"></span>
             <span id="statusText">Verificando...</span>
         </div>
     </div>
 
     <div class="controls">
-        <div class="button-group">
-            <button id="captureButton" class="btn btn-primary">
-                🔄 Capturar Dados
-            </button>
-            
-            <button id="downloadButton" class="btn btn-secondary" disabled>
-                📥 Baixar CSV
-            </button>
-            
-            <button id="viewButton" class="btn btn-secondary" disabled>
-                👁️ Visualizar
-            </button>
+        <!-- NOVA ÁREA PARA SELEÇÃO DE CURSO -->
+        <div class="field">
+            <label for="courseSelect" style="font-size:12px;font-weight:600;color:#2c3e50;">Curso:</label>
+            <select id="courseSelect" class="select">
+                <option value="">Carregando...</option>
+            </select>
         </div>
-        
-        <div id="errorMessage" class="message error hidden"></div>
-        <div id="successMessage" class="message success hidden"></div>
+
+        <div class="button-group">
+            <button id="captureButton" class="btn btn-primary">🔄 Capturar Dados</button>
+            <button id="viewButton" class="btn btn-secondary" disabled>👁️ Visualizar</button>
+            <hr style="width:100%;border:0;border-top:1px solid #ccc;">
+            <button id="downloadButton" class="btn btn-secondary" disabled>📥 Baixar CSV</button>
+            <button id="sendButton" class="btn btn-secondary">📤 Enviar CSV</button>
+        </div>
+    </div>
+
+    <!-- Overlay de comparação -->
+    <div id="comparisonOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;">
+        <div style="background:#fff;padding:20px 25px;border-radius:12px;max-width:240px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+            <h3 style="font-size:16px;color:#2c3e50;margin-bottom:10px;">📊 Alterações encontradas</h3>
+            <p id="cmpDetails" style="font-size:14px;margin-bottom:18px;color:#333;"></p>
+            <button id="btnKeep" class="btn btn-primary" style="width:100%;margin-bottom:8px;">💾 Manter Histórico</button>
+            <button id="btnOverwrite" class="btn btn-secondary" style="width:100%;">✅ Sobrescrever</button>
+        </div>
     </div>
 
     <script src="popup.js"></script>

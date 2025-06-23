@@ -1,26 +1,34 @@
-# 🔧 GUIA DE ATUALIZAÇÃO - SIAA Data Extractor v1.1
+# 🔧 GUIA DE ATUALIZAÇÃO - SIAA Data Extractor v1.1.0
 
-## 🚨 **PROBLEMA RESOLVIDO: CSP (Content Security Policy)**
+## 🚀 **NOVA VERSÃO: Interface Responsiva e Headers Fixos**
 
-A extensão foi completamente reestruturada para contornar o CSP restritivo do SIAA que estava bloqueando a execução de scripts.
+A versão 1.1.0 traz uma renovação completa da interface de visualização, tornando-a profissional, responsiva e otimizada para todos os dispositivos.
 
-## 🔄 **PRINCIPAIS MUDANÇAS**
+## 🎯 **PRINCIPAIS NOVIDADES v1.1.0**
 
-### **1. Nova Arquitetura**
-- ✅ **chrome.scripting.executeScript**: Substitui injeção inline de scripts
-- ✅ **Permissão "scripting"**: Adicionada ao manifest.json
-- ✅ **Background Script melhorado**: Gerencia toda a execução
-- ✅ **Popup redesenhado**: Visual compatível com SIAA
+### **1. Interface Responsiva Profissional**
+- ✅ **Headers Fixos**: Header da página e tabela sempre visíveis durante scroll
+- ✅ **Design Windows**: Estilo profissional cinza com bordas definidas
+- ✅ **Layout Adaptativo**: Perfeita adaptação para mobile e desktop
+- ✅ **Sidebar Moderna**: Painel deslizante com controles organizados
 
-### **2. Visual Atualizado**
-- 🎨 **Gradiente SIAA**: Cores #ebb55e (dourado/laranja)
-- 🎨 **Botões estilizados**: Seguem padrão do sistema
-- 🎨 **Bordas temáticas**: Integração visual completa
+### **2. Melhorias de Funcionalidade**
+- ✅ **Busca Nos Campos Visíveis**: Busca inteligente apenas nos dados exibidos
+- ✅ **Drag & Drop Avançado**: Reordenação de colunas na tabela e sidebar
+- ✅ **Storage Universal**: Funciona como extensão e arquivo local
+- ✅ **Persistência de Configurações**: Larguras, ordem e visibilidade das colunas
 
-### **3. Fluxo de Funcionamento**
-```
-Popup → Background Script → chrome.scripting → Página SIAA
-```
+### **3. Otimização Mobile**
+- ✅ **Detecção Automática**: Ajuste inteligente para portrait/landscape
+- ✅ **Headers Adaptativos**: Recálculo automático de alturas em mobile
+- ✅ **Touch Interface**: Sidebar e controles otimizados para toque
+- ✅ **Layout Mobile**: Header em coluna, espaçamentos otimizados
+
+### **4. Correções Técnicas**
+- ✅ **CSP Compliance**: JavaScript totalmente externo, sem inline scripts
+- ✅ **Arquitetura Robusta**: Sistema de headers dinâmicos melhorado
+- ✅ **Performance**: Debounce e otimizações de scroll
+- ✅ **Compatibilidade**: Funciona em qualquer ambiente
 
 ## 📋 **PASSOS PARA ATUALIZAR**
 
@@ -30,87 +38,194 @@ Popup → Background Script → chrome.scripting → Página SIAA
 3. Clique no ícone de **recarregar** (🔄)
 4. Ou **desabilite** e **habilite** novamente
 
-### **2. Verificar Permissões**
-- A extensão agora solicita permissão "scripting"
-- Aceite quando solicitado
+### **2. Verificar Nova Versão**
+- Versão deve mostrar **1.1.0**
+- Título: "SIAA Data Extractor - Extração e Análise de Dados Acadêmicos"
+- Descrição atualizada com novas funcionalidades
 
-### **3. Testar Funcionamento**
-1. Acesse: `https://siaa.cruzeirodosul.edu.br/novo-siaa/secure/core/home.jsf`
-2. Clique no ícone da extensão
-3. Deve aparecer: **"Pronto para extrair dados"** 🟢
-4. Clique em **"🚀 Extrair Dados"**
+### **3. Testar Novas Funcionalidades**
+1. **Capturar Dados** como antes
+2. **Visualizar** → Nova interface responsiva
+3. **Testar Headers Fixos** → Scroll na tabela
+4. **Testar Mobile** → Redimensionar janela ou usar dispositivo móvel
+5. **Drag & Drop** → Arrastar colunas para reordenar
 
-## 🔍 **DIAGNÓSTICO DE PROBLEMAS**
+## 🔍 **TESTE DA NOVA INTERFACE**
 
-### **Teste Manual no Console:**
-```javascript
-// Cole no console da página SIAA (F12 → Console)
-console.log('Teste de permissões CSP');
+### **Desktop (Tela Grande):**
+```
+┌─────────────────────────────────────────────┐
+│ ☰ SIAA Data Viewer [🔍 Busca] 📊Estatísticas│ ← Header fixo
+├─────────────────────────────────────────────┤
+│ Header da Tabela (fixo durante scroll)      │
+├─────────────────────────────────────────────┤
+│ Conteúdo da Tabela (scroll nativo)          │
+│                                             │
+└─────────────────────────────────────────────┘
 ```
 
-### **Logs Esperados:**
-- `🔧 SIAA Data Extractor - Background Script iniciado`
-- `📍 Página carregada: [URL]`
-- `✅ Página SIAA detectada - Extensão pronta para uso`
+### **Mobile (Tela Pequena):**
+```
+┌─────────────────┐
+│ ☰ SIAA Viewer   │ ← Header adaptativo
+├─────────────────┤
+│ 🔍 Busca        │ ← Layout em coluna
+├─────────────────┤
+│ 📊 Estatísticas │
+├─────────────────┤
+│ Tabela Headers  │ ← Fixo, altura ajustada
+├─────────────────┤
+│ Dados           │ ← Scroll otimizado
+└─────────────────┘
+```
 
-### **Se Ainda Não Funcionar:**
+### **Sidebar (Sobreposição):**
+```
+┌─────────────────┐
+│ ☰ SIAA Filtros  │ ← Header da sidebar
+├─────────────────┤
+│ 📅 Data         │
+│ 📥 Export       │
+├─────────────────┤
+│ 🔽 Filtros      │
+│ Campus          │
+│ Período         │
+│ Disciplina      │
+│ Professor       │
+│ Curso           │
+├─────────────────┤
+│ 📋 Colunas      │
+│ ☑️ Drag & Drop  │
+└─────────────────┘
+```
 
-1. **Limpar Cache do Chrome:**
-   ```
-   chrome://settings/clearBrowserData
-   → Selecionar "Dados de aplicativos hospedados"
-   ```
+## ⚙️ **RECURSOS TESTÁVEIS**
 
-2. **Recarregar Página SIAA:**
-   - Pressione `Ctrl+F5` (hard refresh)
-   - Ou `Ctrl+Shift+R`
+### **1. Headers Fixos**
+- ✅ Role a página → Header permanece visível
+- ✅ Role a tabela → Header da tabela permanece visível
+- ✅ Redimensione janela → Headers se adaptam automaticamente
 
-3. **Verificar Console de Erros:**
-   - F12 → Console
-   - Procure por mensagens com 🚀 ❌ ✅
+### **2. Responsividade**
+- ✅ Desktop: Layout horizontal com 3 seções no header
+- ✅ Mobile Portrait: Layout vertical, padding 220px+
+- ✅ Mobile Landscape: Layout otimizado, padding 180px+
+- ✅ Transições suaves entre layouts
 
-## ⚙️ **ARQUIVOS MODIFICADOS**
+### **3. Busca Inteligente**
+- ✅ Placeholder: "🔍 Buscar nos campos visíveis..."
+- ✅ Busca apenas nas colunas visíveis/marcadas
+- ✅ Console mostra colunas sendo pesquisadas
 
-| Arquivo | Mudanças |
-|---------|----------|
-| `manifest.json` | + Permissão "scripting" |
-| `popup.html` | Visual SIAA (gradiente #ebb55e) |
-| `popup.js` | Comunicação com background |
-| `background.js` | chrome.scripting.executeScript |
-| `content.js` | Simplificado (sem injeção) |
-| `injected.js` | Bordas SIAA nos overlays |
+### **4. Drag & Drop**
+- ✅ Arraste headers da tabela para reordenar
+- ✅ Arraste itens na sidebar para reordenar
+- ✅ Sincronização entre tabela e sidebar
+- ✅ Persistência da configuração
 
-## 🎯 **BENEFÍCIOS DA ATUALIZAÇÃO**
+### **5. Sidebar Moderna**
+- ✅ Toggle com ☰ no header
+- ✅ Fechar com ☰ na sidebar, ESC ou clique fora
+- ✅ Sobreposição sem mover conteúdo
+- ✅ Scroll independente
 
-✅ **Maior Compatibilidade**: Funciona com CSP restritivo  
-✅ **Visual Integrado**: Combina com o design do SIAA  
-✅ **Execução Robusta**: Menos chances de falha  
-✅ **Melhor Performance**: Execução direta via Chrome API  
-✅ **Logs Detalhados**: Facilita debugging  
+## 🐛 **DIAGNÓSTICO DE PROBLEMAS v1.1.0**
 
-## 🚀 **TESTE COMPLETO**
+### **Headers Não Fixos:**
+```javascript
+// Console (F12) deve mostrar:
+console.log('📱 MOBILE PORTRAIT - Header height: XXXpx | Padding aplicado: XXXpx');
+// ou
+console.log('🖥️ DESKTOP - Header height: XXXpx | Padding aplicado: XXXpx');
+```
 
-### **Cenário de Sucesso:**
-1. ✅ Popup abre com visual SIAA
-2. ✅ Status: "Pronto para extrair dados" 🟢
-3. ✅ Clique "Extrair Dados" → Interface de seleção
-4. ✅ Escolher curso → Iniciação da extração
-5. ✅ Download automático do CSV
+### **Busca Não Funciona:**
+```javascript
+// Console deve mostrar:
+console.log('🔍 Buscando por: TERMO nas colunas visíveis: [...array]');
+console.log('📊 Resultados da busca: X registros encontrados');
+```
 
-### **Indicadores Visuais:**
-- 🔴 **Vermelho**: Página incorreta
-- 🟢 **Verde**: Pronto para uso
-- 🟡 **Amarelo**: Processando
+### **Mobile Quebrado:**
+- Force reload: `Ctrl+F5`
+- Rotate dispositivo e aguarde recálculo
+- Console deve mostrar logs de orientação
 
-## 📞 **SUPORTE**
+### **Drag & Drop Não Funciona:**
+- Verifique se está clicando e arrastando corretamente
+- Tanto headers da tabela quanto itens da sidebar são arrastáveis
+- Mudanças devem persistir ao recarregar
 
-Se ainda houver problemas:
+## 🎨 **MELHORIAS VISUAIS**
 
-1. **Verifique o Console** (F12)
-2. **Anote mensagens de erro** exatas
-3. **Confirme URL**: deve conter `home.jsf`
-4. **Teste em aba privada**: para eliminar cache
+### **Antes (v1.0.0):**
+- Interface básica sem responsividade
+- Headers normais (não fixos)
+- Busca em todos os campos
+- Layout fixo desktop
+
+### **Depois (v1.1.0):**
+- Interface profissional estilo Windows
+- Headers sempre visíveis
+- Busca inteligente nos campos visíveis
+- Layout responsivo mobile/desktop
+- Sidebar moderna deslizante
+- Drag & drop avançado
+
+## 📊 **LOGS ESPERADOS (Console)**
+
+### **Inicialização:**
+```
+🚀 Iniciando SIAA Data Viewer...
+DOM carregado, configurando header height...
+📱 MOBILE PORTRAIT - Header height: 180px | Padding aplicado: 220px
+✅ Main-content padding-top ajustado para: 220px
+✅ TableWrapper height ajustado para: calc(100vh - 220px)
+🔄 Configuração finalizada - Mobile: true | Final padding: 220px
+```
+
+### **Busca:**
+```
+🔍 Buscando por: matemática nas colunas visíveis: ["Nome Disciplina", "Campus", "Professor"]
+📊 Resultados da busca: 15 registros encontrados
+```
+
+### **Drag & Drop:**
+```
+🔄 Coluna arrastada de posição 2 para 0
+💾 Configurações salvas: ordem e larguras das colunas
+```
+
+## 🚀 **BENEFÍCIOS DA v1.1.0**
+
+✅ **Interface Moderna**: Design profissional Windows  
+✅ **Responsividade Total**: Funciona em qualquer dispositivo  
+✅ **Headers Sempre Visíveis**: Nunca perde referência  
+✅ **Busca Inteligente**: Apenas nos dados relevantes  
+✅ **Personalização Avançada**: Drag & drop + persistência  
+✅ **Performance Otimizada**: Debounce e recálculos inteligentes  
+✅ **CSP Compliance**: Código seguro e compatível  
+
+## 🎉 **TESTE COMPLETO v1.1.0**
+
+### **Cenário Desktop:**
+1. ✅ Capturar dados → Sucesso
+2. ✅ Visualizar → Interface moderna carrega
+3. ✅ Header fixo → Role página, header permanece
+4. ✅ Busca → Digite termo, busca apenas em campos visíveis
+5. ✅ Drag & Drop → Arraste colunas, ordem muda
+6. ✅ Sidebar → Abra/feche, controles funcionam
+7. ✅ Export → Apenas dados filtrados
+
+### **Cenário Mobile:**
+1. ✅ Redimensione para mobile → Layout se adapta
+2. ✅ Header mobile → Layout em coluna
+3. ✅ Scroll → Headers fixos funcionam
+4. ✅ Sidebar touch → Funciona com toque
+5. ✅ Rotação → Recalcula automaticamente
 
 ---
 
-**🎉 A extensão agora é mais robusta e visualmente integrada ao SIAA!** 
+**🎉 A v1.1.0 é uma renovação completa da experiência do usuário!** 
+
+**Interface responsiva, headers fixos, busca inteligente e design profissional.** 🚀 

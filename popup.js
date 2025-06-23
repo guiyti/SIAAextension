@@ -4,35 +4,42 @@ const statusText = document.getElementById('statusText');
 const captureButton = document.getElementById('captureButton');
 const downloadButton = document.getElementById('downloadButton');
 const viewButton = document.getElementById('viewButton');
-const errorMessage = document.getElementById('errorMessage');
-const successMessage = document.getElementById('successMessage');
+const courseSelect = document.getElementById('courseSelect');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const sendButton = document.getElementById('sendButton');
 
 // Estado da aplicação
 let isExtracting = false;
 let hasStoredData = false;
 
-// Função para mostrar mensagem de erro
-function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.classList.remove('hidden');
-    successMessage.classList.add('hidden');
-    setTimeout(() => {
-        errorMessage.classList.add('hidden');
-    }, 6000);
+// Cursos extras definidos pelo desenvolvedor.
+// Adicione novos cursos no formato { codigo: '999', nome: 'NOME DO CURSO' }
+const EXTRA_COURSES = [
+    // { codigo: '68', nome: 'CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS (EXTRA)' },
+    // { codigo: '16', nome: 'CIÊNCIA DA COMPUTAÇÃO (BACHARELADO) (EXTRA)' },
+    // { codigo: '121', nome: 'CST EM GESTÃO DA TECNOLOGIA DA INFORMAÇÃO (EXTRA)' }
+];
+
+// Mensagens visuais removidas; logs serão feitos apenas no console
+
+// Adicionando stubs para evitar ReferenceError e registrar no console
+function showError(msg) {
+    console.error('[SIAA-ERRO] ' + msg);
+    // Caso queira exibir no popup, descomente a linha abaixo:
+    // updateStatus(msg, false);
 }
 
-// Função para mostrar mensagem de sucesso
-function showSuccess(message) {
-    successMessage.textContent = message;
-    successMessage.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
-    setTimeout(() => {
-        successMessage.classList.add('hidden');
-    }, 6000);
+function showSuccess(msg) {
+    console.log('[SIAA-OK] ' + msg);
+    // Caso queira exibir no popup, descomente a linha abaixo:
+    // updateStatus(msg, true);
 }
 
 // Função para verificar se está na página correta
 async function checkPageStatus() {
+    // Não atualizar status durante extração para evitar sobrescrever percentual
+    if (isExtracting) return;
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
@@ -180,28 +187,85 @@ function compareData(oldData, newData) {
     return { added, removed, modified };
 }
 
-// Função para mostrar comparação no popup
-function showComparison(comparison) {
-    let message = '📊 Comparação: ';
-    
-    if (comparison.added.length > 0) {
-        message += `${comparison.added.length} novas `;
+// Função para buscar cursos disponíveis via SIAA
+async function fetchCursosDisponiveis() {
+    // Verificar lista de códigos no storage
+    const stored = await chrome.storage.local.get('siaa_course_codes');
+    let codeList = Array.isArray(stored.siaa_course_codes) ? stored.siaa_course_codes : null;
+
+    try {
+        // 1) Obter lista de códigos permitidos ao usuário
+        const codesUrl = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboCurso.xml.jsp?ano_leti=2025&sem_leti=2';
+        const codesResp = await fetch(codesUrl, {
+            headers: {
+                'Accept': 'text/xml, application/xml, */*',
+                'Accept-Charset': 'ISO-8859-1'
+            }
+        });
+        if (!codesResp.ok) throw new Error(`HTTP ${codesResp.status}`);
+        const codesAb = await codesResp.arrayBuffer();
+        const codesText = new TextDecoder('iso-8859-1').decode(codesAb);
+        const codesXml = new DOMParser().parseFromString(codesText, 'text/xml');
+        const codeOptions = Array.from(codesXml.querySelectorAll('option'));
+        const codes = codeOptions.map(opt => opt.getAttribute('value')).filter(Boolean);
+
+        // 2) Obter mapeamento código->nome global
+        const namesUrl = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/acd/graduacao/wacdplan05/comboCursos.jsp?ano_leti=2025&sem_leti=2';
+        const namesResp = await fetch(namesUrl, { headers: { 'Accept': 'text/xml, application/xml, */*', 'Accept-Charset': 'ISO-8859-1' } });
+        if (!namesResp.ok) throw new Error(`HTTP ${namesResp.status}`);
+        const namesAb = await namesResp.arrayBuffer();
+        const namesText = new TextDecoder('iso-8859-1').decode(namesAb);
+        const namesXml = new DOMParser().parseFromString(namesText, 'text/xml');
+        const nameOptions = Array.from(namesXml.querySelectorAll('option'));
+        const nameMap = new Map();
+        nameOptions.forEach(opt => {
+            const val = opt.getAttribute('value');
+            const text = opt.textContent.trim();
+            if (val && text) nameMap.set(val, text);
+        });
+
+        // Se já tínhamos lista de códigos, usa ela; senão armazena nova.
+        if (!codeList) {
+            await chrome.storage.local.set({ siaa_course_codes: codes });
+            codeList = codes;
+        }
+
+        const validCodes = (codeList && codeList.length) ? codeList : codes;
+        const cursos = validCodes.map(cod => ({ codigo: cod, nome: nameMap.get(cod) || cod }));
+
+        return cursos;
+    } catch (e) {
+        console.error('Erro ao buscar cursos:', e);
+        showError('Erro ao carregar cursos');
+        return [];
     }
-    
-    if (comparison.removed.length > 0) {
-        message += `${comparison.removed.length} removidas `;
-    }
-    
-    if (comparison.modified.length > 0) {
-        message += `${comparison.modified.length} modificadas`;
-    }
-    
-    if (comparison.added.length === 0 && comparison.removed.length === 0 && comparison.modified.length === 0) {
-        message = '✨ Nenhuma alteração encontrada';
-    }
-    
-    showSuccess(message);
 }
+
+// Popular o select com cursos + extras
+async function popularSelectCursos() {
+    courseSelect.innerHTML = '<option value="">Carregando...</option>';
+
+    const cursosAPI = await fetchCursosDisponiveis();
+
+    // Mesclar extras, garantindo que não haja duplicatas pelo código
+    const cursoMap = new Map();
+    cursosAPI.forEach(c => cursoMap.set(c.codigo, c));
+    EXTRA_COURSES.forEach(c => cursoMap.set(c.codigo, c));
+
+    // Ordenar alfabeticamente pelo nome
+    const cursosOrdenados = Array.from(cursoMap.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    // Construir opções
+    const optionsHtml = ['<option value="">Selecione...</option>'];
+    cursosOrdenados.forEach(curso => {
+        optionsHtml.push(`<option value="${curso.codigo}">${curso.nome}</option>`);
+    });
+
+    courseSelect.innerHTML = optionsHtml.join('');
+}
+
+// Atualizar popularSelectCursos na inicialização
+popularSelectCursos();
 
 // Função para executar a extração
 async function startExtraction() {
@@ -209,6 +273,19 @@ async function startExtraction() {
         showError('Extração já em andamento');
         return;
     }
+
+    console.log('[SIAA] startExtraction acionado');
+
+    // NOVA VALIDAÇÃO DE CURSO SELECIONADO
+    const selectedCode = courseSelect.value;
+    if (!selectedCode) {
+        showError('Selecione um curso antes de continuar');
+        return;
+    }
+    const selectedName = courseSelect.options[courseSelect.selectedIndex].text;
+    const cursoSelecionado = { codigo: selectedCode, nome: selectedName };
+
+    console.log('[SIAA] Curso selecionado no popup:', cursoSelecionado);
 
     try {
         isExtracting = true;
@@ -223,6 +300,9 @@ async function startExtraction() {
         
         // Desabilitar botão durante extração
         captureButton.disabled = true;
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        statusDot.style.display = 'none';
         captureButton.textContent = '⏳ Capturando...';
         
         // Obter a aba atual
@@ -232,11 +312,15 @@ async function startExtraction() {
             throw new Error('Não foi possível acessar a aba atual');
         }
 
-        // Enviar mensagem para o background script executar a extração
+        // Enviar mensagem para o background script executar a extração, incluindo o curso seleccionado
+        console.log('[SIAA] Enviando executeExtraction para background');
         const response = await chrome.runtime.sendMessage({
             action: 'executeExtraction',
-            tabId: tab.id
+            tabId: tab.id,
+            cursoSelecionado
         });
+
+        console.log('[SIAA] Resposta do background:', response);
 
         if (response && response.success) {
             showSuccess('Captura iniciada! Aguarde...');
@@ -253,6 +337,8 @@ async function startExtraction() {
         isExtracting = false;
         captureButton.disabled = false;
         captureButton.textContent = '🔄 Capturar Dados';
+        progressContainer.style.display = 'none';
+        statusDot.style.display = 'inline-block';
     }
 }
 
@@ -269,9 +355,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         isExtracting = false;
         captureButton.disabled = false;
         captureButton.textContent = '🔄 Capturar Dados';
-        
-        // Processar comparação se houver dados antigos
-        processDataComparison();
+        progressContainer.style.display = 'none';
+        statusDot.style.display = 'inline-block';
         
     } else if (request.action === 'extractionError') {
         showError('❌ Erro: ' + request.error);
@@ -281,37 +366,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         captureButton.textContent = '🔄 Capturar Dados';
         
     } else if (request.action === 'extractionProgress') {
-        updateStatus(request.message, true);
-        showSuccess(request.message);
+        handleExtractionProgress(request.message, request.progress);
         
     } else if (request.action === 'dataStored') {
         updateStoredDataStatus();
     }
 });
-
-// Função para processar comparação de dados
-async function processDataComparison() {
-    try {
-        const data = await chrome.storage.local.get(['siaa_data_csv', 'siaa_data_csv_old']);
-        
-        if (data.siaa_data_csv && data.siaa_data_csv_old) {
-            const oldData = parseCSVToArray(data.siaa_data_csv_old);
-            const newData = parseCSVToArray(data.siaa_data_csv);
-            
-            const comparison = compareData(oldData, newData);
-            
-            if (comparison.added.length > 0 || comparison.removed.length > 0 || comparison.modified.length > 0) {
-                setTimeout(() => {
-                    showComparison(comparison);
-                }, 1000);
-            } else {
-                showSuccess('✨ Dados atualizados - sem mudanças');
-            }
-        }
-    } catch (error) {
-        console.error('Erro na comparação:', error);
-    }
-}
 
 // Atualizar status dos botões com base nos dados armazenados
 async function updateStoredDataStatus() {
@@ -320,11 +380,13 @@ async function updateStoredDataStatus() {
         hasStoredData = true;
         downloadButton.disabled = false;
         viewButton.disabled = false;
+        // sendButton permanece habilitado
         console.log('📦 Dados encontrados no storage. Timestamp:', data.siaa_data_timestamp);
     } else {
         hasStoredData = false;
         downloadButton.disabled = true;
         viewButton.disabled = true;
+        // sendButton permanece habilitado
     }
 }
 
@@ -354,10 +416,66 @@ function openViewer() {
 // Botões adicionais
 downloadButton.addEventListener('click', downloadStoredCSV);
 viewButton.addEventListener('click', openViewer);
+sendButton.addEventListener('click', sendCSV);
 
 // Verificar storage ao abrir popup
 document.addEventListener('DOMContentLoaded', async () => {
     await checkPageStatus();
     await updateStoredDataStatus();
     setInterval(checkPageStatus, 5000);
+});
+
+// Receber progresso
+let lastPercent = 0;
+function handleExtractionProgress(message, percent) {
+    if (typeof percent === 'number') {
+        lastPercent = percent;
+        progressBar.style.width = percent + '%';
+        statusText.textContent = percent + '%';
+    }
+}
+
+// Botão Enviar CSV
+async function sendCSV() {
+    // Abrir seletor de arquivo
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,text/csv';
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            await chrome.storage.local.set({
+                siaa_data_csv: text,
+                siaa_data_timestamp: Date.now()
+            });
+            showSuccess('CSV carregado! Abrindo viewer...');
+            chrome.runtime.sendMessage({ action: 'dataStored' });
+            openViewer();
+        } catch (e) {
+            showError('Falha ao ler CSV: ' + e.message);
+        }
+    };
+    input.click();
+}
+
+// Exibir overlay
+function exibirOverlayComparacao(comp) {
+    const parts = [];
+    if (comp.added.length)   parts.push(`⬆️ ${comp.added.length}`);
+    if (comp.removed.length) parts.push(`⬇️ ${comp.removed.length}`);
+    if (comp.modified.length)parts.push(`🔄 ${comp.modified.length}`);
+    cmpDetails.textContent = parts.join('  ');
+    comparisonOverlay.style.display = 'flex';
+}
+
+btnKeep.addEventListener('click', async () => {
+    comparisonOverlay.style.display = 'none';
+});
+
+btnOverwrite.addEventListener('click', async () => {
+    await chrome.storage.local.remove('siaa_data_csv_old');
+    comparisonOverlay.style.display = 'none';
+    showSuccess('Dados sobrescritos');
 }); 

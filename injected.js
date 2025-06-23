@@ -188,169 +188,49 @@ function createCourseSelectionOverlay(cursos) {
 }
 
 async function exportarTabelaSIAA(cursoSelecionado = null) {
+    // Funções auxiliares visíveis para todo o escopo (incluindo catch)
+    function updateStatus(message, progress = null) {
+        const payload = { action: 'extractionProgress', message };
+        if (progress !== null) payload.progress = progress;
+        chrome.runtime?.sendMessage(payload);
+    }
+    function updateBatchInfo(current, total) {
+        updateStatus(`📦 Lote ${current}/${total}`);
+    }
+    function updateProgress(processed, total, startTime) {
+        if (!startTime || total === 0) return;
+        const percent = Math.min(100, Math.floor((processed / total) * 100));
+        updateStatus(`⌛ ${percent}%`, percent);
+    }
+
     let isCanceled = false;
     let loadingOverlay = null;
     
     try {
-        // Se não foi passado um curso, mostrar interface de seleção
+        console.log('📥 exportarTabelaSIAA iniciado. Param cursoSelecionado:', cursoSelecionado, 'Global:', window.__SIAA_SELECTED_COURSE);
+
+        // A seleção de curso agora é feita no popup da extensão.
         if (!cursoSelecionado) {
-            console.log('🔍 Buscando cursos disponíveis...');
-            
-            try {
-                const cursos = await getCursosDisponiveis();
-                if (cursos.length === 0) {
-                    throw new Error('Nenhum curso encontrado');
-                }
-                
-                // Mostrar interface de seleção
-                cursoSelecionado = await createCourseSelectionOverlay(cursos);
-                console.log('✅ Curso selecionado pelo usuário:', cursoSelecionado);
-                
-            } catch (error) {
-                if (error.message === 'Seleção cancelada pelo usuário') {
-                    console.log('ℹ️ Usuário cancelou a seleção de curso');
-                    return;
-                }
-                console.error('❌ Erro ao buscar cursos:', error);
-                alert('Erro ao buscar cursos disponíveis: ' + error.message);
-                return;
-            }
+            // Tentar recuperar do global definido pelo background
+            cursoSelecionado = window.__SIAA_SELECTED_COURSE || null;
+        }
+        if (!cursoSelecionado) {
+            throw new Error('Curso não informado pelo popup');
         }
         
         // Configurações
         const BATCH_SIZE = 10;
         const DELAY_BETWEEN_BATCHES = 800;
         
-        // Criar overlay de loading
-        loadingOverlay = createLoadingOverlay();
-        
-        function createLoadingOverlay() {
-            const overlay = document.createElement('div');
-            overlay.id = 'siaa-loading-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                backdrop-filter: blur(10px);
-                z-index: 10001;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-family: Arial, sans-serif;
-            `;
-            
-            const content = document.createElement('div');
-            content.style.cssText = `
-                background: white;
-                padding: 40px;
-                border-radius: 15px;
-                text-align: center;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-                border: 2px solid #ebb55e;
-                min-width: 400px;
-                max-width: 600px;
-            `;
-            
-            content.innerHTML = `
-                <div style="margin-bottom: 25px;">
-                    <div style="width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #ebb55e; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px auto;"></div>
-                    <h2 style="color: #333; margin: 0;">⚡ Extração em Andamento</h2>
-                </div>
-                
-                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; color: #666; font-size: 14px;">
-                        <strong>Curso:</strong> ${cursoSelecionado.nome}
-                    </p>
-                </div>
-                
-                <div id="status-message" style="margin-bottom: 15px; font-size: 14px; color: #666;">
-                    Iniciando extração...
-                </div>
-                
-                <div id="batch-info" style="margin-bottom: 15px; font-size: 12px; color: #999; display: none;">
-                    Lote: 0/0
-                </div>
-                
-                <div id="progress-info" style="margin-bottom: 20px; font-size: 12px; color: #999; display: none;">
-                    Processados: 0/0 | Tempo: 0s
-                </div>
-                
-            <button id="cancel-button" style="
-                background: #e74c3c;
-                color: white;
-                border: none;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                cursor: pointer;
-                font-size: 14px;
-                transition: background-color 0.3s;
-            " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">
-                    ❌ Cancelar
-            </button>
-                
-                <style>
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-            `;
-            
-            overlay.appendChild(content);
-        document.body.appendChild(overlay);
-        
-            // Evento do botão cancelar
-        document.getElementById('cancel-button').addEventListener('click', () => {
-            isCanceled = true;
-                updateStatus('Cancelando...', '#e74c3c');
+        // Informar início ao popup
+        chrome.runtime?.sendMessage({
+            action: 'extractionProgress',
+            message: `🚀 Iniciando extração para ${cursoSelecionado.nome}`
         });
-        
-        return overlay;
-    }
-    
-    function updateStatus(message, color = '#666') {
-            const statusElement = document.getElementById('status-message');
-            if (statusElement) {
-                statusElement.textContent = message;
-                statusElement.style.color = color;
-            }
-        }
-        
-        function updateBatchInfo(current, total) {
-            const batchElement = document.getElementById('batch-info');
-            if (batchElement) {
-                batchElement.textContent = `Lote: ${current}/${total}`;
-                batchElement.style.display = 'block';
-            }
-        }
-        
-        function updateProgress(processed, total, startTime) {
-            const progressElement = document.getElementById('progress-info');
-            if (progressElement && startTime) {
-                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            const remaining = total - processed;
-                const rate = processed / (Date.now() - startTime) * 1000;
-                const eta = remaining > 0 ? (remaining / rate).toFixed(1) : 0;
-                
-                progressElement.innerHTML = `
-                    Processados: ${processed}/${total} | 
-                    Tempo: ${elapsed}s | 
-                    ETA: ${eta}s | 
-                    Taxa: ${rate.toFixed(1)}/s
-                `;
-                progressElement.style.display = 'block';
-            }
-        }
-        
-    function removeLoadingOverlay() {
-            const overlay = document.getElementById('siaa-loading-overlay');
-            if (overlay) {
-                document.body.removeChild(overlay);
-            }
-        }
+
+        // Funções stub de overlay para compatibilidade
+        function createLoadingOverlay() { return null; }
+        function removeLoadingOverlay() { /* nada */ }
         
         updateStatus('Buscando dados das disciplinas...');
         
@@ -414,44 +294,43 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         
         updateStatus(`${totalRecords} disciplinas encontradas. Iniciando processamento...`);
         
-        // Função para buscar dados do curso
-        async function getCursoData(idOfert) {
-            if (!idOfert || idOfert.trim() === '') {
-                return '';
-            }
-            
+        // Função para buscar professor (genérica)
+        async function getProfessorData(idOfert) {
+            if (!idOfert) return { codigo: '', nome: '' };
             try {
-                const cursoUrl = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
-                const cursoXml = await fetchXML(cursoUrl);
-                
-                const selectedOption = cursoXml.querySelector('option[selected]');
-                return selectedOption ? selectedOption.textContent.trim() : '';
-            } catch (error) {
-                console.warn('⚠️ Erro ao buscar curso para ID:', idOfert, error);
-                return '';
+                const urlProf = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
+                const xml = await fetchXML(urlProf);
+                const row = xml.querySelector('row');
+                if (!row) return { codigo: '', nome: '' };
+                const cells = row.querySelectorAll('cell');
+                if (cells.length < 2) return { codigo: '', nome: '' };
+                const txt = cells[1].textContent.trim();
+                const [codigo, ...nomeParts] = txt.split(' - ');
+                return { codigo: codigo || '', nome: nomeParts.join(' - ').trim() };
+            } catch (e) {
+                return { codigo: '', nome: '' };
             }
         }
         
-        // Função para buscar dados do professor
-        async function getProfessorData(idOfert) {
-            if (!idOfert || idOfert.trim() === '') {
-                return { codigo: '', nome: '' };
-            }
-            
+        // Função para buscar cursos associados à oferta
+        async function getCursoData(idOfert) {
+            if (!idOfert) return '';
             try {
-                const profUrl = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
-                const profXml = await fetchXML(profUrl);
-                
-                const selectedOption = profXml.querySelector('option[selected]');
-                if (selectedOption) {
-                    const profText = selectedOption.textContent.trim();
-                    const profValue = selectedOption.getAttribute('value');
-                    return { codigo: profValue, nome: profText };
-                }
-                return { codigo: '', nome: '' };
-            } catch (error) {
-                console.warn('⚠️ Erro ao buscar professor para ID:', idOfert, error);
-                return { codigo: '', nome: '' };
+                const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
+                const xml = await fetchXML(urlCurso);
+                const rows = xml.querySelectorAll('row');
+                if (!rows || rows.length === 0) return '';
+                const cursos = [];
+                rows.forEach(r => {
+                    const cells = r.querySelectorAll('cell');
+                    if (cells.length >= 2) {
+                        const txt = cells[1].textContent.trim();
+                        if (txt) cursos.push(`(${txt})`);
+                    }
+                });
+                return cursos.join(' - ');
+            } catch (e) {
+                return '';
             }
         }
         
@@ -558,101 +437,21 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                 // Função getCodigoCampus agora usa o código já mapeado
                 const codigoCampus = campusInfo.codigo;
                 
-                // Buscar dados de curso e professor via APIs XML com fallback inteligente
+                // Definir curso utilizando apenas o curso selecionado
                 let curso = '';
+                if (finalData.idOferta) {
+                    curso = await getCursoData(finalData.idOferta);
+                }
+                if (!curso && cursoSelecionado) {
+                    curso = `(${cursoSelecionado.codigo} - ${cursoSelecionado.nome})`;
+                }
+                
                 let professor = { codigo: '', nome: '' };
-                
-                if (finalData.idOferta && finalData.idOferta.trim() !== '') {
-                    try {
-                        // Tentar APIs primeiro
-                        [curso, professor] = await Promise.all([
-                            getCursoData(finalData.idOferta),
-                            getProfessorData(finalData.idOferta)
-                        ]);
-                    } catch (error) {
-                        console.warn(`⚠️ APIs indisponíveis para oferta ${finalData.idOferta}, usando fallback`);
-                        
-                        // Fallback: extrair informações do próprio XML
-                        const cursoCell = cells[11]?.textContent.trim() || '';
-                        const professorCell = cells[12]?.textContent.trim() || '';
-                        
-                        // Extrair curso da descrição (posição 10) ou usar curso selecionado
-                        const descricaoCell = cells[10]?.textContent.trim() || '';
-                        
-                        if (descricaoCell.includes('COMP_OFERTA')) {
-                            // COMP_OFERTA indica disciplinas compartilhadas entre múltiplos cursos
-                            // Usar o curso selecionado pelo usuário como referência
-                            curso = mapearCursoPorCodigo(cursoSelecionado?.codigo);
-                        } else if (descricaoCell.includes('_OFERTA')) {
-                            // Disciplinas específicas de um curso
-                            curso = extrairCursoDaDescricao(descricaoCell, cursoSelecionado?.codigo);
-                        } else {
-                            // Fallback: usar curso selecionado
-                            curso = mapearCursoPorCodigo(cursoSelecionado?.codigo);
-                        }
-                        
-                        // Extrair professor do JavaScript ou usar mapeamento conhecido
-                        if (professorCell.includes('teacher_ofe')) {
-                            const match = professorCell.match(/teacher_ofe\("(\d+)","(\d+)"\)/);
-                            if (match) {
-                                const profId = match[2]; // ID da oferta
-                                professor = buscarProfessorConhecido(profId) || { codigo: match[1], nome: 'Professor não encontrado' };
-                            }
-                        }
-                    }
-                } else {
-                    console.log(`⚠️ ID Oferta vazio para registro ${index}, usando dados do curso selecionado`);
-                    curso = mapearCursoPorCodigo(cursoSelecionado?.codigo);
+                if (finalData.idOferta) {
+                    professor = await getProfessorData(finalData.idOferta);
                 }
                 
-                // Função auxiliar para mapear curso por código
-                function mapearCursoPorCodigo(codigoCurso) {
-                    const cursoMap = {
-                        '68': '(68 - CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS)',
-                        '16': '(16 - CIÊNCIA DA COMPUTAÇÃO (BACHARELADO))',
-                        '121': '(121 - CST EM GESTÃO DA TECNOLOGIA DA INFORMAÇÃO)'
-                    };
-                    return cursoMap[codigoCurso] || '';
-                }
-                
-                // Função auxiliar para extrair curso da descrição
-                function extrairCursoDaDescricao(descricao, codigoCursoSelecionado) {
-                    // Disciplinas específicas por sigla
-                    if (descricao.includes('_ADS_') || descricao.includes('TASIII_') || descricao.includes('PDM_')) {
-                        return '(68 - CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS)';
-                    }
-                    if (descricao.includes('_COMP_') || descricao.includes('ES_')) {
-                        return '(16 - CIÊNCIA DA COMPUTAÇÃO (BACHARELADO))';
-                    }
-                    if (descricao.includes('_GTI_')) {
-                        return '(121 - CST EM GESTÃO DA TECNOLOGIA DA INFORMAÇÃO)';
-                    }
-                    
-                    // Se não conseguir determinar pela descrição, usar curso selecionado
-                    return mapearCursoPorCodigo(codigoCursoSelecionado);
-                }
-                
-                // Função auxiliar para buscar professor conhecido por ID da oferta
-                function buscarProfessorConhecido(idOferta) {
-                    const professoresConhecidos = {
-                        '2129323': { codigo: '970706', nome: 'FABIO LUIZ PERAL' },
-                        '2129339': { codigo: '31055', nome: 'GIULIO GUIYTI ROSSIGNOLO SUZUMURA' },
-                        '2129348': { codigo: '948354', nome: 'EDIDIO RUBENS DANTAS LIMA' },
-                        '2129608': { codigo: '942096', nome: 'NELSON MISSAGLIA' },
-                        '2129614': { codigo: '974809', nome: 'KATIA ALVES BEZERRA' },
-                        '2130026': { codigo: '945804', nome: 'SHIE CHEN FANG' },
-                        '2129680': { codigo: '948354', nome: 'EDIDIO RUBENS DANTAS LIMA' },
-                        '2129682': { codigo: '945302', nome: 'FABIO COSME RODRIGUES DOS SANTOS' },
-                        '2129696': { codigo: '970799', nome: 'WAGNER ANTUNES DA SILVA' },
-                        '2129703': { codigo: '970706', nome: 'FABIO LUIZ PERAL' },
-                        '2129724': { codigo: '941332', nome: 'ALEXANDRE LEITE NUNES' },
-                        '2132865': { codigo: '974024', nome: 'ANDRE LOZANO FERREIRA' },
-                        '2132945': { codigo: '945804', nome: 'SHIE CHEN FANG' }
-                    };
-                    return professoresConhecidos[idOferta];
-                }
-            
-            return {
+                return {
                     index,
                     codigoDisciplina: finalData.codigoDisciplina,
                     nomeDisciplina: finalData.nomeDisciplina,
@@ -695,7 +494,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         
         for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
             if (isCanceled) {
-                updateStatus('Operação cancelada pelo usuário', '#e74c3c');
+                updateStatus('Operação cancelada pelo usuário');
                 setTimeout(removeLoadingOverlay, 2000);
                 return;
             }
@@ -736,12 +535,12 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         }
         
         if (isCanceled) {
-            updateStatus('Operação cancelada pelo usuário', '#e74c3c');
+            updateStatus('Operação cancelada pelo usuário');
             setTimeout(removeLoadingOverlay, 2000);
             return;
         }
         
-        updateStatus('Gerando arquivo CSV...', '#27ae60');
+        updateStatus('Gerando arquivo CSV...');
         
         // Montar CSV
         const csvData = [];
@@ -817,7 +616,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         const csvWithBOM = BOM + csvContent;
         
         const finalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        updateStatus(`✅ Dados capturados! ${processedCount} registros em ${finalTime}s`, '#27ae60');
+        updateStatus(`✅ Dados capturados! ${processedCount} registros em ${finalTime}s`);
         console.log(`🎉 Dados processados com sucesso em ${finalTime}s!`);
         
         // Enviar dados para a extensão armazenar no storage
@@ -843,7 +642,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
     } catch (error) {
         if (error.message !== 'Operação cancelada') {
             console.error('❌ Erro durante a captura:', error);
-            updateStatus(`❌ Erro: ${error.message}`, '#e74c3c');
+            updateStatus(`❌ Erro: ${error.message}`);
             setTimeout(removeLoadingOverlay, 5000);
         }
     }
