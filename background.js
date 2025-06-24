@@ -208,7 +208,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 siaa_data_csv: csvWithBom,
                 siaa_data_timestamp: request.timestamp || Date.now()
             };
-
+            
             chrome.storage.local.set(saveData, () => {
                 console.log(`💾 Dados armazenados. Total de ofertas: ${mergedObjs.length}`);
                 chrome.runtime.sendMessage({ action: 'dataStored' }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));

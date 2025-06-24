@@ -394,7 +394,24 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                 
                 // Extrair horários do atributo title da célula 3
                 const horarioTitle = cells[3]?.getAttribute('title') || '';
-                const hora = horarioTitle.replace(/\./g, ' | ') || '';
+                // Processar horário para melhor legibilidade
+                // Exemplo: "Segunda das 19:10 às 20:25.Segunda das 20:35 às 21:50." 
+                // -> "Segunda 19:10-20:25 | Segunda 20:35-21:50"
+                let hora = '';
+                if (horarioTitle) {
+                    hora = horarioTitle
+                        .replace(/\.$/, '') // Remove ponto final
+                        .split('.') // Divide por pontos
+                        .map(periodo => periodo.trim()) // Remove espaços
+                        .filter(periodo => periodo) // Remove vazios
+                        .map(periodo => {
+                            // Simplificar formato: "Segunda das 19:10 às 20:25" -> "Segunda 19:10-20:25"
+                            return periodo
+                                .replace(/\s+das\s+/g, ' ')
+                                .replace(/\s+às\s+/g, '-');
+                        })
+                        .join(' | '); // Junta com separador
+                }
                 
                 // Extrair ID da oferta da descrição (posição 13 é mais confiável)
                 const idOferta = idOfertaReal || row.getAttribute('id') || '';
@@ -416,6 +433,55 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                 
                 const campusInfo = getCampusInfo(nomeCampus);
                 
+                // Processar descrição para extrair campos adicionais
+                const parseDescriptionField = (desc) => {
+                    if (!desc) return { descricaoLimpa: '', codigoHorario: '', idOfertaDesc: '' };
+                    
+                    // Remover tags HTML se existirem
+                    let cleanDesc = desc.replace(/<[^>]*>/g, '');
+                    
+                    // Extrair ID Oferta (número entre parênteses)
+                    const idOfertaMatch = cleanDesc.match(/\((\d+)\)/);
+                    const idOfertaDesc = idOfertaMatch ? idOfertaMatch[1] : '';
+                    
+                    // Procurar por padrões comuns de código horário
+                    let codigoHorario = '';
+                    const patterns = [
+                        /_(\d+\.\d+)/,           // _2.1910
+                        /(\d+\.\d+)$/,           // 2.1910 no final
+                        /_(\d+\.\d+)(?=<|\(|$)/  // _2.1910 antes de < ou ( ou fim
+                    ];
+                    
+                    for (const pattern of patterns) {
+                        const match = cleanDesc.match(pattern);
+                        if (match) {
+                            codigoHorario = match[1];
+                            break;
+                        }
+                    }
+                    
+                    // Limpar descrição removendo ID Oferta e código horário
+                    let descricaoLimpa = cleanDesc
+                        .replace(/\(\d+\)/, '') // Remove ID Oferta
+                        .replace(/_\d+\.\d+/, '') // Remove código horário
+                        .replace(/\d+\.\d+$/, '') // Remove código no final
+                        .trim();
+                    
+                    const result = { descricaoLimpa, codigoHorario, idOfertaDesc };
+                    
+                    return result;
+                };
+                
+                const parsedDesc = parseDescriptionField(descricaoCompleta);
+                
+                // Debug apenas para os primeiros registros
+                if (index < 2) {
+                    console.log(`🔍 Debug Registro ${index}:`, {
+                        descricaoCompleta,
+                        parsedDesc
+                    });
+                }
+                
                 const finalData = {
                     idOferta,
                 codigoDisciplina,
@@ -430,7 +496,9 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                     total,
                     vagasRestantes,
                     sala,
-                    descricao: descricaoCompleta,
+                    descricao: parsedDesc.descricaoLimpa,
+                    codigoHorario: parsedDesc.codigoHorario,
+                    idOfertaDesc: parsedDesc.idOfertaDesc,
                     hora
                 };
                 
@@ -467,6 +535,8 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                     vagasRestantes: finalData.vagasRestantes,
                     sala: finalData.sala,
                     descricao: finalData.descricao,
+                    codigoHorario: finalData.codigoHorario,
+                    idOfertaDesc: finalData.idOfertaDesc,
                     hora: finalData.hora,
                     idOferta: finalData.idOferta,
                 curso,
@@ -561,8 +631,9 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             'Vagas Restantes',
             'Sala',
             'Descrição',
-            'Hora',
+            'Cód. Horário',
             'ID Oferta',
+            'Hora',
             'Curso',
             'Cód. Prof.',
             'Nome Professor'
@@ -588,8 +659,9 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                     result.vagasRestantes,
                     result.sala,
                     result.descricao,
+                    result.codigoHorario,
+                    result.idOfertaDesc,
                     result.hora,
-                    result.idOferta,
                     result.curso,
                     result.codigoProfessor,
                     result.nomeProfessor

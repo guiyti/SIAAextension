@@ -2,8 +2,8 @@
 // Variáveis globais
 const PRESETS = {
     PADRAO: {
-        order: ['Nome Disciplina', 'Sigla Campus', 'Período', 'Vagas', 'Matriculados', 'Vagas Restantes', 'Nome Professor'],
-        visible: ['Nome Disciplina', 'Sigla Campus', 'Período', 'Vagas', 'Matriculados', 'Vagas Restantes', 'Nome Professor']
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor']
     }
 };
 
@@ -55,6 +55,7 @@ const elements = {
     filteredRecords: document.getElementById('filteredRecords'),
     searchInput: document.getElementById('searchInput'),
     clearBtn: document.getElementById('clearBtn'),
+    resetColumnsBtn: document.getElementById('resetColumnsBtn'),
     exportBtn: document.getElementById('exportBtn'),
     sidebarLastUpdate: document.getElementById('sidebarLastUpdate'),
     campusFilter: document.getElementById('campusFilter'),
@@ -62,6 +63,7 @@ const elements = {
     disciplinaFilter: document.getElementById('disciplinaFilter'),
     professorFilter: document.getElementById('professorFilter'),
     cursoFilter: document.getElementById('cursoFilterTop'),
+    horarioFilter: document.getElementById('horarioFilter'),
     columnToggle: document.getElementById('columnToggle'),
     loadingMessage: document.getElementById('loadingMessage'),
     tableWrapper: document.getElementById('tableWrapper'),
@@ -260,12 +262,17 @@ function parseCSV(csvContent) {
             headers.forEach((header, index) => {
                 row[header] = values[index] || '';
             });
+            
+
+            
             data.push(row);
         }
     }
     
     return data;
 }
+
+
 
 // Parsear linha CSV considerando aspas
 function parseCSVLine(line) {
@@ -417,6 +424,22 @@ function setupFilters() {
     });
     const cursoValues = [...cursoSet].sort();
     populateSelect(elements.cursoFilter, cursoValues);
+
+    // Horário
+    const horarioSet = new Set();
+    allData.forEach(row => {
+        const horario = row['Hora'] || '';
+        if (horario) {
+            // Extrair dias da semana únicos do horário
+            const dias = horario.split(' | ').map(periodo => {
+                const dia = periodo.split(' ')[0]; // Primeira palavra é o dia
+                return dia;
+            }).filter(dia => dia);
+            dias.forEach(dia => horarioSet.add(dia));
+        }
+    });
+    const horarioValues = [...horarioSet].sort();
+    populateSelect(elements.horarioFilter, horarioValues);
 }
 
 // Preencher select com opções
@@ -567,7 +590,14 @@ function setupEventListeners() {
     
     // Botões
     elements.clearBtn.addEventListener('click', clearFilters);
+    elements.resetColumnsBtn.addEventListener('click', resetColumns);
     elements.exportBtn.addEventListener('click', exportFilteredData);
+    
+    // Botão de limpar dados
+    const clearDataBtn = document.getElementById('clearDataBtn');
+    if (clearDataBtn) {
+        clearDataBtn.addEventListener('click', clearAllData);
+    }
     
     // Filtros
     elements.campusFilter.addEventListener('change', applyFilters);
@@ -575,6 +605,7 @@ function setupEventListeners() {
     elements.disciplinaFilter.addEventListener('change', applyFilters);
     elements.professorFilter.addEventListener('change', applyFilters);
     elements.cursoFilter.addEventListener('change', applyFilters);
+    elements.horarioFilter.addEventListener('change', applyFilters);
 }
 
 // Aplicar filtros
@@ -621,6 +652,14 @@ function applyFilters() {
     const cursoFilter = elements.cursoFilter.value;
     if (cursoFilter) {
         filtered = filtered.filter(row => (row['Curso'] || '').includes(cursoFilter));
+    }
+
+    const horarioFilter = elements.horarioFilter.value;
+    if (horarioFilter) {
+        filtered = filtered.filter(row => {
+            const horario = row['Hora'] || '';
+            return horario.includes(horarioFilter);
+        });
     }
     
     filteredData = filtered;
@@ -722,6 +761,7 @@ function clearFilters() {
     elements.disciplinaFilter.value = '';
     elements.professorFilter.value = '';
     elements.cursoFilter.value = '';
+    elements.horarioFilter.value = '';
     
     // Resetar ordenação
     currentSort = { column: null, direction: 'asc' };
@@ -736,6 +776,61 @@ function clearFilters() {
     applyFilters();
 }
 
+// Redefinir colunas para o padrão
+function resetColumns() {
+    if (!allData || allData.length === 0) {
+        console.log('⚠️ Nenhum dado disponível para redefinir colunas');
+        return;
+    }
+    
+    const headers = Object.keys(allData[0]);
+    
+    // Redefinir ordem para o padrão
+    columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
+    headers.forEach(h => { 
+        if (!columnOrder.includes(h)) columnOrder.push(h);
+    });
+    
+    // Redefinir visibilidade para o padrão
+    visibleColumns.clear();
+    PRESETS.PADRAO.visible.forEach(h => {
+        if (headers.includes(h)) visibleColumns.add(h);
+    });
+    
+    // Limpar larguras personalizadas
+    columnWidths = {};
+    
+    // Salvar configurações resetadas
+    Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
+    });
+    
+    // Atualizar interface
+    setupTable();
+    setupColumnToggle();
+    updateColumnVisibility();
+    renderTable();
+    
+    // Feedback visual
+    console.log('🔄 Colunas redefinidas para o padrão');
+    
+    // Feedback para o usuário
+    const btn = elements.resetColumnsBtn;
+    const originalText = btn.textContent;
+    const originalBg = btn.style.background;
+    btn.textContent = '✅ Redefinido!';
+    btn.style.background = '#27ae60';
+    btn.style.color = 'white';
+    
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+    }, 1500);
+}
+
 // Exportar dados filtrados
 function exportFilteredData() {
     if (filteredData.length === 0) {
@@ -743,8 +838,10 @@ function exportFilteredData() {
         return;
     }
     
-    // Filtrar apenas colunas visíveis
-    const headers = Object.keys(allData[0]).filter(header => visibleColumns.has(header));
+    // Usar ordem das colunas definida pelo usuário, filtrando apenas as visíveis
+    // Fallback para ordem original se columnOrder estiver vazio
+    const orderedColumns = columnOrder.length > 0 ? columnOrder : Object.keys(allData[0]);
+    const headers = orderedColumns.filter(header => visibleColumns.has(header));
     
     // Criar CSV
     const csvContent = [
@@ -775,6 +872,101 @@ function exportFilteredData() {
     
     // Feedback
     console.log(`📥 Exportados ${filteredData.length} registros com ${headers.length} colunas`);
+    console.log(`📋 Ordem das colunas no CSV:`, headers);
+}
+
+// Limpar todos os dados armazenados
+async function clearAllData() {
+    // Confirmar ação
+    const confirmed = confirm(
+        '⚠️ ATENÇÃO!\n\n' +
+        'Esta ação irá remover TODOS os dados armazenados da extensão SIAA Data Extractor.\n\n' +
+        '• Dados de disciplinas e ofertas\n' +
+        '• Configurações de colunas\n' +
+        '• Filtros salvos\n' +
+        '• Histórico de atualizações\n\n' +
+        'Esta ação NÃO PODE ser desfeita!\n\n' +
+        'Deseja realmente continuar?'
+    );
+    
+    if (!confirmed) {
+        console.log('🚫 Limpeza de dados cancelada pelo usuário');
+        return;
+    }
+    
+    try {
+        console.log('🗑️ Iniciando limpeza de todos os dados...');
+        
+        // Limpar storage
+        await Storage.set({
+            'siaa_data_csv': null,
+            'siaa_last_update': null,
+            'siaa_column_config': null,
+            'siaa_filters_config': null
+        });
+        
+        // Limpar variáveis locais
+        allData = [];
+        filteredData = [];
+        visibleColumns = new Set();
+        columnOrder = [];
+        columnWidths = {};
+        
+        // Limpar interface
+        elements.tableBody.innerHTML = '';
+        elements.tableHead.innerHTML = '';
+        elements.totalRecords.textContent = '0';
+        elements.filteredRecords.textContent = '0';
+        
+        // Limpar filtros
+        elements.searchInput.value = '';
+        elements.campusFilter.innerHTML = '<option value="">Todos os Campus</option>';
+        elements.periodoFilter.innerHTML = '<option value="">Todos os Períodos</option>';
+        elements.disciplinaFilter.innerHTML = '<option value="">Todas as Disciplinas</option>';
+        elements.professorFilter.innerHTML = '<option value="">Todos os Professores</option>';
+        elements.cursoFilter.innerHTML = '<option value="">Todos os Cursos</option>';
+        elements.horarioFilter.innerHTML = '<option value="">Todos os Horários</option>';
+        
+        // Limpar seção de colunas
+        const columnToggle = document.getElementById('columnToggle');
+        if (columnToggle) {
+            const existingList = columnToggle.querySelector('ul');
+            if (existingList) {
+                existingList.remove();
+            }
+        }
+        
+        // Atualizar data na sidebar
+        const sidebarLastUpdate = document.getElementById('sidebarLastUpdate');
+        if (sidebarLastUpdate) {
+            sidebarLastUpdate.textContent = '-';
+        }
+        
+        // Mostrar mensagem de sucesso
+        showNoData();
+        
+        // Feedback visual
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        if (clearDataBtn) {
+            const originalText = clearDataBtn.innerHTML;
+            clearDataBtn.innerHTML = '✅ Dados Limpos!';
+            clearDataBtn.style.background = '#4caf50';
+            
+            setTimeout(() => {
+                clearDataBtn.innerHTML = originalText;
+                clearDataBtn.style.background = '#d32f2f';
+            }, 3000);
+        }
+        
+        console.log('✅ Todos os dados foram removidos com sucesso');
+        
+        // Notificar usuário
+        alert('✅ Dados limpos com sucesso!\n\nTodos os dados da extensão foram removidos.\nPara usar novamente, capture novos dados no SIAA.');
+        
+    } catch (error) {
+        console.error('❌ Erro ao limpar dados:', error);
+        alert('❌ Erro ao limpar dados.\nVerifique o console para mais detalhes.');
+    }
 }
 
 // Debounce para otimizar performance

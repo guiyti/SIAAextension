@@ -458,7 +458,7 @@ async function sendCSV() {
         }
     };
     input.click();
-}
+} 
 
 // Exibir overlay
 function exibirOverlayComparacao(comp) {

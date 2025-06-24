@@ -84,6 +84,14 @@
             color: #333;
         }
 
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
+        }
+
         .search-container {
             display: flex;
             align-items: center;
@@ -228,6 +236,21 @@
 
         .clear-btn:hover {
             background: #c0392b;
+        }
+
+        .reset-columns-btn {
+            background: #d4d4d4;
+            border: 1px solid #adadad;
+            color: #333;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .reset-columns-btn:hover {
+            background: #bfbfbf;
         }
 
         .export-btn {
@@ -478,6 +501,8 @@
                 order: 3;
                 max-width: 100%;
                 width: 100%;
+                flex-direction: column;
+                gap: 10px;
             }
 
             .header-right {
@@ -485,6 +510,13 @@
                 align-self: center;
                 width: 100%;
                 justify-content: center;
+            }
+
+            .reset-columns-btn {
+                font-size: 12px;
+                padding: 6px 10px;
+                width: 100%;
+                text-align: center;
             }
 
             .stats {
@@ -659,6 +691,36 @@
             background: #666;
         }
 
+        /* Botão de Limpar Dados */
+        .clear-data-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e1e1e1;
+        }
+
+        .clear-data-btn {
+            width: 100%;
+            padding: 12px 15px;
+            background: #d32f2f;
+            color: white;
+            border: 1px solid #b71c1c;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .clear-data-btn:hover {
+            background: #b71c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(211,47,47,0.3);
+        }
+
+        .clear-data-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(211,47,47,0.3);
+        }
+
         /* Sidebar Controls */
         .controls {
             padding: 20px;
@@ -708,6 +770,9 @@
                     <input type="text" id="searchInput" class="header-search" placeholder="🔍 Buscar nos campos visíveis...">
                     <button id="clearBtn" class="header-clear-btn">🗑️</button>
                 </div>
+                <button id="resetColumnsBtn" class="reset-columns-btn">
+                    🔄 Redefinir Colunas
+                </button>
             </div>
             <div class="header-right">
                 <div class="stats">
@@ -770,6 +835,12 @@
                         <option value="">Todos os Cursos</option>
                     </select>
                 </div>
+                <div class="filter-group">
+                    <div class="filter-label">Horário</div>
+                    <select id="horarioFilter" class="filter-select">
+                        <option value="">Todos os Horários</option>
+                    </select>
+                </div>
             </div>
 
             <div class="column-toggle" id="columnToggle">
@@ -779,6 +850,17 @@
                     Use os checkboxes para mostrar/ocultar colunas.
                 </p>
                 <!-- Será preenchido dinamicamente -->
+            </div>
+
+            <!-- Seção de Limpeza de Dados -->
+            <div class="clear-data-section">
+                <h4 style="color: #d32f2f; margin-bottom: 10px;">🗑️ Gerenciar Dados</h4>
+                <p style="font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.4;">
+                    Remove todos os dados armazenados da extensão. Esta ação não pode ser desfeita.
+                </p>
+                <button id="clearDataBtn" class="clear-data-btn">
+                    🗑️ Limpar Todos os Dados
+                </button>
             </div>
         </div>
     </div>
