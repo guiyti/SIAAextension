@@ -87,7 +87,7 @@
         .header-center {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 20px;
             flex: 1;
             justify-content: center;
         }
@@ -238,19 +238,52 @@
             background: #c0392b;
         }
 
-        .reset-columns-btn {
+        .columns-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #adadad;
+            padding: 4px 8px;
+        }
+
+        .columns-btn {
             background: #d4d4d4;
             border: 1px solid #adadad;
             color: #333;
-            padding: 8px 12px;
+            padding: 6px 12px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             transition: background-color 0.3s;
             white-space: nowrap;
         }
 
-        .reset-columns-btn:hover {
+        #savePresetBtn {
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+
+        .columns-btn:hover {
             background: #bfbfbf;
+        }
+
+        .preset-select {
+            border: 1px solid #adadad;
+            background: white;
+            color: #333;
+            font-size: 12px;
+            padding: 6px 10px;
+            cursor: pointer;
+            min-width: 170px;
+            max-width: 220px;
+        }
+
+        .preset-select option {
+            padding: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
         }
 
         .export-btn {
@@ -512,11 +545,29 @@
                 justify-content: center;
             }
 
-            .reset-columns-btn {
-                font-size: 12px;
+            .columns-controls {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                padding: 8px 12px;
+            }
+
+            .columns-btn {
+                font-size: 11px;
                 padding: 6px 10px;
                 width: 100%;
                 text-align: center;
+            }
+
+            #savePresetBtn {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+
+            .preset-select {
+                width: 100%;
+                font-size: 11px;
+                padding: 6px 8px;
             }
 
             .stats {
@@ -691,6 +742,61 @@
             background: #666;
         }
 
+        /* Seção de Presets */
+        .presets-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e1e1e1;
+        }
+
+        .preset-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #adadad;
+            margin-bottom: 6px;
+            transition: all 0.3s;
+        }
+
+        .preset-item:hover {
+            background: #e9ecef;
+        }
+
+        .preset-name {
+            flex: 1;
+            font-size: 12px;
+            font-weight: 500;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .preset-delete-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            background: #d32f2f;
+            color: white;
+            border: 1px solid #b71c1c;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .preset-delete-btn:hover {
+            background: #b71c1c;
+        }
+
+        .no-presets {
+            text-align: center;
+            color: #999;
+            font-size: 11px;
+            font-style: italic;
+            padding: 10px;
+        }
+
         /* Botão de Limpar Dados */
         .clear-data-section {
             margin-top: 30px;
@@ -770,9 +876,17 @@
                     <input type="text" id="searchInput" class="header-search" placeholder="🔍 Buscar nos campos visíveis...">
                     <button id="clearBtn" class="header-clear-btn">🗑️</button>
                 </div>
-                <button id="resetColumnsBtn" class="reset-columns-btn">
-                    🔄 Redefinir Colunas
-                </button>
+                <div class="columns-controls">
+                    <button id="resetColumnsBtn" class="columns-btn">
+                        🔄 Redefinir Colunas
+                    </button>
+                    <button id="savePresetBtn" class="columns-btn">
+                        💾
+                    </button>
+                    <select id="presetSelect" class="preset-select">
+                        <option value="">📋 Carregar preset...</option>
+                    </select>
+                </div>
             </div>
             <div class="header-right">
                 <div class="stats">
@@ -850,6 +964,17 @@
                     Use os checkboxes para mostrar/ocultar colunas.
                 </p>
                 <!-- Será preenchido dinamicamente -->
+            </div>
+
+            <!-- Seção de Presets -->
+            <div class="presets-section">
+                <h4 style="color: #7a7a7a; margin-bottom: 10px;">💾 Presets Salvos</h4>
+                <p style="font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.4;">
+                    Gerencie seus presets de colunas salvos. Use o header para carregar.
+                </p>
+                <div id="presetsList">
+                    <!-- Será preenchido dinamicamente -->
+                </div>
             </div>
 
             <!-- Seção de Limpeza de Dados -->

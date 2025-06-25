@@ -56,6 +56,8 @@ const elements = {
     searchInput: document.getElementById('searchInput'),
     clearBtn: document.getElementById('clearBtn'),
     resetColumnsBtn: document.getElementById('resetColumnsBtn'),
+    savePresetBtn: document.getElementById('savePresetBtn'),
+    presetSelect: document.getElementById('presetSelect'),
     exportBtn: document.getElementById('exportBtn'),
     sidebarLastUpdate: document.getElementById('sidebarLastUpdate'),
     campusFilter: document.getElementById('campusFilter'),
@@ -65,6 +67,7 @@ const elements = {
     cursoFilter: document.getElementById('cursoFilterTop'),
     horarioFilter: document.getElementById('horarioFilter'),
     columnToggle: document.getElementById('columnToggle'),
+    presetsList: document.getElementById('presetsList'),
     loadingMessage: document.getElementById('loadingMessage'),
     tableWrapper: document.getElementById('tableWrapper'),
     noDataMessage: document.getElementById('noDataMessage'),
@@ -190,7 +193,7 @@ async function loadData() {
             elements.sidebarLastUpdate.textContent = 'Não disponível';
         }
 
-        finishDataLoading();
+        await finishDataLoading();
         
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
@@ -199,7 +202,7 @@ async function loadData() {
 }
 
 // Finalizar carregamento dos dados
-function finishDataLoading() {
+async function finishDataLoading() {
     // Headers e configurações iniciais
     const headers = Object.keys(allData[0]);
 
@@ -217,6 +220,8 @@ function finishDataLoading() {
     setupTable();
     setupFilters();
     setupColumnToggle();
+    await loadPresetsList();
+    await loadPresetsSelect();
     applyFilters();
     
     // CORREÇÃO: Aplicar visibilidade das colunas após renderizar a tabela
@@ -591,9 +596,11 @@ function setupEventListeners() {
     // Botões
     elements.clearBtn.addEventListener('click', clearFilters);
     elements.resetColumnsBtn.addEventListener('click', resetColumns);
+    elements.savePresetBtn.addEventListener('click', savePreset);
+    elements.presetSelect.addEventListener('change', loadSelectedPreset);
     elements.exportBtn.addEventListener('click', exportFilteredData);
     
-    // Botão de limpar dados
+    // Event listener para limpar todos os dados
     const clearDataBtn = document.getElementById('clearDataBtn');
     if (clearDataBtn) {
         clearDataBtn.addEventListener('click', clearAllData);
@@ -831,6 +838,210 @@ function resetColumns() {
     }, 1500);
 }
 
+// Salvar preset de colunas
+async function savePreset() {
+    if (!allData || allData.length === 0) {
+        alert('Nenhum dado disponível para salvar preset');
+        return;
+    }
+    
+    // Solicitar nome do preset
+    const presetName = prompt(
+        '💾 Salvar Preset de Colunas\n\n' +
+        'Digite um nome para este preset:\n' +
+        '(configuração atual de ordem e visibilidade)'
+    );
+    
+    if (!presetName || !presetName.trim()) {
+        return; // Cancelado
+    }
+    
+    const name = presetName.trim();
+    
+    // Verificar se já existe
+    const existingPresets = await getPresets();
+    if (existingPresets[name]) {
+        const overwrite = confirm(
+            `⚠️ Preset "${name}" já existe!\n\n` +
+            'Deseja sobrescrever a configuração existente?'
+        );
+        if (!overwrite) return;
+    }
+    
+    // Criar preset com configuração atual
+    const preset = {
+        name: name,
+        order: [...columnOrder],
+        visible: Array.from(visibleColumns),
+        widths: {...columnWidths},
+        created: new Date().toISOString(),
+        modified: new Date().toISOString()
+    };
+    
+    // Salvar no storage
+    existingPresets[name] = preset;
+    await Storage.set({ 'siaa_column_presets': existingPresets });
+    
+    // Atualizar listas
+    await loadPresetsList();
+    await loadPresetsSelect();
+    
+    // Feedback visual
+    const btn = elements.savePresetBtn;
+    const originalText = btn.textContent;
+    btn.textContent = '✅ Salvo!';
+    btn.style.background = '#27ae60';
+    btn.style.color = 'white';
+    
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
+    }, 1500);
+    
+    console.log(`💾 Preset "${name}" salvo com sucesso`);
+}
+
+// Carregar preset selecionado no header
+function loadSelectedPreset() {
+    const selectedPreset = elements.presetSelect.value;
+    if (!selectedPreset) {
+        return; // Nada selecionado, não faz nada
+    }
+    
+    loadPreset(selectedPreset);
+    
+    // Resetar select após carregar
+    setTimeout(() => {
+        elements.presetSelect.value = '';
+    }, 100);
+}
+
+// Carregar preset
+async function loadPreset(presetName) {
+    const presets = await getPresets();
+    const preset = presets[presetName];
+    
+    if (!preset) {
+        alert(`Preset "${presetName}" não encontrado`);
+        return;
+    }
+    
+    // Aplicar configuração do preset
+    columnOrder = [...preset.order];
+    visibleColumns = new Set(preset.visible);
+    columnWidths = {...preset.widths};
+    
+    // Atualizar modified timestamp
+    preset.modified = new Date().toISOString();
+    presets[presetName] = preset;
+    await Storage.set({ 'siaa_column_presets': presets });
+    
+    // Salvar configurações atuais
+    await Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
+    });
+    
+    // Atualizar interface
+    setupTable();
+    setupColumnToggle();
+    updateColumnVisibility();
+    renderTable();
+    
+    console.log(`📥 Preset "${presetName}" carregado`);
+}
+
+// Deletar preset
+async function deletePreset(presetName) {
+    const confirmed = confirm(
+        `⚠️ Deletar Preset\n\n` +
+        `Deseja realmente deletar o preset "${presetName}"?\n\n` +
+        'Esta ação não pode ser desfeita.'
+    );
+    
+    if (!confirmed) return;
+    
+    const presets = await getPresets();
+    delete presets[presetName];
+    await Storage.set({ 'siaa_column_presets': presets });
+    
+    // Atualizar listas
+    await loadPresetsList();
+    await loadPresetsSelect();
+    
+    console.log(`🗑️ Preset "${presetName}" deletado`);
+}
+
+// Obter presets do storage
+async function getPresets() {
+    const data = await Storage.get(['siaa_column_presets']);
+    return data.siaa_column_presets || {};
+}
+
+// Carregar select de presets no header
+async function loadPresetsSelect() {
+    const presets = await getPresets();
+    const presetNames = Object.keys(presets).sort();
+    
+    elements.presetSelect.innerHTML = '<option value="">📋 Carregar preset...</option>';
+    
+    presetNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        // Truncar nomes longos para o select
+        option.textContent = name.length > 25 ? name.substring(0, 22) + '...' : name;
+        option.title = name; // Tooltip com nome completo
+        elements.presetSelect.appendChild(option);
+    });
+}
+
+// Carregar e exibir lista de presets na sidebar
+async function loadPresetsList() {
+    const presets = await getPresets();
+    const presetNames = Object.keys(presets).sort();
+    
+    if (presetNames.length === 0) {
+        elements.presetsList.innerHTML = '<div class="no-presets">Nenhum preset salvo</div>';
+        return;
+    }
+    
+    elements.presetsList.innerHTML = presetNames.map((name, index) => {
+        const preset = presets[name];
+        const createdDate = new Date(preset.created).toLocaleDateString('pt-BR');
+        const visibleCount = preset.visible.length;
+        const totalCount = preset.order.length;
+        
+        // Truncar nome longo para exibição
+        const displayName = name.length > 20 ? name.substring(0, 17) + '...' : name;
+        
+        return `
+            <div class="preset-item">
+                <div class="preset-name" title="Nome: ${name.replace(/"/g, '&quot;')}&#10;Criado em: ${createdDate}&#10;Colunas visíveis: ${visibleCount}/${totalCount}">
+                    ${displayName}
+                </div>
+                <button class="preset-delete-btn" data-preset-name="${name.replace(/"/g, '&quot;')}" data-preset-index="${index}" title="Deletar '${name.replace(/"/g, '&quot;')}'">
+                    🗑️
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    // Adicionar event listeners para os botões de deletar
+    const deleteButtons = elements.presetsList.querySelectorAll('.preset-delete-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const presetName = this.getAttribute('data-preset-name');
+            deletePreset(presetName);
+        });
+    });
+}
+
+// Expor funções globalmente para uso nos botões HTML
+window.loadPreset = loadPreset;
+window.deletePreset = deletePreset;
+
 // Exportar dados filtrados
 function exportFilteredData() {
     if (filteredData.length === 0) {
@@ -880,11 +1091,10 @@ async function clearAllData() {
     // Confirmar ação
     const confirmed = confirm(
         '⚠️ ATENÇÃO!\n\n' +
-        'Esta ação irá remover TODOS os dados armazenados da extensão SIAA Data Extractor.\n\n' +
-        '• Dados de disciplinas e ofertas\n' +
-        '• Configurações de colunas\n' +
-        '• Filtros salvos\n' +
-        '• Histórico de atualizações\n\n' +
+        'Esta ação irá remover apenas os DADOS das ofertas capturadas.\n\n' +
+        '• Dados de disciplinas e ofertas serão removidos\n' +
+        '• Configurações de colunas e presets serão PRESERVADOS\n' +
+        '• Filtros serão limpos\n\n' +
         'Esta ação NÃO PODE ser desfeita!\n\n' +
         'Deseja realmente continuar?'
     );
@@ -895,24 +1105,19 @@ async function clearAllData() {
     }
     
     try {
-        console.log('🗑️ Iniciando limpeza de todos os dados...');
+        console.log('🗑️ Iniciando limpeza dos dados das ofertas...');
         
-        // Limpar storage
+        // Limpar apenas os dados das ofertas, preservando presets e configurações
         await Storage.set({
             'siaa_data_csv': null,
-            'siaa_last_update': null,
-            'siaa_column_config': null,
-            'siaa_filters_config': null
+            'siaa_data_timestamp': null
         });
         
-        // Limpar variáveis locais
+        // Limpar variáveis locais dos dados
         allData = [];
         filteredData = [];
-        visibleColumns = new Set();
-        columnOrder = [];
-        columnWidths = {};
         
-        // Limpar interface
+        // Limpar interface da tabela
         elements.tableBody.innerHTML = '';
         elements.tableHead.innerHTML = '';
         elements.totalRecords.textContent = '0';
@@ -927,7 +1132,7 @@ async function clearAllData() {
         elements.cursoFilter.innerHTML = '<option value="">Todos os Cursos</option>';
         elements.horarioFilter.innerHTML = '<option value="">Todos os Horários</option>';
         
-        // Limpar seção de colunas
+        // Limpar seção de colunas (será recriada quando novos dados forem carregados)
         const columnToggle = document.getElementById('columnToggle');
         if (columnToggle) {
             const existingList = columnToggle.querySelector('ul');
@@ -942,7 +1147,7 @@ async function clearAllData() {
             sidebarLastUpdate.textContent = '-';
         }
         
-        // Mostrar mensagem de sucesso
+        // Mostrar mensagem de "sem dados"
         showNoData();
         
         // Feedback visual
@@ -958,10 +1163,10 @@ async function clearAllData() {
             }, 3000);
         }
         
-        console.log('✅ Todos os dados foram removidos com sucesso');
+        console.log('✅ Dados das ofertas foram removidos com sucesso (presets preservados)');
         
         // Notificar usuário
-        alert('✅ Dados limpos com sucesso!\n\nTodos os dados da extensão foram removidos.\nPara usar novamente, capture novos dados no SIAA.');
+        alert('✅ Dados limpos com sucesso!\n\nApenas os dados das ofertas foram removidos.\nSeus presets e configurações de colunas foram preservados.\n\nPara usar novamente, capture novos dados no SIAA.');
         
     } catch (error) {
         console.error('❌ Erro ao limpar dados:', error);
