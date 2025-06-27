@@ -1,43 +1,45 @@
 # 🎓 SIAA Data Extractor - Chrome Extension
 
-Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do sistema SIAA da Universidade Cruzeiro do Sul com interface moderna e responsiva.
+Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do sistema SIAA da Universidade Cruzeiro do Sul com interface moderna, responsiva e profissional.
 
 ![SIAA Logo](https://img.shields.io/badge/SIAA-Data%20Extractor-orange?style=for-the-badge&logo=google-chrome)
-![Versão](https://img.shields.io/badge/version-1.1.0-blue?style=for-the-badge)
+![Versão](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
 ![Manifest](https://img.shields.io/badge/manifest-v3-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-PRONTO%20CHROME%20STORE-brightgreen?style=for-the-badge)
 
-## ✨ Funcionalidades
+## ✨ Funcionalidades v1.2.0
 
 ### 🔄 Captura Inteligente de Dados
-- **Verificação de Atualizações**: Compara dados existentes com novos dados
-- **Relatório de Mudanças**: Mostra adições, remoções e modificações
-- **Processamento em Lotes**: Otimizado para grandes volumes de dados
+- **Verificação de Atualizações**: Compara dados existentes com novos dados automaticamente
+- **Relatório de Mudanças**: Mostra adições, remoções e modificações detalhadas
+- **Processamento em Lotes Otimizado**: Eficiente para grandes volumes de dados
 - **Interface Minimalista**: Popup compacto e funcional
-- **CSP Compliance**: Totalmente compatível com políticas de segurança modernas
+- **CSP Compliance Total**: Compatível com políticas de segurança modernas
 
-### 📊 Visualização Avançada - NOVO v1.1.0!
-- **Interface Responsiva**: Design moderno que se adapta a qualquer dispositivo
-- **Headers Fixos**: Headers da página e tabela sempre visíveis durante scroll
-- **Busca Nos Campos Visíveis**: Busca inteligente apenas nos dados exibidos
-- **Filtros Dinâmicos**: Por campus, período, disciplina, professor e curso
-- **Ordenação por Drag & Drop**: Reordene colunas arrastando na tabela ou sidebar
-- **Toggle de Colunas**: Mostre/oculte colunas com persistência de configurações
+### 📊 Visualização Profissional - RENOVADA v1.2.0!
+- **Interface Responsiva Completa**: Design profissional que se adapta perfeitamente a qualquer dispositivo
+- **Headers Fixos Inteligentes**: Headers da página e tabela sempre visíveis durante scroll
+- **Busca Exclusiva nos Campos Visíveis**: Busca inteligente apenas nos dados exibidos
+- **Filtros Dinâmicos Avançados**: Por campus, período, disciplina, professor e curso
+- **Drag & Drop Sincronizado**: Reordene colunas arrastando na tabela ou sidebar
+- **Toggle de Colunas Inteligente**: Mostre/oculte colunas com persistência automática
 - **Exportação Filtrada**: Exporte apenas os dados visíveis e filtrados
-- **Design Windows**: Estilo profissional cinza com bordas definidas
+- **Design Profissional**: Estilo moderno com cores harmoniosas
 
-### 💾 Gerenciamento de Dados
-- **Storage Universal**: Funciona tanto como extensão quanto arquivo local
-- **Persistência de Configurações**: Larguras, ordem e visibilidade das colunas
-- **Workflow em 3 Etapas**:
-  1. **Capturar**: Extrair e armazenar dados
-  2. **Baixar**: Download do CSV completo
-  3. **Visualizar**: Interface web interativa
+### 💾 Gerenciamento Inteligente de Dados
+- **Storage Universal**: Funciona como extensão (chrome.storage) e arquivo local (localStorage)
+- **Persistência Completa**: Larguras, ordem e visibilidade das colunas
+- **Workflow Otimizado em 3 Etapas**:
+  1. **🔄 Capturar**: Extrair e armazenar dados
+  2. **📥 Baixar**: Download do CSV completo
+  3. **👁️ Visualizar**: Interface web interativa
 
-### 📱 Mobile Friendly - NOVO!
-- **Layout Responsivo**: Perfeita adaptação para dispositivos móveis
+### 📱 Mobile Friendly - OTIMIZADO!
+- **Layout Responsivo Inteligente**: Adaptação perfeita para dispositivos móveis
 - **Detecção Automática**: Ajuste inteligente para portrait/landscape
-- **Headers Adaptativos**: Recálculo automático de alturas em mobile
-- **Sidebar Touch**: Interface otimizada para toque
+- **Headers Adaptativos**: Recálculo automático de alturas em tempo real
+- **Sidebar Touch**: Interface otimizada para gestos de toque
+- **Performance Mobile**: Otimizações específicas para dispositivos móveis
 
 ## 🚀 Instalação
 
@@ -45,7 +47,14 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 - Google Chrome (versão 88+)
 - Acesso ao sistema SIAA da Cruzeiro do Sul
 
-### Passos de Instalação
+### 📦 Instalação via Chrome Web Store (Recomendado)
+```
+🔄 EM PROCESSO DE PUBLICAÇÃO NA CHROME WEB STORE
+📅 Estimativa: Disponível em breve
+✅ Extensão pronta e validada para submissão
+```
+
+### 🛠️ Instalação Manual (Desenvolvedores)
 
 1. **Download dos Arquivos**
    ```bash
@@ -72,30 +81,31 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 3. O status da extensão deve mostrar "Pronto para extrair"
 
 ### 2. Captura de Dados
-1. Clique em **"🔄 Capturar Dados"**
-2. Se houver dados salvos, será perguntado sobre verificação de atualizações
-3. Aguarde o processamento (pode levar alguns minutos)
-4. Dados são salvos automaticamente no storage local
+1. Selecione o curso desejado no dropdown
+2. Clique em **"🔄 Capturar Dados"**
+3. Se houver dados salvos, será perguntado sobre verificação de atualizações
+4. Aguarde o processamento (pode levar alguns minutos)
+5. Dados são salvos automaticamente no storage local
 
-### 3. Verificação de Mudanças
-- **Adições**: Novas ofertas de disciplinas
+### 3. Verificação de Mudanças Automática
+- **Adições**: Novas ofertas de disciplinas detectadas
 - **Remoções**: Ofertas que não existem mais
-- **Modificações**: Mudanças em vagas, professores, etc.
+- **Modificações**: Mudanças em vagas, professores, horários, etc.
 - **Relatório Detalhado**: Mostra exatamente o que mudou
 
 ### 4. Download e Visualização
-- **📥 Baixar CSV**: Download direto do arquivo CSV
+- **📥 Baixar CSV**: Download direto do arquivo CSV completo
 - **👁️ Visualizar**: Abre interface web interativa moderna
 
-## 🔍 Interface de Visualização - RENOVADA!
+## 🔍 Interface de Visualização - PROFISSIONAL v1.2.0!
 
-### Layout Moderno
-- **Header Fixo**: Sempre visível com busca, título e estatísticas
-- **Sidebar Deslizante**: Filtros e controles em painel lateral
+### Layout Moderno e Responsivo
+- **Header Fixo Inteligente**: Sempre visível com busca, título e estatísticas
+- **Sidebar Deslizante Elegante**: Filtros e controles em painel lateral organizado
 - **Tabela Responsiva**: Headers fixos e scroll otimizado
-- **Design Profissional**: Estilo Windows com cores cinza elegantes
+- **Design Profissional**: Cores harmoniosas e tipografia moderna
 
-### Filtros Disponíveis
+### Filtros Avançados Disponíveis
 - **Campus**: Todos os campus da universidade
 - **Período**: DIURNO, NOTURNO, etc.
 - **Disciplina**: Todas as disciplinas oferecidas
@@ -103,18 +113,18 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 - **Curso**: Filtragem por curso específico
 
 ### Funcionalidades da Tabela
-- **Busca Inteligente**: Digite para buscar nos campos visíveis apenas
-- **Ordenação**: Clique nos cabeçalhos para ordenar (visual com setas)
-- **Drag & Drop**: Arraste colunas para reordenar na tabela ou sidebar
-- **Toggle de Colunas**: Configure visibilidade com checkboxes na sidebar
-- **Exportação Avançada**: Exporte apenas dados filtrados e colunas visíveis
+- **Busca Inteligente**: Digite para buscar exclusivamente nos campos visíveis
+- **Ordenação Avançada**: Clique nos cabeçalhos para ordenar (indicadores visuais)
+- **Drag & Drop Sincronizado**: Arraste colunas para reordenar na tabela ou sidebar
+- **Toggle de Colunas**: Configure visibilidade com checkboxes organizados
+- **Exportação Filtrada**: Exporte apenas dados filtrados e colunas visíveis
 - **Redimensionamento**: Ajuste largura das colunas arrastando bordas
 
-### Responsividade Mobile
-- **Layout Adaptativo**: Header em coluna para mobile
+### Responsividade Mobile Profissional
+- **Layout Adaptativo**: Header em coluna para mobile, horizontal para desktop
 - **Altura Inteligente**: Recálculo automático para diferentes orientações
 - **Touch Friendly**: Interface otimizada para dispositivos móveis
-- **Sidebar Mobile**: Painel deslizante com largura otimizada
+- **Sidebar Mobile**: Painel deslizante com largura otimizada para toque
 
 ### Dados Incluídos
 | Campo | Descrição |
@@ -134,20 +144,20 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 
 ## ⚙️ Configurações Técnicas
 
-### Processamento
+### Processamento Otimizado
 - **Lotes**: 10 registros por lote
 - **Delay**: 800ms entre lotes
 - **Timeout**: 15s por requisição
 - **Encoding**: UTF-8 com BOM para Excel
 
-### Permissões
+### Permissões Mínimas
 - `activeTab`: Acesso à aba atual
 - `storage`: Armazenamento local
 - `scripting`: Execução de scripts (CSP compliance)
 
-### Compatibilidade
+### Compatibilidade Total
 - **Manifest V3**: Última versão dos padrões Chrome
-- **CSP Compliance**: JavaScript externo, sem inline scripts
+- **CSP Compliance**: JavaScript 100% externo, sem inline scripts
 - **Mobile Responsive**: Interface adaptativa para todos os dispositivos
 - **Cross-browser Storage**: Funciona como extensão e arquivo local
 
@@ -156,14 +166,15 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 ### Estrutura do Projeto
 ```
 extensionSIAA/
-├── manifest.json          # Configuração da extensão (v1.1.0)
+├── manifest.json          # Configuração da extensão (v1.2.0)
 ├── popup.html/js          # Interface do popup
 ├── background.js          # Service worker
 ├── injected.js           # Script de extração
 ├── viewer.html/js        # Interface de visualização responsiva
 ├── content.js            # Script de conteúdo
 ├── privacy-policy.html   # Política de privacidade
-├── UPDATE-GUIDE.md       # Guia de atualizações
+├── SUBMISSAO-CHROME-STORE.md  # Guia de submissão
+├── CHROME-STORE-SUBMISSION.md # Informações completas
 ├── README.md            # Este arquivo
 └── icons/               # Ícones da extensão (16, 32, 48, 128px)
 ```
@@ -175,7 +186,7 @@ extensionSIAA/
 - **viewer.js**: Visualização responsiva com headers fixos e filtros avançados
 
 ### Arquitetura Responsiva
-- **CSS Mobile-First**: Design adaptativo com media queries
+- **CSS Mobile-First**: Design adaptativo com breakpoints inteligentes
 - **JavaScript Adaptativo**: Detecção automática de dispositivo e orientação
 - **Headers Dinâmicos**: Recálculo automático de alturas em tempo real
 - **Storage Inteligente**: Sistema universal chrome.storage + localStorage
@@ -198,60 +209,77 @@ extensionSIAA/
 - Verifique se há dados no storage local
 
 ### Interface Não Carrega
-- Verifique console de erros (F12)
+- Verifique se o navegador suporta Manifest V3
+- Desative outras extensões que possam interferir
 - Recarregue a extensão em chrome://extensions/
-- Teste em aba privada para eliminar cache
 
-### Mobile Layout Quebrado
-- A extensão recalcula automaticamente
-- Force um reload da página se necessário
-- Verifique orientação do dispositivo
+## 📊 Chrome Web Store
 
-## 📝 Changelog
+### Status de Publicação
+```
+🔄 PREPARAÇÃO CONCLUÍDA
+📦 Arquivo ZIP criado: siaa-data-extractor-v1.2.0.zip
+✅ Todos os requisitos atendidos
+📋 Documentação completa
+🎯 Pronto para submissão
+```
 
-### 🆕 v1.1.0 - Interface Responsiva e Headers Fixos
-- ✅ **Headers Fixos**: Header da página e tabela sempre visíveis
-- ✅ **Interface Responsiva**: Adaptação perfeita para mobile/desktop
-- ✅ **Busca Nos Campos Visíveis**: Busca inteligente apenas nos dados exibidos
-- ✅ **Design Windows**: Estilo profissional cinza com bordas definidas
-- ✅ **Mobile Optimization**: Detecção automática com ajustes para portrait/landscape
-- ✅ **CSP Compliance**: JavaScript totalmente externo, sem inline scripts
-- ✅ **Drag & Drop Melhorado**: Reordenação de colunas na tabela e sidebar
-- ✅ **Storage Universal**: Funciona como extensão e arquivo local
-- ✅ **Sidebar Moderna**: Painel deslizante com controles organizados
+### Informações da Store
+- **Nome**: SIAA Data Extractor
+- **Versão**: 1.2.0
+- **Categoria**: Produtividade
+- **Público**: Comunidade Cruzeiro do Sul
+- **Preço**: Gratuito
 
-### v1.0.0 - Sistema de Verificação
-- ✅ Comparação automática de dados
-- ✅ Relatório de mudanças detalhado
-- ✅ Interface minimalista
-- ✅ Popup não fecha automaticamente
+## 🔒 Privacidade e Segurança
 
-### v0.9.0 - Visualização Avançada
-- ✅ Filtros por múltiplos campos
-- ✅ Busca global funcional
-- ✅ Ordenação por colunas
-- ✅ Toggle de visibilidade de colunas
-- ✅ Exportação filtrada
+### Garantias de Privacidade
+- ❌ **NÃO coleta dados pessoais**
+- ❌ **NÃO envia dados para servidores externos**
+- ❌ **NÃO rastreia atividade do usuário**
+- ✅ **Processamento 100% local**
+- ✅ **Armazenamento apenas local**
+- ✅ **Código fonte transparente**
 
-## 🎯 Próximas Versões
+### Segurança Técnica
+- **Manifest V3**: Padrões de segurança mais recentes
+- **CSP Compliance**: Sem violações de Content Security Policy
+- **Permissões Mínimas**: Apenas o necessário para funcionamento
+- **Domínio Restrito**: Acesso apenas ao SIAA oficial
 
-### v1.2.0 - Planejado
-- 📊 Gráficos e estatísticas visuais
-- 🔄 Sincronização em tempo real
-- 📧 Notificações de mudanças
-- 🎨 Temas customizáveis
+## 📈 Roadmap
 
-## 📄 Licença
+### Versões Futuras
+- **v1.3.0**: Melhorias baseadas em feedback dos usuários
+- **Análises Avançadas**: Gráficos e estatísticas
+- **Exportação Múltipla**: Formatos adicionais (Excel, PDF)
+- **Temas Personalizáveis**: Dark mode e outros temas
 
-Este projeto é desenvolvido para uso acadêmico e administrativo na Universidade Cruzeiro do Sul.
+### Suporte Contínuo
+- Monitoramento de bugs e correções
+- Atualizações de compatibilidade
+- Novas funcionalidades baseadas em demanda
 
 ## 🤝 Contribuição
 
-Para melhorias ou correções:
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature
-3. Faça commit das mudanças
-4. Abra um Pull Request
+### Como Contribuir
+1. Report bugs e sugestões
+2. Teste em diferentes ambientes
+3. Compartilhe feedback de uso
+4. Contribua com melhorias de código
+
+### Contato
+- **Email**: guiyti@gmail.com
+- **Suporte**: Via email com resposta rápida
 
 ---
-**🚀 Versão 1.1.0 - Interface Responsiva Profissional** 🎉 
+
+## 📄 Licença
+
+Este projeto é desenvolvido para uso acadêmico na Universidade Cruzeiro do Sul.
+
+---
+
+**🎓 SIAA Data Extractor v1.2.0 - Revolucionando a análise de dados acadêmicos!** 
+
+**✅ Pronto para Chrome Web Store | 🚀 Interface Profissional | �� Mobile Optimized** 
