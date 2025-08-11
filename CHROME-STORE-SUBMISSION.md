@@ -1,10 +1,10 @@
-# 🚀 SIAA Data Extractor v1.2.0 - Chrome Web Store Submission
+# 🚀 SIAA Data Extractor v1.3.0 - Chrome Web Store Submission
 
 ## 📋 Informações Básicas
 
 ### **Detalhes da Extensão**
 - **Nome**: SIAA Data Extractor
-- **Versão**: 1.2.0
+- **Versão**: 1.3.0
 - **Categoria**: Produtividade
 - **Idioma**: Português (Brasil)
 - **Manifest**: V3 (Moderno)
@@ -16,11 +16,11 @@ Ferramenta profissional para extrair e visualizar dados acadêmicos do SIAA - Cr
 
 ### **Descrição Detalhada**
 ```
-🎓 SIAA Data Extractor v1.2.0 - Ferramenta Profissional para Análise Acadêmica
+🎓 SIAA Data Extractor v1.3.0 - Ferramenta Profissional para Análise Acadêmica
 
 Extensão avançada e completa para extrair, processar e visualizar dados acadêmicos do sistema SIAA da Universidade Cruzeiro do Sul. Interface moderna, totalmente responsiva e otimizada para produtividade acadêmica.
 
-✨ PRINCIPAIS FUNCIONALIDADES v1.2.0:
+✨ PRINCIPAIS FUNCIONALIDADES v1.3.0:
 
 📊 VISUALIZAÇÃO PROFISSIONAL:
 • Interface responsiva que se adapta perfeitamente a qualquer dispositivo
@@ -231,7 +231,7 @@ educação, gestão acadêmica, relatórios, dashboard
 
 ---
 
-## 🚀 Release Notes v1.2.0
+## 🚀 Release Notes v1.3.0
 
 ### **Principais Novidades**
 - ✅ Interface responsiva profissional renovada
@@ -262,7 +262,7 @@ educação, gestão acadêmica, relatórios, dashboard
 ## ✅ Checklist Final Pré-Submissão
 
 ### **Arquivos Obrigatórios**
-- [x] manifest.json (v1.2.0) ✅
+- [x] manifest.json (v1.3.0) ✅
 - [x] Todos os ícones PNG (16, 32, 48, 128px) ✅
 - [x] popup.html/js ✅
 - [x] background.js ✅
@@ -286,7 +286,7 @@ educação, gestão acadêmica, relatórios, dashboard
 
 ### **Documentação Completa**
 - [x] README.md detalhado e atualizado
-- [x] RELEASE-NOTES.md com v1.2.0
+- [x] RELEASE-NOTES.md com v1.3.0
 - [x] UPDATE-GUIDE.md para usuários
 - [x] privacy-policy.html em português
 - [x] CHROME-STORE-SUBMISSION.md (este arquivo)
@@ -302,7 +302,7 @@ educação, gestão acadêmica, relatórios, dashboard
 
 ## 🎉 Status Final
 
-### **Versão**: 1.2.0
+### **Versão**: 1.3.0
 ### **Status**: ✅ PRONTO PARA CHROME WEB STORE
 ### **Destaque**: Interface Responsiva Profissional Completa
 ### **Público**: Comunidade Acadêmica Cruzeiro do Sul
@@ -310,6 +310,6 @@ educação, gestão acadêmica, relatórios, dashboard
 
 ---
 
-**🚀 SIAA Data Extractor v1.2.0 está pronto para revolucionar completamente a experiência de análise de dados acadêmicos na Universidade Cruzeiro do Sul!** 🎓
+**🚀 SIAA Data Extractor v1.3.0 está pronto para revolucionar completamente a experiência de análise de dados acadêmicos na Universidade Cruzeiro do Sul!** 🎓
 
 **📦 PRONTO PARA EMPACOTAMENTO E SUBMISSÃO NA CHROME WEB STORE** ✅ 

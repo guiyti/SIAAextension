@@ -2,10 +2,72 @@
 // Variáveis globais
 const PRESETS = {
     PADRAO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor']
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor']
+    },
+    PRESET_1_BASICO: {
+        // 1) Cód Disc. - Nome Disciplina - Sigla Campus - Hora - ID Oferta - Nome Professor
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
+    },
+    PRESET_2_DETALHADO: {
+        // 2) Cód Disc. - Nome Disciplina - Sigla Campus - Cód. Horário - Hora - ID Oferta - Sala - Total Matriculados - Nome Professor
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor']
+    },
+    PRESET_3_CURSO: {
+        // 3) Nome Disciplina - Sigla Campus - Hora - Curso - Nome Professor
+        order: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor'],
+        visible: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor']
     }
 };
+
+// Presets fixos (defaults) para restaurar no Redefinir
+const PRESET_DEFAULTS = {
+    PRESET_1_BASICO: {
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
+    },
+    PRESET_2_DETALHADO: {
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor']
+    },
+    PRESET_3_CURSO: {
+        order: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor'],
+        visible: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor']
+    }
+};
+
+// Overrides em memória para o preset selecionado via botão Salvar
+let PRESETS_CURRENT = {};
+
+function getPresetConfig(presetKey, headers) {
+    const normalize = (cfg) => {
+        if (!cfg) return null;
+        const order = (cfg.order || []).filter(h => headers.includes(h));
+        const rest = headers.filter(h => !order.includes(h));
+        return {
+            order: [...order, ...rest],
+            visible: (cfg.visible || []).filter(h => headers.includes(h))
+        };
+    };
+    if (presetKey === 'PRESET_COMPLETO') {
+        return { order: [...headers], visible: [...headers] };
+    }
+    if (PRESETS_CURRENT[presetKey]) return normalize(PRESETS_CURRENT[presetKey]);
+    return normalize(PRESET_DEFAULTS[presetKey]);
+}
+
+function getPresetDefault(presetKey, headers) {
+    if (presetKey === 'PRESET_COMPLETO') {
+        return { order: [...headers], visible: [...headers] };
+    }
+    const base = PRESET_DEFAULTS[presetKey];
+    if (!base) return { order: [...headers], visible: [...headers] };
+    const order = base.order.filter(h => headers.includes(h));
+    const rest = headers.filter(h => !order.includes(h));
+    return { order: [...order, ...rest], visible: base.visible.filter(h => headers.includes(h)) };
+}
 
 // Sistema de storage universal (funciona em extensão e browser)
 const Storage = {
@@ -48,6 +110,9 @@ let visibleColumns = new Set();
 let columnWidths = {}; // Armazenará larguras por cabeçalho
 let columnOrder = [];  // Ordem atual das colunas
 let dragSrcIndex = null; // Aux para DnD
+let columnFilters = {}; // Filtros por coluna
+let activeDropdown = null; // Dropdown de sugestões ativo
+let currentPresetSelection = ''; // Valor selecionado no select de presets
 
 // Elementos do DOM
 const elements = {
@@ -206,15 +271,55 @@ async function finishDataLoading() {
     // Headers e configurações iniciais
     const headers = Object.keys(allData[0]);
 
-    // Definir ordem
-    if (columnOrder.length === 0) {
-        columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
-        headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
-    }
+    // Compatibilidade: alinhar aliases 'Total' ↔ 'Total Matriculados'
+    (function reconcileTotalHeaders() {
+        const hasTotal = headers.includes('Total');
+        const hasTotalMatric = headers.includes('Total Matriculados');
+        // Se o CSV novo usa 'Total Matriculados', mas há estado salvo com 'Total', trocamos
+        if (!hasTotal && hasTotalMatric) {
+            let changed = false;
+            if (Array.isArray(columnOrder) && columnOrder.includes('Total')) {
+                columnOrder = columnOrder.map(h => h === 'Total' ? 'Total Matriculados' : h);
+                changed = true;
+            }
+            if (visibleColumns instanceof Set && visibleColumns.has('Total')) {
+                visibleColumns.delete('Total');
+                visibleColumns.add('Total Matriculados');
+                changed = true;
+            }
+            if (changed) {
+                Storage.set({
+                    viewer_column_order: columnOrder,
+                    viewer_column_visibility: Array.from(visibleColumns)
+                });
+            }
+        }
+        // Se o CSV usa 'Total' e presets apontam para 'Total Matriculados', nada a fazer;
+        // a lógica de fallback em getCellValue cobre a exibição.
+    })();
 
-    // Definir visibilidade
-    if (visibleColumns.size === 0) {
-        PRESETS.PADRAO.visible.forEach(h => visibleColumns.add(h));
+    // Aplicar preset selecionado ANTES de montar a visualização para manter sincronizado
+    try {
+        const sel = await Storage.get(['viewer_selected_preset']);
+        currentPresetSelection = sel.viewer_selected_preset || '__builtin__PRESET_COMPLETO';
+        const presetKey = currentPresetSelection.startsWith('__builtin__')
+            ? currentPresetSelection.replace('__builtin__','')
+            : 'PRESET_COMPLETO';
+        const cfg = getPresetConfig(presetKey, headers);
+        if (cfg) {
+            columnOrder = cfg.order;
+            visibleColumns = new Set(cfg.visible);
+        }
+    } catch (e) {
+        // fallback silencioso
+        if (columnOrder.length === 0) {
+            columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
+            headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
+        }
+        if (visibleColumns.size === 0) {
+            const allHeaders = Object.keys(allData[0]);
+            allHeaders.forEach(h => visibleColumns.add(h));
+        }
     }
 
     setupTable();
@@ -234,6 +339,8 @@ async function finishDataLoading() {
     elements.tableWrapper.style.display = 'block';
     
     console.log('✅ Dados carregados com sucesso!');
+    // Atualizar estado dos botões de Importar/Mesclar
+    updateDataActionButtonsUI();
 }
 
 // Mostrar mensagem de nenhum dado
@@ -394,28 +501,94 @@ function setupTable() {
         headerRow.appendChild(th);
     });
     
+    // Segunda linha: inputs de filtro por coluna
+    const filterRow = document.createElement('tr');
+    headers.forEach(header => {
+        const th = document.createElement('th');
+        th.dataset.column = header;
+        th.style.cursor = 'default';
+        th.style.userSelect = 'auto';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'column-filter-input';
+        input.placeholder = 'Filtrar...';
+        input.value = columnFilters[header] || '';
+        if (columnFilters[header]) {
+            th.classList.add('column-filter-active');
+            input.classList.add('active');
+        }
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showColumnFilterDropdown(input, header);
+        });
+        input.addEventListener('input', debounce(() => {
+            const val = input.value || '';
+            if (val) {
+                columnFilters[header] = val;
+            } else {
+                delete columnFilters[header];
+            }
+            toggleFilterActiveStyles(header, th, input);
+            applyFilters();
+            showColumnFilterDropdown(input, header);
+        }, 250));
+        input.addEventListener('focus', () => {
+            // Apenas abre o dropdown; não aplica destaque se não houver valor
+            showColumnFilterDropdown(input, header);
+        });
+        input.addEventListener('blur', () => {
+            // Garante que estilos reflitam se há valor ou não
+            toggleFilterActiveStyles(header, th, input);
+        });
+        th.appendChild(input);
+        filterRow.appendChild(th);
+    });
+
     elements.tableHead.appendChild(headerRow);
+    elements.tableHead.appendChild(filterRow);
+}
+
+// Aplicar estilos ativos ao cabeçalho/input conforme estado do filtro
+function toggleFilterActiveStyles(header, th, input) {
+    const isActive = Boolean(columnFilters[header]);
+    if (isActive) {
+        th.classList.add('column-filter-active');
+        input.classList.add('active');
+    } else {
+        th.classList.remove('column-filter-active');
+        input.classList.remove('active');
+    }
 }
 
 // Configurar filtros
 function setupFilters() {
     if (allData.length === 0) return;
     
+    // Se os selects não existem no DOM, não executar população
     // Campus
-    const campusValues = [...new Set(allData.map(row => row['Sigla Campus']).filter(Boolean))].sort();
-    populateSelect(elements.campusFilter, campusValues);
+    if (elements.campusFilter) {
+        const campusValues = [...new Set(allData.map(row => row['Sigla Campus']).filter(Boolean))].sort();
+        populateSelect(elements.campusFilter, campusValues);
+    }
     
     // Período
-    const periodoValues = [...new Set(allData.map(row => row['Período']).filter(Boolean))].sort();
-    populateSelect(elements.periodoFilter, periodoValues);
+    if (elements.periodoFilter) {
+        const periodoValues = [...new Set(allData.map(row => row['Período']).filter(Boolean))].sort();
+        populateSelect(elements.periodoFilter, periodoValues);
+    }
     
     // Disciplina
-    const disciplinaValues = [...new Set(allData.map(row => row['Nome Disciplina']).filter(Boolean))].sort();
-    populateSelect(elements.disciplinaFilter, disciplinaValues);
+    if (elements.disciplinaFilter) {
+        const disciplinaValues = [...new Set(allData.map(row => row['Nome Disciplina']).filter(Boolean))].sort();
+        populateSelect(elements.disciplinaFilter, disciplinaValues);
+    }
     
     // Professor
-    const professorValues = [...new Set(allData.map(row => row['Nome Professor']).filter(Boolean))].sort();
-    populateSelect(elements.professorFilter, professorValues);
+    if (elements.professorFilter) {
+        const professorValues = [...new Set(allData.map(row => row['Nome Professor']).filter(Boolean))].sort();
+        populateSelect(elements.professorFilter, professorValues);
+    }
 
     // Curso
     const cursoSet = new Set();
@@ -428,7 +601,7 @@ function setupFilters() {
         }
     });
     const cursoValues = [...cursoSet].sort();
-    populateSelect(elements.cursoFilter, cursoValues);
+    if (elements.cursoFilter) populateSelect(elements.cursoFilter, cursoValues);
 
     // Horário
     const horarioSet = new Set();
@@ -444,11 +617,12 @@ function setupFilters() {
         }
     });
     const horarioValues = [...horarioSet].sort();
-    populateSelect(elements.horarioFilter, horarioValues);
+    if (elements.horarioFilter) populateSelect(elements.horarioFilter, horarioValues);
 }
 
 // Preencher select com opções
 function populateSelect(selectElement, values) {
+    if (!selectElement) return;
     // Manter primeira opção (Todos)
     const firstOption = selectElement.children[0];
     selectElement.innerHTML = '';
@@ -465,6 +639,7 @@ function populateSelect(selectElement, values) {
 // Configurar toggle de colunas
 function setupColumnToggle() {
     if (allData.length === 0) return;
+    if (!elements.columnToggle) return; // Se não existe no DOM, não montar
     
     // Preservar o título e a dica
     const title = elements.columnToggle.querySelector('h4');
@@ -574,11 +749,9 @@ function updateColumnVisibility() {
         const isVisible = visibleColumns.has(header);
         const className = isVisible ? '' : 'hidden-column';
         
-        // Atualizar cabeçalho
-        const headerCell = table.querySelector(`th[data-column="${header}"]`);
-        if (headerCell) {
-            headerCell.className = className;
-        }
+        // Atualizar cabeçalho (todas as linhas do thead)
+        const headerCells = table.querySelectorAll(`thead th[data-column="${header}"]`);
+        headerCells.forEach(cell => { cell.className = className; });
         
         // Atualizar células do corpo
         const cells = table.querySelectorAll(`td:nth-child(${index + 1})`);
@@ -590,15 +763,104 @@ function updateColumnVisibility() {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Busca
-    elements.searchInput.addEventListener('input', debounce(applyFilters, 300));
-    
     // Botões
-    elements.clearBtn.addEventListener('click', clearFilters);
     elements.resetColumnsBtn.addEventListener('click', resetColumns);
-    elements.savePresetBtn.addEventListener('click', savePreset);
+    if (elements.savePresetBtn) elements.savePresetBtn.addEventListener('click', savePreset);
     elements.presetSelect.addEventListener('change', loadSelectedPreset);
     elements.exportBtn.addEventListener('click', exportFilteredData);
+    
+    // Dropdown de configuração no header
+    const configBtn = document.getElementById('columnConfigBtn');
+    const configDropdown = document.getElementById('columnConfigDropdown');
+    const copyVisibleBtn = document.getElementById('copyVisibleBtn');
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    if (configBtn && configDropdown) {
+        const toggle = () => {
+            const rect = configBtn.getBoundingClientRect();
+            configDropdown.style.left = Math.round(rect.left + window.scrollX) + 'px';
+            configDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
+            const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
+            configDropdown.style.display = willOpen ? 'block' : 'none';
+            if (willOpen) {
+                buildVisibilityAndOrderLists();
+            }
+        };
+        configBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggle();
+        });
+        document.addEventListener('mousedown', (e) => {
+            if (!configDropdown) return;
+            const clickInside = configDropdown.contains(e.target) || configBtn.contains(e.target);
+            if (!clickInside) configDropdown.style.display = 'none';
+        });
+    }
+
+    // Copiar tabela visível (com cabeçalhos e apenas colunas visíveis)
+    if (copyVisibleBtn) {
+        copyVisibleBtn.addEventListener('click', async () => {
+            try {
+                const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+                const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+                if (!visibleHeaders.length) {
+                    alert('Não há colunas visíveis para copiar.');
+                    return;
+                }
+                const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
+                    // Fallback Total/Total Matriculados
+                    if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+                    if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+                    return row[h] ?? '';
+                }))];
+                // Constrói texto tabular (TSV) para fallback
+                const tsv = rows.map(r => r.map(cell => String(cell).replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
+
+                // Constrói HTML table para preservar células em apps que suportam text/html
+                const escapeHtml = (s) => String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                const htmlHead = '<table><thead><tr>' + visibleHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+                const htmlBody = '<tbody>' + filteredData.map(row => {
+                    const tds = visibleHeaders.map(h => {
+                        let v;
+                        if (h === 'Total Matriculados') v = row['Total Matriculados'] ?? row['Total'] ?? '';
+                        else if (h === 'Total') v = row['Total'] ?? row['Total Matriculados'] ?? '';
+                        else v = row[h] ?? '';
+                        return `<td>${escapeHtml(v)}</td>`;
+                    }).join('');
+                    return `<tr>${tds}</tr>`;
+                }).join('') + '</tbody></table>';
+                const html = htmlHead + htmlBody;
+
+                if (window.ClipboardItem) {
+                    const item = new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([tsv], { type: 'text/plain' })
+                    });
+                    await navigator.clipboard.write([item]);
+                } else {
+                    await navigator.clipboard.writeText(tsv);
+                }
+                copyVisibleBtn.textContent = '✅ Copiado!';
+                setTimeout(() => { copyVisibleBtn.textContent = '📋 Copiar Tabela Visível'; }, 1200);
+            } catch (e) {
+                console.error('Falha ao copiar:', e);
+                alert('Não foi possível copiar para a área de transferência.');
+            }
+        });
+    }
+
+    // Limpar filtros (globais de coluna, selects e ordenação)
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+            clearFilters();
+            clearFiltersBtn.textContent = '✅ Filtros Limpos!';
+            setTimeout(() => { clearFiltersBtn.textContent = '🧹 Limpar Filtros'; }, 1200);
+        });
+    }
     
     // Event listener para limpar todos os dados
     const clearDataBtn = document.getElementById('clearDataBtn');
@@ -607,12 +869,166 @@ function setupEventListeners() {
     }
     
     // Filtros
-    elements.campusFilter.addEventListener('change', applyFilters);
-    elements.periodoFilter.addEventListener('change', applyFilters);
-    elements.disciplinaFilter.addEventListener('change', applyFilters);
-    elements.professorFilter.addEventListener('change', applyFilters);
-    elements.cursoFilter.addEventListener('change', applyFilters);
-    elements.horarioFilter.addEventListener('change', applyFilters);
+    if (elements.campusFilter) elements.campusFilter.addEventListener('change', applyFilters);
+    if (elements.periodoFilter) elements.periodoFilter.addEventListener('change', applyFilters);
+    if (elements.disciplinaFilter) elements.disciplinaFilter.addEventListener('change', applyFilters);
+    if (elements.professorFilter) elements.professorFilter.addEventListener('change', applyFilters);
+    if (elements.cursoFilter) elements.cursoFilter.addEventListener('change', applyFilters);
+    if (elements.horarioFilter) elements.horarioFilter.addEventListener('change', applyFilters);
+
+    // Exportar/Importar CSV Completo no menu hamburger
+    const exportAllBtn = document.getElementById('exportAllBtn');
+    const importAllBtn = document.getElementById('importAllBtn');
+    const importFileInput = document.getElementById('importFileInput');
+    const mergeAllBtn = document.getElementById('mergeAllBtn');
+    const mergeFileInput = document.getElementById('mergeFileInput');
+    if (exportAllBtn) exportAllBtn.addEventListener('click', exportAllCsvFromStorage);
+    if (importAllBtn && importFileInput) {
+        importAllBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                await importAllCsvWithHeaderValidation(text);
+            } catch (err) {
+                alert('Falha ao ler o arquivo CSV.');
+            } finally {
+                importFileInput.value = '';
+            }
+        });
+    }
+    if (mergeAllBtn && mergeFileInput) {
+        mergeAllBtn.addEventListener('click', () => mergeFileInput.click());
+        mergeFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                await mergeAllCsvWithHeaderValidation(text);
+            } catch (err) {
+                alert('Falha ao ler o arquivo CSV para mesclar.');
+            } finally {
+                mergeFileInput.value = '';
+            }
+        });
+    }
+}
+
+// Habilitar/Desabilitar botões Importar/Mesclar conforme existência de dados
+function updateDataActionButtonsUI() {
+    const importAllBtn = document.getElementById('importAllBtn');
+    const mergeAllBtn = document.getElementById('mergeAllBtn');
+    const clearDataBtn = document.getElementById('clearDataBtn');
+    const hasData = Array.isArray(allData) && allData.length > 0;
+    if (importAllBtn) {
+        importAllBtn.disabled = hasData;
+        importAllBtn.title = hasData
+            ? 'Desabilitado: já existem dados. Limpe os dados ou use Importar e Mesclar CSV.'
+            : '';
+    }
+    if (mergeAllBtn) {
+        mergeAllBtn.disabled = !hasData;
+        mergeAllBtn.title = !hasData
+            ? 'Desabilitado: não há dados para mesclar. Primeiro importe um CSV completo.'
+            : '';
+    }
+    if (clearDataBtn) {
+        clearDataBtn.disabled = false; // sempre disponível
+    }
+}
+
+// Construir listas de Visibilidade e Ordem no menu header
+function buildVisibilityAndOrderLists() {
+    const visibilityList = document.getElementById('visibilityList');
+    const orderList = document.getElementById('orderList');
+    if (!visibilityList || !orderList) return;
+
+    visibilityList.innerHTML = '';
+    orderList.innerHTML = '';
+
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+
+    // Visibilidade
+    headers.forEach(header => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = visibleColumns.has(header);
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) visibleColumns.add(header); else visibleColumns.delete(header);
+            Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
+            updateColumnVisibility();
+            rebuildOrderList(orderList, headers);
+        });
+        const span = document.createElement('span');
+        span.textContent = header;
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        visibilityList.appendChild(label);
+    });
+
+    // Ordem (somente visíveis)
+    rebuildOrderList(orderList, headers);
+
+    const onDragOver = (e) => {
+        e.preventDefault();
+        const dragging = orderList.querySelector('.dragging');
+        const afterElement = getDragAfterElement(orderList, e.clientY);
+        if (!dragging) return;
+        if (afterElement == null) {
+            orderList.appendChild(dragging);
+        } else {
+            orderList.insertBefore(dragging, afterElement);
+        }
+    };
+    orderList.addEventListener('dragover', onDragOver);
+}
+
+function rebuildOrderList(orderList, headers) {
+    orderList.innerHTML = '';
+    const visibleOnly = headers.filter(h => visibleColumns.has(h));
+    visibleOnly.forEach((header, idx) => {
+        const item = document.createElement('div');
+        item.textContent = `${idx + 1}. ${header}`;
+        item.setAttribute('draggable', 'true');
+        item.className = 'order-item';
+        item.addEventListener('dragstart', () => { item.classList.add('dragging'); });
+        item.addEventListener('dragend', () => { item.classList.remove('dragging'); saveOrderFromOrderList(); });
+        orderList.appendChild(item);
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.order-item:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+}
+
+function saveOrderFromOrderList() {
+    const orderList = document.getElementById('orderList');
+    if (!orderList) return;
+    const newOrderVisible = [...orderList.querySelectorAll('.order-item')]
+        .map(el => el.textContent.replace(/^\d+\.\s*/, ''));
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+    const hidden = headers.filter(h => !newOrderVisible.includes(h));
+    const newOrder = [...newOrderVisible, ...hidden];
+    if (newOrder.length) {
+        columnOrder = newOrder;
+        Storage.set({ viewer_column_order: columnOrder });
+        setupTable();
+        updateColumnVisibility();
+        renderTable();
+        // Reconstroi para refletir ordem após salvar
+        buildVisibilityAndOrderLists();
+    }
 }
 
 // Aplicar filtros
@@ -620,7 +1036,7 @@ function applyFilters() {
     let filtered = [...allData];
     
     // Filtro de busca - apenas nos campos visíveis
-    const searchTerm = elements.searchInput.value.toLowerCase().trim();
+    const searchTerm = '';
     if (searchTerm) {
         const visibleColumnsList = Array.from(visibleColumns);
         console.log('🔍 Buscando por:', searchTerm, 'nas colunas visíveis:', visibleColumnsList);
@@ -635,33 +1051,44 @@ function applyFilters() {
         console.log('📊 Resultados da busca:', filtered.length, 'registros encontrados');
     }
     
+    // Filtros por coluna (AND cumulativo)
+    const entries = Object.entries(columnFilters);
+    if (entries.length > 0) {
+        filtered = filtered.filter(row => {
+            return entries.every(([col, term]) => {
+                const value = row[col] || '';
+                return String(value).toLowerCase().includes(String(term).toLowerCase());
+            });
+        });
+    }
+
     // Filtros específicos
-    const campusFilter = elements.campusFilter.value;
+    const campusFilter = elements.campusFilter ? elements.campusFilter.value : '';
     if (campusFilter) {
         filtered = filtered.filter(row => row['Sigla Campus'] === campusFilter);
     }
     
-    const periodoFilter = elements.periodoFilter.value;
+    const periodoFilter = elements.periodoFilter ? elements.periodoFilter.value : '';
     if (periodoFilter) {
         filtered = filtered.filter(row => row['Período'] === periodoFilter);
     }
     
-    const disciplinaFilter = elements.disciplinaFilter.value;
+    const disciplinaFilter = elements.disciplinaFilter ? elements.disciplinaFilter.value : '';
     if (disciplinaFilter) {
         filtered = filtered.filter(row => row['Nome Disciplina'] === disciplinaFilter);
     }
     
-    const professorFilter = elements.professorFilter.value;
+    const professorFilter = elements.professorFilter ? elements.professorFilter.value : '';
     if (professorFilter) {
         filtered = filtered.filter(row => row['Nome Professor'] === professorFilter);
     }
 
-    const cursoFilter = elements.cursoFilter.value;
+    const cursoFilter = elements.cursoFilter ? elements.cursoFilter.value : '';
     if (cursoFilter) {
         filtered = filtered.filter(row => (row['Curso'] || '').includes(cursoFilter));
     }
 
-    const horarioFilter = elements.horarioFilter.value;
+    const horarioFilter = elements.horarioFilter ? elements.horarioFilter.value : '';
     if (horarioFilter) {
         filtered = filtered.filter(row => {
             const horario = row['Hora'] || '';
@@ -694,7 +1121,15 @@ function renderTable() {
         headers.forEach(header => {
             const td = document.createElement('td');
 
-            let cellText = row[header] || '';
+            // Fallback entre 'Total Matriculados' e 'Total'
+            let cellText;
+            if (header === 'Total Matriculados') {
+                cellText = row['Total Matriculados'] ?? row['Total'] ?? '';
+            } else if (header === 'Total') {
+                cellText = row['Total'] ?? row['Total Matriculados'] ?? '';
+            } else {
+                cellText = row[header] || '';
+            }
             if (isInactive && header === 'Nome Disciplina' && !cellText.includes('(INATIVA)')) {
                 cellText += ' (INATIVA)';
             }
@@ -718,6 +1153,44 @@ function renderTable() {
 
 // Ordenar tabela
 function sortTable(column) {
+    // Ordenação especial para coluna de horários por dia da semana (Seg → Sáb) e horário inicial
+    function normalizeTextForComparison(text) {
+        return String(text || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+    }
+
+    function dayNameToIndexPortuguese(dayToken) {
+        const d = normalizeTextForComparison(dayToken).slice(0, 6); // pega prefixo suficiente
+        if (d.startsWith('seg')) return 1; // Segunda
+        if (d.startsWith('ter')) return 2; // Terça
+        if (d.startsWith('qua')) return 3; // Quarta
+        if (d.startsWith('qui')) return 4; // Quinta
+        if (d.startsWith('sex')) return 5; // Sexta
+        if (d.startsWith('sab')) return 6; // Sábado
+        if (d.startsWith('dom')) return 0; // Domingo (caso apareça)
+        return 99; // desconhecido vai para o final
+    }
+
+    function extractHoraSortTuple(value) {
+        // Ex.: "SEG 08:00-10:00 | QUA 10:00-12:00"
+        const raw = String(value || '').trim();
+        if (!raw) return [99, 24 * 60 + 1];
+
+        const firstSegment = raw.split(' | ')[0] || raw;
+        const [firstWord, timeRange] = firstSegment.split(/\s+/, 2);
+        const dayIndex = dayNameToIndexPortuguese(firstWord || '');
+
+        let minutes = 24 * 60 + 1; // depois de todos
+        if (timeRange && /\d{1,2}:\d{2}/.test(timeRange)) {
+            const start = timeRange.split('-')[0];
+            const [hh, mm] = start.split(':').map(n => parseInt(n, 10));
+            if (!Number.isNaN(hh) && !Number.isNaN(mm)) minutes = hh * 60 + mm;
+        }
+        return [dayIndex, minutes];
+    }
+
     if (currentSort.column === column) {
         currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
@@ -736,39 +1209,56 @@ function sortTable(column) {
     }
     
     // Ordenar dados
-    filteredData.sort((a, b) => {
-        let valueA = a[column] || '';
-        let valueB = b[column] || '';
-        
-        // Tentar converter para número se possível
-        const numA = parseFloat(valueA);
-        const numB = parseFloat(valueB);
-        
-        if (!isNaN(numA) && !isNaN(numB)) {
-            valueA = numA;
-            valueB = numB;
-        } else {
-            valueA = String(valueA).toLowerCase();
-            valueB = String(valueB).toLowerCase();
-        }
-        
-        if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
-        if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
+    if (column === 'Hora') {
+        filteredData.sort((a, b) => {
+            const [dA, mA] = extractHoraSortTuple(a[column]);
+            const [dB, mB] = extractHoraSortTuple(b[column]);
+            let cmp = 0;
+            if (dA !== dB) cmp = dA < dB ? -1 : 1;
+            else if (mA !== mB) cmp = mA < mB ? -1 : 1;
+            return currentSort.direction === 'asc' ? cmp : -cmp;
+        });
+    } else {
+        filteredData.sort((a, b) => {
+            let valueA = a[column] || '';
+            let valueB = b[column] || '';
+            
+            // Tentar converter para número se possível
+            const numA = parseFloat(valueA);
+            const numB = parseFloat(valueB);
+            
+            if (!isNaN(numA) && !isNaN(numB)) {
+                valueA = numA;
+                valueB = numB;
+            } else {
+                valueA = String(valueA).toLowerCase();
+                valueB = String(valueB).toLowerCase();
+            }
+            
+            if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+            if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
     
     renderTable();
 }
 
 // Limpar filtros
 function clearFilters() {
-    elements.searchInput.value = '';
-    elements.campusFilter.value = '';
-    elements.periodoFilter.value = '';
-    elements.disciplinaFilter.value = '';
-    elements.professorFilter.value = '';
-    elements.cursoFilter.value = '';
-    elements.horarioFilter.value = '';
+    // limpar selects (se existirem)
+    if (elements.campusFilter) elements.campusFilter.value = '';
+    if (elements.periodoFilter) elements.periodoFilter.value = '';
+    if (elements.disciplinaFilter) elements.disciplinaFilter.value = '';
+    if (elements.professorFilter) elements.professorFilter.value = '';
+    if (elements.cursoFilter) elements.cursoFilter.value = '';
+    if (elements.horarioFilter) elements.horarioFilter.value = '';
+    
+    // Limpar filtros por coluna + inputs
+    columnFilters = {};
+    document.querySelectorAll('.column-filter-input').forEach(inp => { inp.value = ''; inp.classList.remove('active'); });
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('column-filter-active'));
+    closeActiveDropdown();
     
     // Resetar ordenação
     currentSort = { column: null, direction: 'asc' };
@@ -777,11 +1267,144 @@ function clearFilters() {
     });
     
     // Feedback visual
-    elements.searchInput.focus();
+    // sem foco em busca global
     console.log('🧹 Filtros limpos');
     
     applyFilters();
 }
+
+// Dropdown de sugestões estilo Excel
+function showColumnFilterDropdown(inputEl, header) {
+    closeActiveDropdown();
+    // Base: aplicar todos os filtros exceto o da coluna atual
+    const tempFilters = { ...columnFilters };
+    delete tempFilters[header];
+    let base = [...allData];
+    // Busca global
+    const searchTerm = '';
+    if (searchTerm) {
+        const visibleColumnsList = Array.from(visibleColumns);
+        base = base.filter(row => visibleColumnsList.some(c => String(row[c]||'').toLowerCase().includes(searchTerm)));
+    }
+    // Filtros específicos (sidebar) - null safe
+    const campusFilter = elements.campusFilter ? elements.campusFilter.value : '';
+    if (campusFilter) base = base.filter(r => r['Sigla Campus'] === campusFilter);
+    const periodoFilter = elements.periodoFilter ? elements.periodoFilter.value : '';
+    if (periodoFilter) base = base.filter(r => r['Período'] === periodoFilter);
+    const disciplinaFilter = elements.disciplinaFilter ? elements.disciplinaFilter.value : '';
+    if (disciplinaFilter) base = base.filter(r => r['Nome Disciplina'] === disciplinaFilter);
+    const professorFilter = elements.professorFilter ? elements.professorFilter.value : '';
+    if (professorFilter) base = base.filter(r => r['Nome Professor'] === professorFilter);
+    const cursoFilter = elements.cursoFilter ? elements.cursoFilter.value : '';
+    if (cursoFilter) base = base.filter(r => (r['Curso']||'').includes(cursoFilter));
+    const horarioFilter = elements.horarioFilter ? elements.horarioFilter.value : '';
+    if (horarioFilter) base = base.filter(r => (r['Hora']||'').includes(horarioFilter));
+    // Filtros por coluna (exceto atual)
+    const other = Object.entries(tempFilters);
+    if (other.length) {
+        base = base.filter(row => other.every(([col, term]) => String(row[col]||'').toLowerCase().includes(String(term).toLowerCase())));
+    }
+
+    // Valores únicos
+    const uniques = [...new Set(base.map(r => (r[header]||'').trim()).filter(v => v !== ''))]
+        .sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
+
+    // Filtrar sugestões conforme texto digitado no input
+    const typed = String(inputEl.value || '').toLowerCase();
+    let list = typed
+        ? uniques.filter(v => String(v).toLowerCase().includes(typed))
+        : uniques;
+
+    // Ordenação especial para coluna Hora: Seg→Sáb e horário inicial
+    if (header === 'Hora') {
+        const normalize = (text) => String(text || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+        const dayIndex = (dayToken) => {
+            const d = normalize(dayToken).slice(0,6);
+            if (d.startsWith('seg')) return 1;
+            if (d.startsWith('ter')) return 2;
+            if (d.startsWith('qua')) return 3;
+            if (d.startsWith('qui')) return 4;
+            if (d.startsWith('sex')) return 5;
+            if (d.startsWith('sab')) return 6;
+            if (d.startsWith('dom')) return 0;
+            return 99;
+        };
+        const tuple = (val) => {
+            const raw = String(val || '').trim();
+            if (!raw) return [99, 24*60+1];
+            const firstSeg = raw.split(' | ')[0] || raw;
+            const [firstWord, timeRange] = firstSeg.split(/\s+/, 2);
+            const di = dayIndex(firstWord || '');
+            let mins = 24*60+1;
+            if (timeRange && /\d{1,2}:\d{2}/.test(timeRange)) {
+                const start = timeRange.split('-')[0];
+                const [hh, mm] = start.split(':').map(n => parseInt(n,10));
+                if (!Number.isNaN(hh) && !Number.isNaN(mm)) mins = hh*60 + mm;
+            }
+            return [di, mins];
+        };
+        list = [...list].sort((a,b) => {
+            const [da, ma] = tuple(a);
+            const [db, mb] = tuple(b);
+            if (da !== db) return da - db;
+            return ma - mb;
+        });
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'column-filter-dropdown';
+
+    if (list.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'column-filter-nooption';
+        empty.textContent = 'Sem opções';
+        dropdown.appendChild(empty);
+    } else {
+        list.forEach(val => {
+            const opt = document.createElement('div');
+            opt.className = 'column-filter-option';
+            opt.textContent = val;
+            opt.title = val;
+            opt.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                inputEl.value = val;
+                columnFilters[header] = val;
+                toggleFilterActiveStyles(header, inputEl.closest('th'), inputEl);
+                applyFilters();
+                closeActiveDropdown();
+            });
+            dropdown.appendChild(opt);
+        });
+    }
+
+    document.body.appendChild(dropdown);
+    activeDropdown = dropdown;
+
+    const rect = inputEl.getBoundingClientRect();
+    dropdown.style.left = Math.round(rect.left + window.scrollX) + 'px';
+    dropdown.style.top = Math.round(rect.bottom + window.scrollY) + 'px';
+    dropdown.style.minWidth = Math.max(rect.width, 180) + 'px';
+}
+
+function closeActiveDropdown() {
+    if (activeDropdown && activeDropdown.parentNode) {
+        activeDropdown.parentNode.removeChild(activeDropdown);
+    }
+    activeDropdown = null;
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('mousedown', (e) => {
+    if (!activeDropdown) return;
+    const isInside = activeDropdown.contains(e.target);
+    const isInput = e.target.classList && e.target.classList.contains('column-filter-input');
+    if (!isInside && !isInput) {
+        closeActiveDropdown();
+    }
+});
 
 // Redefinir colunas para o padrão
 function resetColumns() {
@@ -792,17 +1415,14 @@ function resetColumns() {
     
     const headers = Object.keys(allData[0]);
     
-    // Redefinir ordem para o padrão
-    columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
-    headers.forEach(h => { 
-        if (!columnOrder.includes(h)) columnOrder.push(h);
-    });
-    
-    // Redefinir visibilidade para o padrão
-    visibleColumns.clear();
-    PRESETS.PADRAO.visible.forEach(h => {
-        if (headers.includes(h)) visibleColumns.add(h);
-    });
+    // Redefinir de acordo com o preset atualmente selecionado
+    let presetKey = 'PRESET_COMPLETO';
+    if (currentPresetSelection && currentPresetSelection.startsWith('__builtin__')) {
+        presetKey = currentPresetSelection.replace('__builtin__','');
+    }
+    const base = getPresetDefault(presetKey, headers);
+    columnOrder = base.order;
+    visibleColumns = new Set(base.visible);
     
     // Limpar larguras personalizadas
     columnWidths = {};
@@ -819,6 +1439,11 @@ function resetColumns() {
     setupColumnToggle();
     updateColumnVisibility();
     renderTable();
+    // Sincronizar menu se aberto
+    const configDropdown = document.getElementById('columnConfigDropdown');
+    if (configDropdown && configDropdown.style.display === 'block') {
+        buildVisibilityAndOrderLists();
+    }
     
     // Feedback visual
     console.log('🔄 Colunas redefinidas para o padrão');
@@ -838,68 +1463,32 @@ function resetColumns() {
     }, 1500);
 }
 
-// Salvar preset de colunas
-async function savePreset() {
-    if (!allData || allData.length === 0) {
-        alert('Nenhum dado disponível para salvar preset');
+// Salvar preset: sobrescreve em memória o preset fixo selecionado
+function savePreset() {
+    if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
+        alert('Selecione um dos 4 presets para salvar suas configurações.');
         return;
     }
-    
-    // Solicitar nome do preset
-    const presetName = prompt(
-        '💾 Salvar Preset de Colunas\n\n' +
-        'Digite um nome para este preset:\n' +
-        '(configuração atual de ordem e visibilidade)'
-    );
-    
-    if (!presetName || !presetName.trim()) {
-        return; // Cancelado
-    }
-    
-    const name = presetName.trim();
-    
-    // Verificar se já existe
-    const existingPresets = await getPresets();
-    if (existingPresets[name]) {
-        const overwrite = confirm(
-            `⚠️ Preset "${name}" já existe!\n\n` +
-            'Deseja sobrescrever a configuração existente?'
-        );
-        if (!overwrite) return;
-    }
-    
-    // Criar preset com configuração atual
-    const preset = {
-        name: name,
-        order: [...columnOrder],
-        visible: Array.from(visibleColumns),
-        widths: {...columnWidths},
-        created: new Date().toISOString(),
-        modified: new Date().toISOString()
+    const key = currentPresetSelection.replace('__builtin__','');
+    const headers = Object.keys(allData[0] || {});
+    const normalizedOrder = columnOrder.filter(h => headers.includes(h));
+    const rest = headers.filter(h => !normalizedOrder.includes(h));
+    PRESETS_CURRENT[key] = {
+        order: [...normalizedOrder, ...rest],
+        visible: Array.from(visibleColumns).filter(h => headers.includes(h))
     };
-    
-    // Salvar no storage
-    existingPresets[name] = preset;
-    await Storage.set({ 'siaa_column_presets': existingPresets });
-    
-    // Atualizar listas
-    await loadPresetsList();
-    await loadPresetsSelect();
-    
-    // Feedback visual
     const btn = elements.savePresetBtn;
-    const originalText = btn.textContent;
-    btn.textContent = '✅ Salvo!';
-    btn.style.background = '#27ae60';
-    btn.style.color = 'white';
-    
-    setTimeout(() => {
-        btn.textContent = originalText;
-        btn.style.background = '';
-        btn.style.color = '';
-    }, 1500);
-    
-    console.log(`💾 Preset "${name}" salvo com sucesso`);
+    if (btn) {
+        const originalText = btn.textContent;
+        btn.textContent = '✅ Salvo!';
+        btn.style.background = '#27ae60';
+        btn.style.color = 'white';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.style.color = '';
+        }, 1200);
+    }
 }
 
 // Carregar preset selecionado no header
@@ -908,13 +1497,41 @@ function loadSelectedPreset() {
     if (!selectedPreset) {
         return; // Nada selecionado, não faz nada
     }
-    
-    loadPreset(selectedPreset);
-    
-    // Resetar select após carregar
-    setTimeout(() => {
-        elements.presetSelect.value = '';
-    }, 100);
+    currentPresetSelection = selectedPreset;
+    // Persistir seleção para sincronizar na próxima carga
+    Storage.set({ viewer_selected_preset: currentPresetSelection });
+    if (selectedPreset.startsWith('__builtin__')) {
+        const key = selectedPreset.replace('__builtin__','');
+        applyBuiltInPreset(key);
+    } else {
+        loadPreset(selectedPreset);
+    }
+}
+
+function applyBuiltInPreset(presetKey) {
+    const headers = Object.keys(allData[0] || {});
+    const cfg = getPresetConfig(presetKey, headers);
+    if (!cfg) return;
+    columnOrder = cfg.order;
+    visibleColumns = new Set(cfg.visible);
+
+    Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns)
+    });
+
+    setupTable();
+    setupColumnToggle();
+    updateColumnVisibility();
+    renderTable();
+
+    const configDropdown = document.getElementById('columnConfigDropdown');
+    if (configDropdown && configDropdown.style.display === 'block') {
+        buildVisibilityAndOrderLists();
+    }
+    if (elements.presetSelect && currentPresetSelection) {
+        elements.presetSelect.value = currentPresetSelection;
+    }
 }
 
 // Carregar preset
@@ -951,6 +1568,12 @@ async function loadPreset(presetName) {
     renderTable();
     
     console.log(`📥 Preset "${presetName}" carregado`);
+
+    // Manter seleção no select
+    currentPresetSelection = presetName;
+    if (elements.presetSelect) {
+        elements.presetSelect.value = presetName;
+    }
 }
 
 // Deletar preset
@@ -980,62 +1603,31 @@ async function getPresets() {
     return data.siaa_column_presets || {};
 }
 
-// Carregar select de presets no header
+// Carregar select de presets no header (fixos)
 async function loadPresetsSelect() {
-    const presets = await getPresets();
-    const presetNames = Object.keys(presets).sort();
-    
-    elements.presetSelect.innerHTML = '<option value="">📋 Carregar preset...</option>';
-    
-    presetNames.forEach(name => {
+    elements.presetSelect.innerHTML = '';
+    const builtins = [
+        { key: 'PRESET_1_BASICO', label: 'Preset 1 • Básico' },
+        { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • Detalhado' },
+        { key: 'PRESET_3_CURSO', label: 'Preset 3 • Curso' },
+        { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
+    ];
+    builtins.forEach(b => {
         const option = document.createElement('option');
-        option.value = name;
-        // Truncar nomes longos para o select
-        option.textContent = name.length > 25 ? name.substring(0, 22) + '...' : name;
-        option.title = name; // Tooltip com nome completo
+        option.value = `__builtin__${b.key}`;
+        option.textContent = b.label;
+        option.title = b.label;
         elements.presetSelect.appendChild(option);
     });
+    if (currentPresetSelection) {
+        elements.presetSelect.value = currentPresetSelection;
+    }
 }
 
 // Carregar e exibir lista de presets na sidebar
 async function loadPresetsList() {
-    const presets = await getPresets();
-    const presetNames = Object.keys(presets).sort();
-    
-    if (presetNames.length === 0) {
-        elements.presetsList.innerHTML = '<div class="no-presets">Nenhum preset salvo</div>';
-        return;
-    }
-    
-    elements.presetsList.innerHTML = presetNames.map((name, index) => {
-        const preset = presets[name];
-        const createdDate = new Date(preset.created).toLocaleDateString('pt-BR');
-        const visibleCount = preset.visible.length;
-        const totalCount = preset.order.length;
-        
-        // Truncar nome longo para exibição
-        const displayName = name.length > 20 ? name.substring(0, 17) + '...' : name;
-        
-        return `
-            <div class="preset-item">
-                <div class="preset-name" title="Nome: ${name.replace(/"/g, '&quot;')}&#10;Criado em: ${createdDate}&#10;Colunas visíveis: ${visibleCount}/${totalCount}">
-                    ${displayName}
-                </div>
-                <button class="preset-delete-btn" data-preset-name="${name.replace(/"/g, '&quot;')}" data-preset-index="${index}" title="Deletar '${name.replace(/"/g, '&quot;')}'">
-                    🗑️
-                </button>
-            </div>
-        `;
-    }).join('');
-    
-    // Adicionar event listeners para os botões de deletar
-    const deleteButtons = elements.presetsList.querySelectorAll('.preset-delete-btn');
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const presetName = this.getAttribute('data-preset-name');
-            deletePreset(presetName);
-        });
-    });
+    if (!elements.presetsList) return;
+    elements.presetsList.innerHTML = '<div class="no-presets">Presets fixos: use o menu superior</div>';
 }
 
 // Expor funções globalmente para uso nos botões HTML
@@ -1084,6 +1676,150 @@ function exportFilteredData() {
     // Feedback
     console.log(`📥 Exportados ${filteredData.length} registros com ${headers.length} colunas`);
     console.log(`📋 Ordem das colunas no CSV:`, headers);
+}
+
+// Exportar CSV completo do storage (sem filtros, cabeçalho completo)
+async function exportAllCsvFromStorage() {
+    try {
+        const data = await Storage.get(['siaa_data_csv']);
+        const csv = data.siaa_data_csv;
+        if (!csv) {
+            alert('Não há CSV completo armazenado para exportar.');
+            return;
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `siaa_dados_completos_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error('Erro ao exportar CSV completo:', e);
+        alert('Erro ao exportar CSV completo.');
+    }
+}
+
+// Validar cabeçalho do CSV importado antes de aceitar
+async function importAllCsvWithHeaderValidation(csvText) {
+    if (!csvText || typeof csvText !== 'string') {
+        alert('Arquivo CSV inválido.');
+        return;
+    }
+    // Extrair primeira linha (cabeçalho) considerando BOM
+    const clean = csvText.replace(/^\uFEFF/, '');
+    const firstLine = (clean.split('\n')[0] || '').trim();
+    if (!firstLine) {
+        alert('CSV sem cabeçalho.');
+        return;
+    }
+    const headersImported = parseCSVLine(firstLine);
+    const required = [
+        'Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Cód. Campus', 'Sigla Campus', 'Nome Campus', 'Período',
+        'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Sala', 'Descrição',
+        'Cód. Horário', 'ID Oferta', 'Hora', 'Curso', 'Cód. Prof.', 'Nome Professor'
+    ];
+    const missing = required.filter(h => !headersImported.includes(h));
+    if (missing.length) {
+        alert('Cabeçalho inválido. Ausentes:\n- ' + missing.join('\n- '));
+        return;
+    }
+    // Tudo ok: armazenar CSV completo e recarregar viewer
+    const csvWithBom = clean.startsWith('\uFEFF') ? clean : ('\uFEFF' + clean);
+    await Storage.set({
+        siaa_data_csv: csvWithBom,
+        siaa_data_timestamp: Date.now()
+    });
+    // Recarregar dados em memória
+    await loadData();
+    alert('CSV importado com sucesso.');
+    updateDataActionButtonsUI();
+}
+
+// Mesclar CSV completo importado com o atual, mantendo a última ocorrência (da importação) em caso de duplicidade por ID Oferta
+async function mergeAllCsvWithHeaderValidation(csvText) {
+    if (!csvText || typeof csvText !== 'string') {
+        alert('Arquivo CSV inválido.');
+        return;
+    }
+    const clean = csvText.replace(/^\uFEFF/, '');
+    const firstLine = (clean.split('\n')[0] || '').trim();
+    if (!firstLine) {
+        alert('CSV sem cabeçalho.');
+        return;
+    }
+    const headersImported = parseCSVLine(firstLine);
+    const required = [
+        'Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Cód. Campus', 'Sigla Campus', 'Nome Campus', 'Período',
+        'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Sala', 'Descrição',
+        'Cód. Horário', 'ID Oferta', 'Hora', 'Curso', 'Cód. Prof.', 'Nome Professor'
+    ];
+    const missing = required.filter(h => !headersImported.includes(h));
+    if (missing.length) {
+        alert('Cabeçalho inválido. Ausentes:\n- ' + missing.join('\n- '));
+        return;
+    }
+
+    // Obter CSV atual do storage
+    const data = await Storage.get(['siaa_data_csv']);
+    const currentCsv = (data.siaa_data_csv || '').replace(/^\uFEFF/, '');
+    if (!currentCsv) {
+        // Se não há CSV atual, apenas importa
+        await importAllCsvWithHeaderValidation(csvText);
+        return;
+    }
+
+    // Converter ambos em arrays de objetos usando parser local
+    const currentObjs = parseCSV(currentCsv);
+    const importedObjs = parseCSV(clean);
+
+    // Mesclar por ID Oferta, mantendo a última (da importação) em caso de duplicidade
+    const map = new Map();
+    const duplicates = [];
+    for (const obj of currentObjs) {
+        const key = obj['ID Oferta'];
+        if (key) map.set(key, obj);
+    }
+    for (const obj of importedObjs) {
+        const key = obj['ID Oferta'];
+        if (!key) continue;
+        if (map.has(key)) {
+            duplicates.push(key);
+        }
+        map.set(key, obj); // mantém a última (importada)
+    }
+
+    // Montar CSV final usando os headers do importado
+    const finalHeaders = headersImported;
+    const lines = [finalHeaders.join(',')];
+    for (const row of map.values()) {
+        const line = finalHeaders.map(h => {
+            const value = row[h] || '';
+            const escaped = String(value).replace(/"/g, '""');
+            return escaped.includes(',') || escaped.includes('"') || escaped.includes('\n')
+                ? `"${escaped}"`
+                : escaped;
+        }).join(',');
+        lines.push(line);
+    }
+    const mergedCsv = lines.join('\n');
+    const csvWithBom = '\uFEFF' + mergedCsv;
+
+    await Storage.set({
+        siaa_data_csv: csvWithBom,
+        siaa_data_timestamp: Date.now()
+    });
+
+    // Recarregar dados no viewer
+    await loadData();
+
+    // Popup com duplicidades indicando que a última (importada) foi mantida
+    if (duplicates.length) {
+        alert(`Mesclagem concluída. Duplicidades por ID Oferta detectadas e a última foi mantida (importação):\n- ${duplicates.slice(0,50).join('\n- ')}${duplicates.length>50?'\n...':''}`);
+    } else {
+        alert('Mesclagem concluída. Nenhuma duplicidade por ID Oferta encontrada.');
+    }
+    updateDataActionButtonsUI();
 }
 
 // Limpar todos os dados armazenados
@@ -1167,6 +1903,7 @@ async function clearAllData() {
         
         // Notificar usuário
         alert('✅ Dados limpos com sucesso!\n\nApenas os dados das ofertas foram removidos.\nSeus presets e configurações de colunas foram preservados.\n\nPara usar novamente, capture novos dados no SIAA.');
+        updateDataActionButtonsUI();
         
     } catch (error) {
         console.error('❌ Erro ao limpar dados:', error);

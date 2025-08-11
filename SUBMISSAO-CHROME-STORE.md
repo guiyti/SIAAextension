@@ -1,6 +1,6 @@
 # 📦 Guia de Submissão - Chrome Web Store
 
-## 🎯 SIAA Data Extractor v1.2.0 - PRONTO PARA SUBMISSÃO
+## 🎯 SIAA Data Extractor v1.3.0 - PRONTO PARA SUBMISSÃO
 
 ### ✅ Status Atual: TODOS OS ARQUIVOS PRONTOS
 
@@ -21,7 +21,7 @@ ls -la
 rm -f *.zip *.crx debug-*.html test-*.html
 
 # 4. Crie o arquivo ZIP para submissão
-zip -r siaa-data-extractor-v1.2.0.zip . -x "*.git*" "*.DS_Store*" "*.md" "*.txt"
+zip -r siaa-data-extractor-v1.3.0.zip . -x "*.git*" "*.DS_Store*" "*.md" "*.txt"
 ```
 
 ### 2. **Acessar Chrome Web Store Developer Console**
@@ -32,7 +32,7 @@ zip -r siaa-data-extractor-v1.2.0.zip . -x "*.git*" "*.DS_Store*" "*.md" "*.txt"
 
 ### 3. **Upload da Extensão**
 
-1. **Arquivo ZIP**: Envie `siaa-data-extractor-v1.2.0.zip`
+1. **Arquivo ZIP**: Envie `siaa-data-extractor-v1.3.0.zip`
 2. **Aguarde a validação automática**
 3. **Corrija erros se aparecerem** (não devem aparecer - tudo testado ✅)
 
@@ -48,11 +48,11 @@ Idioma: Português (Brasil)
 
 #### **📝 Descrição Detalhada**
 ```
-🎓 SIAA Data Extractor v1.2.0 - Ferramenta Profissional para Análise Acadêmica
+🎓 SIAA Data Extractor v1.3.0 - Ferramenta Profissional para Análise Acadêmica
 
 Extensão avançada e completa para extrair, processar e visualizar dados acadêmicos do sistema SIAA da Universidade Cruzeiro do Sul. Interface moderna, totalmente responsiva e otimizada para produtividade acadêmica.
 
-✨ PRINCIPAIS FUNCIONALIDADES v1.2.0:
+✨ PRINCIPAIS FUNCIONALIDADES v1.3.0:
 
 📊 VISUALIZAÇÃO PROFISSIONAL:
 • Interface responsiva que se adapta perfeitamente a qualquer dispositivo
@@ -223,6 +223,6 @@ Preço: Gratuito
 
 ---
 
-**🎉 SIAA Data Extractor v1.2.0 está 100% pronto para ser submetido à Chrome Web Store!**
+**🎉 SIAA Data Extractor v1.3.0 está 100% pronto para ser submetido à Chrome Web Store!**
 
 **🚀 Boa sorte com a publicação!** 🎓 

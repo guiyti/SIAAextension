@@ -2,12 +2,12 @@
 const statusDot = document.getElementById('statusDot');
 const statusText = document.getElementById('statusText');
 const captureButton = document.getElementById('captureButton');
-const downloadButton = document.getElementById('downloadButton');
+const updateExtButton = document.getElementById('updateExtButton');
 const viewButton = document.getElementById('viewButton');
 const courseSelect = document.getElementById('courseSelect');
 const progressContainer = document.getElementById('progressContainer');
 const progressBar = document.getElementById('progressBar');
-const sendButton = document.getElementById('sendButton');
+// const sendButton = document.getElementById('sendButton'); // removido
 
 // Estado da aplicação
 let isExtracting = false;
@@ -21,7 +21,7 @@ const EXTRA_COURSES = [
     // { codigo: '121', nome: 'CST EM GESTÃO DA TECNOLOGIA DA INFORMAÇÃO (EXTRA)' }
 ];
 
-// Mensagens visuais removidas; logs serão feitos apenas no console
+// Mensagens visuais removidas; logs serão feitos apenas no console. Para atualizar a extensão, use o botão do popup.
 
 // Adicionando stubs para evitar ReferenceError e registrar no console
 function showError(msg) {
@@ -151,7 +151,7 @@ function compareData(oldData, newData) {
         } else {
             const oldRow = oldMap.get(key);
             // Comparar campos relevantes
-            const fieldsToCompare = ['Vagas', 'Matriculados', 'Pré-matriculados', 'Total', 'Vagas Restantes', 'Nome Professor'];
+            const fieldsToCompare = ['Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Nome Professor'];
             let hasChanges = false;
             const changes = {};
             
@@ -378,15 +378,11 @@ async function updateStoredDataStatus() {
     const data = await chrome.storage.local.get(['siaa_data_csv', 'siaa_data_timestamp']);
     if (data.siaa_data_csv) {
         hasStoredData = true;
-        downloadButton.disabled = false;
         viewButton.disabled = false;
-        // sendButton permanece habilitado
         console.log('📦 Dados encontrados no storage. Timestamp:', data.siaa_data_timestamp);
     } else {
         hasStoredData = false;
-        downloadButton.disabled = true;
         viewButton.disabled = true;
-        // sendButton permanece habilitado
     }
 }
 
@@ -414,9 +410,12 @@ function openViewer() {
 }
 
 // Botões adicionais
-downloadButton.addEventListener('click', downloadStoredCSV);
 viewButton.addEventListener('click', openViewer);
-sendButton.addEventListener('click', sendCSV);
+if (updateExtButton) {
+    updateExtButton.addEventListener('click', () => {
+        chrome.tabs.create({ url: 'https://chromewebstore.google.com/detail/siaa-data-extractor/eagbiabplhfolaennchgalfljbdniioc?authuser=0&hl=pt-BR' });
+    });
+}
 
 // Verificar storage ao abrir popup
 document.addEventListener('DOMContentLoaded', async () => {
@@ -435,30 +434,7 @@ function handleExtractionProgress(message, percent) {
     }
 }
 
-// Botão Enviar CSV
-async function sendCSV() {
-    // Abrir seletor de arquivo
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv,text/csv';
-    input.onchange = async () => {
-        const file = input.files[0];
-        if (!file) return;
-        try {
-            const text = await file.text();
-            await chrome.storage.local.set({
-                siaa_data_csv: text,
-                siaa_data_timestamp: Date.now()
-            });
-            showSuccess('CSV carregado! Abrindo viewer...');
-            chrome.runtime.sendMessage({ action: 'dataStored' });
-            openViewer();
-        } catch (e) {
-            showError('Falha ao ler CSV: ' + e.message);
-        }
-    };
-    input.click();
-} 
+// Botão Atualizar Extensão: handler já acima
 
 // Exibir overlay
 function exibirOverlayComparacao(comp) {

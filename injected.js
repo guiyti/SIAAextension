@@ -627,7 +627,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             'Vagas',
             'Matriculados',
             'Pré-matriculados',
-            'Total',
+            'Total Matriculados',
             'Vagas Restantes',
             'Sala',
             'Descrição',

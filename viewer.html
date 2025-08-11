@@ -13,8 +13,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f0f0;
-            color: #333;
+            background: linear-gradient(180deg, #f6f7fb 0%, #eef1f5 100%);
+            color: #2b2b2b;
             margin: 0;
             padding: 0;
         }
@@ -26,15 +26,16 @@
 
         /* Header da página - sempre fixo no topo */
         .header {
-            background: #e1e1e1;
-            border-bottom: 2px solid #adadad;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #ffffffcc;
+            backdrop-filter: saturate(150%) blur(6px);
+            border-bottom: 1px solid #d7d7d7;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            color: #333;
+            color: #2b2b2b;
         }
 
         .header-top {
@@ -64,25 +65,24 @@
             flex: 0 0 auto;
         }
 
-        .sidebar-toggle {
-            background: #d4d4d4;
-            border: 1px solid #adadad;
-            font-size: 22px;
-            color: #333;
+        .sidebar-toggle, .columns-btn {
+            background: #ffffff;
+            border: 1px solid #d7d7d7;
+            font-size: 14px;
+            color: #2b2b2b;
             cursor: pointer;
-            padding: 8px;
-            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 10px;
+            transition: box-shadow 0.2s ease, transform 0.05s ease, background 0.2s ease;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.02);
         }
 
-        .sidebar-toggle:hover {
-            background: #bfbfbf;
+        .sidebar-toggle:hover, .columns-btn:hover {
+            background: #fafafa;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
         }
 
-        .app-title {
-            font-weight: bold;
-            font-size: 18px;
-            color: #333;
-        }
+        .app-title { font-weight: 700; font-size: 18px; color: #2b2b2b; }
 
         .header-center {
             display: flex;
@@ -92,16 +92,7 @@
             justify-content: center;
         }
 
-        .search-container {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #adadad;
-            padding: 2px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
+        .search-container { display:none; }
 
         .header-search {
             flex: 1;
@@ -238,14 +229,7 @@
             background: #c0392b;
         }
 
-        .columns-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #adadad;
-            padding: 4px 8px;
-        }
+        .columns-controls { display:flex; align-items:center; gap:8px; }
 
         .columns-btn {
             background: #d4d4d4;
@@ -342,7 +326,9 @@
             width: 100%;
             border-collapse: collapse;
             min-width: 1400px;
-            background: white;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
             position: relative;
         }
 
@@ -350,26 +336,24 @@
             position: sticky;
             top: 0;
             z-index: 500;
-            background: #e1e1e1;
+            background: #f6f7fb;
         }
 
         th {
-            background: #e1e1e1;
-            color: #333;
+            background: #f6f7fb;
+            color: #2b2b2b;
             padding: 12px 8px;
             text-align: left;
             font-weight: 600;
             font-size: 13px;
-            border-right: 1px solid #adadad;
-            border-bottom: 2px solid #adadad;
+            border-right: 1px solid #ececf1;
+            border-bottom: 1px solid #e3e6ed;
             cursor: pointer;
             user-select: none;
             position: relative;
         }
 
-        th:hover {
-            background: #d4d4d4;
-        }
+        th:hover { background: #eef1f7; }
 
         th.sorted-asc::after {
             content: ' ↑';
@@ -385,25 +369,18 @@
 
         td {
             padding: 10px 8px;
-            border-bottom: 1px solid #eee;
-            border-right: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f2f7;
+            border-right: 1px solid #f7f8fb;
             font-size: 13px;
             line-height: 1.4;
         }
 
-        tr:nth-child(even) {
-            background: #f9f9f9;
-        }
+        tr:nth-child(even) { background: #fafbfe; }
 
-        tr:hover {
-            background: #f0f8ff;
-        }
+        tr:hover { background: #f2f6ff; }
 
         /* Linhas de ofertas inativas */
-        .inactive-row td {
-            color: #e74c3c !important;
-            font-weight: bold !important;
-        }
+        .inactive-row td { color: #e74c3c !important; font-weight: 600 !important; }
 
         .no-data {
             text-align: center;
@@ -486,13 +463,114 @@
             display: none;
         }
 
-        .footer {
-            padding: 20px;
-            text-align: center;
-            background: #2c3e50;
-            color: white;
-            margin-top: 20px;
+        .footer { padding: 20px; text-align: center; color: #7a7a7a; margin-top: 20px; }
+
+        /* Inputs de filtro por coluna */
+        .column-filter-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #adadad;
+            font-size: 12px;
+            box-sizing: border-box;
+            background: #fff;
+            color: #333;
         }
+        .column-filter-input:focus {
+            border-color: #7a7a7a;
+            outline: none;
+        }
+
+        /* Indicação de filtro ativo na coluna */
+        th.column-filter-active {
+            background: #f9edd8; /* tom claro próximo ao tema */
+            border-bottom-color: #ebb55e;
+        }
+        .column-filter-input.active {
+            border-color: #ebb55e;
+            background: #fffaf0;
+        }
+
+        /* Dropdown de sugestões do filtro por coluna */
+        .column-filter-dropdown {
+            position: fixed;
+            z-index: 10001;
+            background: #fff;
+            border: 1px solid #adadad;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            max-height: 260px;
+            overflow: auto;
+            min-width: 180px;
+            font-size: 12px;
+        }
+        .column-filter-option {
+            padding: 8px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .column-filter-option:hover {
+            background: #f0f0f0;
+        }
+        .column-filter-nooption {
+            padding: 8px 10px;
+            color: #777;
+        }
+
+        /* Dropdown de configuração de colunas (header) */
+        .config-dropdown {
+            position: fixed;
+            z-index: 10001;
+            background: #fff;
+            border: 1px solid #adadad;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            padding: 8px;
+            min-width: 260px;
+            display: none;
+        }
+        .config-section { margin-bottom: 10px; }
+        .config-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #555;
+            margin: 4px 0 6px 0;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+        .visibility-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            max-height: 260px;
+            overflow: auto;
+        }
+        .visibility-list label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 6px 8px;
+            background: #fff;
+            border: 1px solid #e3e6ed;
+        }
+        .order-list {
+            border: 1px solid #e3e6ed;
+            padding: 6px;
+            max-height: 260px;
+            overflow: auto;
+            background: #fff;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .order-item {
+            padding: 6px 8px;
+            border: 1px dashed #cfd4e6;
+            cursor: move;
+            background:#fafbff;
+        }
+        .order-item.dragging { opacity: .6; background:#eef2ff; }
 
         /* Overlay para mobile */
         .sidebar-overlay {
@@ -742,6 +820,13 @@
             background: #666;
         }
 
+        .sidebar-export-btn:disabled {
+            background: #c9c9c9;
+            color: #777;
+            cursor: not-allowed;
+            border-color: #d6d6d6;
+        }
+
         /* Seção de Presets */
         .presets-section {
             margin-top: 30px;
@@ -872,20 +957,28 @@
                 <span class="app-title">SIAA Data Viewer</span>
             </div>
             <div class="header-center">
-                <div class="search-container">
-                    <input type="text" id="searchInput" class="header-search" placeholder="🔍 Buscar nos campos visíveis...">
-                    <button id="clearBtn" class="header-clear-btn">🗑️</button>
-                </div>
                 <div class="columns-controls">
-                    <button id="resetColumnsBtn" class="columns-btn">
-                        🔄 Redefinir Colunas
-                    </button>
-                    <button id="savePresetBtn" class="columns-btn">
-                        💾
-                    </button>
-                    <select id="presetSelect" class="preset-select">
-                        <option value="">📋 Carregar preset...</option>
-                    </select>
+                    <button id="clearFiltersBtn" class="columns-btn" title="Limpar todos os filtros">🧹 Limpar Filtros</button>
+                    <button id="columnConfigBtn" class="columns-btn" title="Configuração de Colunas">📊 Organizar Colunas</button>
+                    <button id="copyVisibleBtn" class="columns-btn" title="Copiar tabela visível">📋 Copiar Tabela Visível</button>
+                    <div id="columnConfigDropdown" class="config-dropdown">
+                        <div class="config-section">
+                            <div class="config-title">Presets</div>
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+                                <select id="presetSelect" class="preset-select"></select>
+                                <button id="savePresetBtn" class="columns-btn">💾 Salvar</button>
+                                <button id="resetColumnsBtn" class="columns-btn">🔄 Redefinir</button>
+                            </div>
+                        </div>
+                        <div class="config-section">
+                            <div class="config-title">Visibilidade</div>
+                            <div id="visibilityList" class="visibility-list"></div>
+                        </div>
+                        <div class="config-section">
+                            <div class="config-title">Ordem</div>
+                            <div id="orderList" class="order-list"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="header-right">
@@ -918,64 +1011,19 @@
         </div>
         <div class="controls">
 
-            <div class="filters">
-                <div class="filter-group">
-                    <div class="filter-label">Campus</div>
-                    <select id="campusFilter" class="filter-select">
-                        <option value="">Todos os Campus</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <div class="filter-label">Período</div>
-                    <select id="periodoFilter" class="filter-select">
-                        <option value="">Todos os Períodos</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <div class="filter-label">Disciplina</div>
-                    <select id="disciplinaFilter" class="filter-select">
-                        <option value="">Todas as Disciplinas</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <div class="filter-label">Professor</div>
-                    <select id="professorFilter" class="filter-select">
-                        <option value="">Todos os Professores</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <div class="filter-label">Curso</div>
-                    <select id="cursoFilterTop" class="filter-select">
-                        <option value="">Todos os Cursos</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <div class="filter-label">Horário</div>
-                    <select id="horarioFilter" class="filter-select">
-                        <option value="">Todos os Horários</option>
-                    </select>
+            <!-- Exportar/Importar CSV Completo -->
+            <div class="export-import-section" style="margin: 12px 12px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                <h4 style="color:#2c3e50; margin: 0 0 8px 0; font-size: 13px;">📦 Exportar / Importar</h4>
+                <div style="display:flex; flex-direction: column; gap:8px;">
+                    <button id="exportAllBtn" class="sidebar-export-btn">⬇️ Exportar CSV Completo</button>
+                    <button id="importAllBtn" class="sidebar-export-btn">⬆️ Importar CSV Completo</button>
+                    <button id="mergeAllBtn" class="sidebar-export-btn">🔁 Importar e Mesclar CSV</button>
+                    <input id="importFileInput" type="file" accept=".csv" style="display:none;" />
+                    <input id="mergeFileInput" type="file" accept=".csv" style="display:none;" />
                 </div>
             </div>
 
-            <div class="column-toggle" id="columnToggle">
-                <h4>📋 Ordem e Visibilidade das Colunas</h4>
-                <p style="font-size: 11px; color: #666; margin-bottom: 10px; line-height: 1.4;">
-                    💡 <strong>Dica:</strong> Arraste os itens abaixo ou as colunas da tabela para reordenar. 
-                    Use os checkboxes para mostrar/ocultar colunas.
-                </p>
-                <!-- Será preenchido dinamicamente -->
-            </div>
-
-            <!-- Seção de Presets -->
-            <div class="presets-section">
-                <h4 style="color: #7a7a7a; margin-bottom: 10px;">💾 Presets Salvos</h4>
-                <p style="font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.4;">
-                    Gerencie seus presets de colunas salvos. Use o header para carregar.
-                </p>
-                <div id="presetsList">
-                    <!-- Será preenchido dinamicamente -->
-                </div>
-            </div>
+            <!-- Seção de Presets (removida: não há presets salvos) -->
 
             <!-- Seção de Limpeza de Dados -->
             <div class="clear-data-section">

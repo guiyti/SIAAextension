@@ -3,11 +3,11 @@
 Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do sistema SIAA da Universidade Cruzeiro do Sul com interface moderna, responsiva e profissional.
 
 ![SIAA Logo](https://img.shields.io/badge/SIAA-Data%20Extractor-orange?style=for-the-badge&logo=google-chrome)
-![Versão](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)
+![Versão](https://img.shields.io/badge/version-1.3.0-blue?style=for-the-badge)
 ![Manifest](https://img.shields.io/badge/manifest-v3-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-PRONTO%20CHROME%20STORE-brightgreen?style=for-the-badge)
 
-## ✨ Funcionalidades v1.2.0
+## ✨ Funcionalidades v1.3.0
 
 ### 🔄 Captura Inteligente de Dados
 - **Verificação de Atualizações**: Compara dados existentes com novos dados automaticamente
@@ -16,14 +16,17 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 - **Interface Minimalista**: Popup compacto e funcional
 - **CSP Compliance Total**: Compatível com políticas de segurança modernas
 
-### 📊 Visualização Profissional - RENOVADA v1.2.0!
+### 📊 Visualização Profissional - RENOVADA v1.3.0!
 - **Interface Responsiva Completa**: Design profissional que se adapta perfeitamente a qualquer dispositivo
 - **Headers Fixos Inteligentes**: Headers da página e tabela sempre visíveis durante scroll
-- **Busca Exclusiva nos Campos Visíveis**: Busca inteligente apenas nos dados exibidos
-- **Filtros Dinâmicos Avançados**: Por campus, período, disciplina, professor e curso
-- **Drag & Drop Sincronizado**: Reordene colunas arrastando na tabela ou sidebar
-- **Toggle de Colunas Inteligente**: Mostre/oculte colunas com persistência automática
-- **Exportação Filtrada**: Exporte apenas os dados visíveis e filtrados
+- **Filtros por Coluna + Dropdown dinâmico**: Inputs por coluna com sugestões (estilo Excel)
+- **Realce de Colunas Filtradas**: Indicação visual de filtros ativos
+- **Ordenação Especial em Hora**: Seg → Sáb e por horário inicial
+- **Organizar Colunas**: Presets fixos (Básico, Detalhado, Curso, Completo) com sobrescrita
+- **Drag & Drop Sincronizado**: Reordene colunas pela lista e cabeçalhos
+- **Visibilidade em Grade**: Layout compacto em 3 colunas no menu
+- **Copiar Tabela Visível**: Copia headers + dados visíveis (HTML/TSV)
+- **Exportar/Importar/Mesclar CSV**: No menu hamburger, com validação de cabeçalho
 - **Design Profissional**: Estilo moderno com cores harmoniosas
 
 ### 💾 Gerenciamento Inteligente de Dados
@@ -93,11 +96,12 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 - **Modificações**: Mudanças em vagas, professores, horários, etc.
 - **Relatório Detalhado**: Mostra exatamente o que mudou
 
-### 4. Download e Visualização
-- **📥 Baixar CSV**: Download direto do arquivo CSV completo
-- **👁️ Visualizar**: Abre interface web interativa moderna
+### 4. Visualização
+- **👁️ Visualizar**: Abre a interface web interativa moderna
+  - Importar CSV Completo habilitado somente sem dados; Mesclar habilitado apenas quando houver dados
+  - Botão "Atualizar Extensão" no popup abre a Chrome Web Store
 
-## 🔍 Interface de Visualização - PROFISSIONAL v1.2.0!
+## 🔍 Interface de Visualização - PROFISSIONAL v1.3.0!
 
 ### Layout Moderno e Responsivo
 - **Header Fixo Inteligente**: Sempre visível com busca, título e estatísticas
@@ -126,7 +130,7 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 - **Touch Friendly**: Interface otimizada para dispositivos móveis
 - **Sidebar Mobile**: Painel deslizante com largura otimizada para toque
 
-### Dados Incluídos
+### Dados Incluídos (cabeçalhos)
 | Campo | Descrição |
 |-------|-----------|
 | Cód. Disc. | Código da disciplina |
@@ -138,6 +142,7 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 | Matriculados | Alunos já matriculados |
 | Pré-matriculados | Alunos em pré-matrícula |
 | Vagas Restantes | Vagas ainda disponíveis |
+| Total Matriculados | Soma Matriculados + Pré-matriculados (compatível com "Total") |
 | Professor | Dados do professor responsável |
 | Sala | Local da aula |
 | Horário | Horário da disciplina |
@@ -166,7 +171,7 @@ Uma extensão avançada do Chrome para extrair e visualizar dados acadêmicos do
 ### Estrutura do Projeto
 ```
 extensionSIAA/
-├── manifest.json          # Configuração da extensão (v1.2.0)
+├── manifest.json          # Configuração da extensão (v1.3.0)
 ├── popup.html/js          # Interface do popup
 ├── background.js          # Service worker
 ├── injected.js           # Script de extração
@@ -218,15 +223,15 @@ extensionSIAA/
 ### Status de Publicação
 ```
 🔄 PREPARAÇÃO CONCLUÍDA
-📦 Arquivo ZIP criado: siaa-data-extractor-v1.2.0.zip
+📦 Arquivo ZIP criado: siaa-data-extractor-v1.3.0.zip
 ✅ Todos os requisitos atendidos
-📋 Documentação completa
+📋 Documentação atualizada
 🎯 Pronto para submissão
 ```
 
 ### Informações da Store
 - **Nome**: SIAA Data Extractor
-- **Versão**: 1.2.0
+- **Versão**: 1.3.0
 - **Categoria**: Produtividade
 - **Público**: Comunidade Cruzeiro do Sul
 - **Preço**: Gratuito
@@ -280,6 +285,6 @@ Este projeto é desenvolvido para uso acadêmico na Universidade Cruzeiro do Sul
 
 ---
 
-**🎓 SIAA Data Extractor v1.2.0 - Revolucionando a análise de dados acadêmicos!** 
+**🎓 SIAA Data Extractor v1.3.0 - Revolucionando a análise de dados acadêmicos!** 
 
 **✅ Pronto para Chrome Web Store | 🚀 Interface Profissional | �� Mobile Optimized** 
