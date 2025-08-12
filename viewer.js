@@ -41,6 +41,19 @@ const PRESET_DEFAULTS = {
 // Overrides em memória para o preset selecionado via botão Salvar
 let PRESETS_CURRENT = {};
 
+// Overrides persistentes dos presets embutidos (ordem, visibilidade, larguras)
+let builtinOverridesCache = null;
+async function getBuiltinOverrides() {
+    if (builtinOverridesCache) return builtinOverridesCache;
+    const data = await Storage.get(['siaa_builtin_overrides']);
+    builtinOverridesCache = data.siaa_builtin_overrides || {};
+    return builtinOverridesCache;
+}
+async function setBuiltinOverrides(map) {
+    builtinOverridesCache = map;
+    await Storage.set({ 'siaa_builtin_overrides': map });
+}
+
 function getPresetConfig(presetKey, headers) {
     const normalize = (cfg) => {
         if (!cfg) return null;
@@ -54,7 +67,12 @@ function getPresetConfig(presetKey, headers) {
     if (presetKey === 'PRESET_COMPLETO') {
         return { order: [...headers], visible: [...headers] };
     }
+    // 1) Prioriza overrides persistentes
+    const overrides = builtinOverridesCache ? builtinOverridesCache : {};
+    if (overrides[presetKey]) return normalize(overrides[presetKey]);
+    // 2) Depois overrides em memória (sessão)
     if (PRESETS_CURRENT[presetKey]) return normalize(PRESETS_CURRENT[presetKey]);
+    // 3) Caso contrário, default
     return normalize(PRESET_DEFAULTS[presetKey]);
 }
 
@@ -302,6 +320,8 @@ async function finishDataLoading() {
     try {
         const sel = await Storage.get(['viewer_selected_preset']);
         currentPresetSelection = sel.viewer_selected_preset || '__builtin__PRESET_COMPLETO';
+        // Carregar overrides persistentes em cache para uso imediato
+        await getBuiltinOverrides();
         const presetKey = currentPresetSelection.startsWith('__builtin__')
             ? currentPresetSelection.replace('__builtin__','')
             : 'PRESET_COMPLETO';
@@ -312,11 +332,11 @@ async function finishDataLoading() {
         }
     } catch (e) {
         // fallback silencioso
-        if (columnOrder.length === 0) {
-            columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
-            headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
-        }
-        if (visibleColumns.size === 0) {
+    if (columnOrder.length === 0) {
+        columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
+        headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
+    }
+    if (visibleColumns.size === 0) {
             const allHeaders = Object.keys(allData[0]);
             allHeaders.forEach(h => visibleColumns.add(h));
         }
@@ -544,7 +564,7 @@ function setupTable() {
         th.appendChild(input);
         filterRow.appendChild(th);
     });
-
+    
     elements.tableHead.appendChild(headerRow);
     elements.tableHead.appendChild(filterRow);
 }
@@ -568,26 +588,26 @@ function setupFilters() {
     // Se os selects não existem no DOM, não executar população
     // Campus
     if (elements.campusFilter) {
-        const campusValues = [...new Set(allData.map(row => row['Sigla Campus']).filter(Boolean))].sort();
-        populateSelect(elements.campusFilter, campusValues);
+    const campusValues = [...new Set(allData.map(row => row['Sigla Campus']).filter(Boolean))].sort();
+    populateSelect(elements.campusFilter, campusValues);
     }
     
     // Período
     if (elements.periodoFilter) {
-        const periodoValues = [...new Set(allData.map(row => row['Período']).filter(Boolean))].sort();
-        populateSelect(elements.periodoFilter, periodoValues);
+    const periodoValues = [...new Set(allData.map(row => row['Período']).filter(Boolean))].sort();
+    populateSelect(elements.periodoFilter, periodoValues);
     }
     
     // Disciplina
     if (elements.disciplinaFilter) {
-        const disciplinaValues = [...new Set(allData.map(row => row['Nome Disciplina']).filter(Boolean))].sort();
-        populateSelect(elements.disciplinaFilter, disciplinaValues);
+    const disciplinaValues = [...new Set(allData.map(row => row['Nome Disciplina']).filter(Boolean))].sort();
+    populateSelect(elements.disciplinaFilter, disciplinaValues);
     }
     
     // Professor
     if (elements.professorFilter) {
-        const professorValues = [...new Set(allData.map(row => row['Nome Professor']).filter(Boolean))].sort();
-        populateSelect(elements.professorFilter, professorValues);
+    const professorValues = [...new Set(allData.map(row => row['Nome Professor']).filter(Boolean))].sort();
+    populateSelect(elements.professorFilter, professorValues);
     }
 
     // Curso
@@ -1061,7 +1081,7 @@ function applyFilters() {
             });
         });
     }
-
+    
     // Filtros específicos
     const campusFilter = elements.campusFilter ? elements.campusFilter.value : '';
     if (campusFilter) {
@@ -1219,26 +1239,26 @@ function sortTable(column) {
             return currentSort.direction === 'asc' ? cmp : -cmp;
         });
     } else {
-        filteredData.sort((a, b) => {
-            let valueA = a[column] || '';
-            let valueB = b[column] || '';
-            
-            // Tentar converter para número se possível
-            const numA = parseFloat(valueA);
-            const numB = parseFloat(valueB);
-            
-            if (!isNaN(numA) && !isNaN(numB)) {
-                valueA = numA;
-                valueB = numB;
-            } else {
-                valueA = String(valueA).toLowerCase();
-                valueB = String(valueB).toLowerCase();
-            }
-            
-            if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
-            if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
+    filteredData.sort((a, b) => {
+        let valueA = a[column] || '';
+        let valueB = b[column] || '';
+        
+        // Tentar converter para número se possível
+        const numA = parseFloat(valueA);
+        const numB = parseFloat(valueB);
+        
+        if (!isNaN(numA) && !isNaN(numB)) {
+            valueA = numA;
+            valueB = numB;
+        } else {
+            valueA = String(valueA).toLowerCase();
+            valueB = String(valueB).toLowerCase();
+        }
+        
+        if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+        if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
+        return 0;
+    });
     }
     
     renderTable();
@@ -1420,6 +1440,16 @@ function resetColumns() {
     if (currentPresetSelection && currentPresetSelection.startsWith('__builtin__')) {
         presetKey = currentPresetSelection.replace('__builtin__','');
     }
+    // Remover overrides persistentes e em memória para este preset
+    (async () => {
+        const overrides = await getBuiltinOverrides();
+        if (overrides[presetKey]) {
+            delete overrides[presetKey];
+            await setBuiltinOverrides(overrides);
+        }
+    })();
+    if (PRESETS_CURRENT && PRESETS_CURRENT[presetKey]) delete PRESETS_CURRENT[presetKey];
+
     const base = getPresetDefault(presetKey, headers);
     columnOrder = base.order;
     visibleColumns = new Set(base.visible);
@@ -1473,20 +1503,29 @@ function savePreset() {
     const headers = Object.keys(allData[0] || {});
     const normalizedOrder = columnOrder.filter(h => headers.includes(h));
     const rest = headers.filter(h => !normalizedOrder.includes(h));
-    PRESETS_CURRENT[key] = {
+    const newCfg = {
         order: [...normalizedOrder, ...rest],
-        visible: Array.from(visibleColumns).filter(h => headers.includes(h))
+        visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
+        widths: { ...columnWidths }
     };
+    // Em memória (sessão)
+    PRESETS_CURRENT[key] = newCfg;
+    // Persistente (storage)
+    (async () => {
+        const overrides = await getBuiltinOverrides();
+        overrides[key] = newCfg;
+        await setBuiltinOverrides(overrides);
+    })();
     const btn = elements.savePresetBtn;
     if (btn) {
-        const originalText = btn.textContent;
-        btn.textContent = '✅ Salvo!';
-        btn.style.background = '#27ae60';
-        btn.style.color = 'white';
-        setTimeout(() => {
-            btn.textContent = originalText;
-            btn.style.background = '';
-            btn.style.color = '';
+    const originalText = btn.textContent;
+    btn.textContent = '✅ Salvo!';
+    btn.style.background = '#27ae60';
+    btn.style.color = 'white';
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.color = '';
         }, 1200);
     }
 }
@@ -1504,7 +1543,7 @@ function loadSelectedPreset() {
         const key = selectedPreset.replace('__builtin__','');
         applyBuiltInPreset(key);
     } else {
-        loadPreset(selectedPreset);
+    loadPreset(selectedPreset);
     }
 }
 
@@ -1514,6 +1553,12 @@ function applyBuiltInPreset(presetKey) {
     if (!cfg) return;
     columnOrder = cfg.order;
     visibleColumns = new Set(cfg.visible);
+
+    // Se houver larguras salvas no override, restaurá-las
+    const overrides = builtinOverridesCache || {};
+    if (overrides[presetKey] && overrides[presetKey].widths) {
+        columnWidths = { ...overrides[presetKey].widths };
+    }
 
     Storage.set({
         viewer_column_order: columnOrder,
