@@ -191,6 +191,164 @@ function getPresetDefault(presetKey, headers) {
     return { order: [...order, ...rest], visible: base.visible.filter(h => headers.includes(h)) };
 }
 
+// Função para atualizar contadores do header
+async function updateHeaderCounters() {
+    try {
+        // Obter dados de ofertas e alunos do storage
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        
+        // Contar ofertas
+        let ofertasCount = 0;
+        if (storage.siaa_data_csv) {
+            const ofertasData = parseCSV(storage.siaa_data_csv);
+            ofertasCount = ofertasData.length;
+        }
+        
+        // Contar alunos
+        let alunosCount = 0;
+        if (storage.siaa_students_csv) {
+            const alunosData = parseCSV(storage.siaa_students_csv);
+            alunosCount = alunosData.length;
+        }
+        
+        // Atualizar elementos do DOM
+        if (elements.totalOfertas) {
+            elements.totalOfertas.textContent = ofertasCount;
+        }
+        if (elements.totalAlunos) {
+            elements.totalAlunos.textContent = alunosCount;
+        }
+        
+        console.log('📊 Contadores atualizados:', { ofertas: ofertasCount, alunos: alunosCount });
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar contadores:', error);
+        // Definir valores padrão em caso de erro
+        if (elements.totalOfertas) elements.totalOfertas.textContent = '0';
+        if (elements.totalAlunos) elements.totalAlunos.textContent = '0';
+    }
+}
+
+// Função para copiar tabela visível (extraída da implementação anterior)
+async function copyVisibleTable() {
+    try {
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+        if (!visibleHeaders.length) {
+            alert('Não há colunas visíveis para copiar.');
+            return;
+        }
+        const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
+            // Fallback Total/Total Matriculados
+            if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+            if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+            return row[h] ?? '';
+        }))];
+        
+        // Constrói texto tabular (TSV) para fallback
+        const tsv = rows.map(r => r.map(cell => String(cell).replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
+
+        // Constrói HTML table para preservar células em apps que suportam text/html
+        const escapeHtml = (s) => String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        const htmlHead = '<table><thead><tr>' + visibleHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+        const htmlBody = '<tbody>' + filteredData.map(row => {
+            const tds = visibleHeaders.map(h => {
+                let v;
+                if (h === 'Total Matriculados') v = row['Total Matriculados'] ?? row['Total'] ?? '';
+                else if (h === 'Total') v = row['Total'] ?? row['Total Matriculados'] ?? '';
+                else v = row[h] ?? '';
+                return `<td>${escapeHtml(v)}</td>`;
+            }).join('');
+            return `<tr>${tds}</tr>`;
+        }).join('') + '</tbody></table>';
+        const html = htmlHead + htmlBody;
+
+        if (window.ClipboardItem) {
+            const item = new ClipboardItem({
+                'text/html': new Blob([html], { type: 'text/html' }),
+                'text/plain': new Blob([tsv], { type: 'text/plain' })
+            });
+            await navigator.clipboard.write([item]);
+        } else {
+            await navigator.clipboard.writeText(tsv);
+        }
+        
+        showNotification('✅ Tabela copiada com sucesso!', 'success');
+    } catch (e) {
+        console.error('Falha ao copiar:', e);
+        alert('Não foi possível copiar para a área de transferência.');
+    }
+}
+
+// Função para copiar coluna individual
+async function copyColumn(columnName, withDuplicates = true) {
+    try {
+        const values = filteredData.map(row => {
+            // Fallback Total/Total Matriculados
+            if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+            if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+            return row[columnName] ?? '';
+        }).filter(val => val !== ''); // Remove valores vazios
+        
+        let finalValues = values;
+        if (!withDuplicates) {
+            finalValues = [...new Set(values)]; // Remove duplicatas
+        }
+        
+        const text = finalValues.join('\n');
+        await navigator.clipboard.writeText(text);
+        
+        const typeText = withDuplicates ? 'com repetições' : 'sem repetições';
+        showNotification(`✅ Coluna "${columnName}" copiada ${typeText}! (${finalValues.length} valores)`, 'success');
+    } catch (e) {
+        console.error('Falha ao copiar coluna:', e);
+        alert('Não foi possível copiar para a área de transferência.');
+    }
+}
+
+// Função para construir lista de colunas no dropdown de cópia
+function buildCopyColumnsList() {
+    const copyColumnsList = document.getElementById('copyColumnsList');
+    if (!copyColumnsList) return;
+    
+    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+    
+    copyColumnsList.innerHTML = '';
+    
+    visibleHeaders.forEach(columnName => {
+        const item = document.createElement('div');
+        item.className = 'copy-column-item';
+        
+        item.innerHTML = `
+            <span class="copy-column-name" title="${columnName}">${columnName}</span>
+            <button class="copy-column-btn" data-column="${columnName}" data-duplicates="true" title="Copiar com repetições">📋 Com</button>
+            <button class="copy-column-btn" data-column="${columnName}" data-duplicates="false" title="Copiar sem repetições">🔗 Sem</button>
+        `;
+        
+        // Event listeners para os botões
+        item.querySelectorAll('.copy-column-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const column = btn.dataset.column;
+                const withDuplicates = btn.dataset.duplicates === 'true';
+                await copyColumn(column, withDuplicates);
+                document.getElementById('copyDataDropdown').style.display = 'none';
+            });
+        });
+        
+        copyColumnsList.appendChild(item);
+    });
+    
+    if (visibleHeaders.length === 0) {
+        copyColumnsList.innerHTML = '<div style="padding:8px;color:#666;font-size:11px;text-align:center;">Nenhuma coluna visível</div>';
+    }
+}
+
 // Sistema de storage universal (funciona em extensão e browser)
 const Storage = {
     async get(keys) {
@@ -238,8 +396,9 @@ let currentPresetSelection = ''; // Valor selecionado no select de presets
 
 // Elementos do DOM
 const elements = {
-    totalRecords: document.getElementById('totalRecords'),
     filteredRecords: document.getElementById('filteredRecords'),
+    totalOfertas: document.getElementById('totalOfertas'),
+    totalAlunos: document.getElementById('totalAlunos'),
     searchInput: document.getElementById('searchInput'),
     clearBtn: document.getElementById('clearBtn'),
     resetColumnsBtn: document.getElementById('resetColumnsBtn'),
@@ -324,11 +483,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadData();
         setupEventListeners();
         
+        // Atualizar contadores na inicialização
+        await updateHeaderCounters();
+        
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
         showNoData();
         setupEventListeners();
         setupHeaderEvents(); // Garantir que header seja configurado mesmo com erro
+        
+        // Tentar atualizar contadores mesmo com erro
+        await updateHeaderCounters();
     }
     
     // Função global para debug da sidebar
@@ -372,13 +537,16 @@ async function loadData() {
         }
 
         // Atualizar informações
-        elements.totalRecords.textContent = allData.length;
+        // totalRecords removido - usando contadores específicos nos botões
         if (data.siaa_data_timestamp) {
             const dateStr = new Date(data.siaa_data_timestamp).toLocaleString('pt-BR');
             elements.sidebarLastUpdate.textContent = dateStr;
         } else {
             elements.sidebarLastUpdate.textContent = 'Não disponível';
         }
+
+        // Atualizar contadores do header
+        await updateHeaderCounters();
 
         await finishDataLoading();
         
@@ -390,8 +558,11 @@ async function loadData() {
 
 // Finalizar carregamento dos dados
 async function finishDataLoading() {
-    // Headers e configurações iniciais
-    const headers = Object.keys(allData[0]);
+    try {
+        console.log('🔄 finishDataLoading iniciado');
+        
+        // Headers e configurações iniciais
+        const headers = Object.keys(allData[0]);
 
     // Compatibilidade: alinhar aliases 'Total' ↔ 'Total Matriculados'
     (function reconcileTotalHeaders() {
@@ -465,13 +636,25 @@ async function finishDataLoading() {
     console.log('✅ Dados carregados com sucesso!');
     // Atualizar estado dos botões de Importar/Mesclar
     updateDataActionButtonsUI();
+    
+    } catch (error) {
+        console.error('❌ Erro em finishDataLoading:', error);
+        console.error('Stack trace:', error.stack);
+        showNoData();
+    }
 }
 
 // Mostrar dados na tabela (esconder dialog)
 function showData() {
-    elements.loadingMessage.style.display = 'none';
-    elements.noDataMessage.style.display = 'none';
-    elements.tableWrapper.style.display = 'block';
+    if (elements.loadingMessage) {
+        elements.loadingMessage.style.display = 'none';
+    }
+    if (elements.noDataMessage) {
+        elements.noDataMessage.style.display = 'none';
+    }
+    if (elements.tableWrapper) {
+        elements.tableWrapper.style.display = 'block';
+    }
 }
 
 // Mostrar mensagem de nenhum dado (dinâmica baseada no modo)
@@ -529,9 +712,8 @@ function showNoData() {
     }
     
     // Limpar elementos de estatísticas
-    elements.totalRecords.textContent = '0';
-    elements.filteredRecords.textContent = '0';
-    elements.sidebarLastUpdate.textContent = 'Sem dados';
+    if (elements.filteredRecords) elements.filteredRecords.textContent = '0';
+    if (elements.sidebarLastUpdate) elements.sidebarLastUpdate.textContent = 'Sem dados';
 }
 
 // Parsear CSV
@@ -947,13 +1129,19 @@ function setupEventListeners() {
     // Dropdown de configuração no header
     const configBtn = document.getElementById('columnConfigBtn');
     const configDropdown = document.getElementById('columnConfigDropdown');
-    const copyVisibleBtn = document.getElementById('copyVisibleBtn');
+    const copyDataBtn = document.getElementById('copyDataBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (configBtn && configDropdown) {
         const toggle = () => {
             const rect = configBtn.getBoundingClientRect();
-            configDropdown.style.left = Math.round(rect.left + window.scrollX) + 'px';
+            const dropdownWidth = 350; // Largura fixa aumentada
+            
+            // Posicionar o dropdown para crescer para a esquerda
+            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
+            configDropdown.style.left = leftPosition + 'px';
             configDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
+            configDropdown.style.width = dropdownWidth + 'px';
+            
             const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
             configDropdown.style.display = willOpen ? 'block' : 'none';
             if (willOpen) {
@@ -971,61 +1159,47 @@ function setupEventListeners() {
         });
     }
 
-    // Copiar tabela visível (com cabeçalhos e apenas colunas visíveis)
-    if (copyVisibleBtn) {
-        copyVisibleBtn.addEventListener('click', async () => {
-            try {
-                const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
-                const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-                if (!visibleHeaders.length) {
-                    alert('Não há colunas visíveis para copiar.');
-                    return;
-                }
-                const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
-                    // Fallback Total/Total Matriculados
-                    if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
-                    if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
-                    return row[h] ?? '';
-                }))];
-                // Constrói texto tabular (TSV) para fallback
-                const tsv = rows.map(r => r.map(cell => String(cell).replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
-
-                // Constrói HTML table para preservar células em apps que suportam text/html
-                const escapeHtml = (s) => String(s)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-                const htmlHead = '<table><thead><tr>' + visibleHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
-                const htmlBody = '<tbody>' + filteredData.map(row => {
-                    const tds = visibleHeaders.map(h => {
-                        let v;
-                        if (h === 'Total Matriculados') v = row['Total Matriculados'] ?? row['Total'] ?? '';
-                        else if (h === 'Total') v = row['Total'] ?? row['Total Matriculados'] ?? '';
-                        else v = row[h] ?? '';
-                        return `<td>${escapeHtml(v)}</td>`;
-                    }).join('');
-                    return `<tr>${tds}</tr>`;
-                }).join('') + '</tbody></table>';
-                const html = htmlHead + htmlBody;
-
-                if (window.ClipboardItem) {
-                    const item = new ClipboardItem({
-                        'text/html': new Blob([html], { type: 'text/html' }),
-                        'text/plain': new Blob([tsv], { type: 'text/plain' })
-                    });
-                    await navigator.clipboard.write([item]);
-                } else {
-                    await navigator.clipboard.writeText(tsv);
-                }
-                copyVisibleBtn.textContent = '✅ Copiado!';
-                setTimeout(() => { copyVisibleBtn.textContent = '📋 Copiar Tabela Visível'; }, 1200);
-            } catch (e) {
-                console.error('Falha ao copiar:', e);
-                alert('Não foi possível copiar para a área de transferência.');
+    // Dropdown de cópia de dados
+    const copyDropdown = document.getElementById('copyDataDropdown');
+    if (copyDataBtn && copyDropdown) {
+        const toggleCopyDropdown = () => {
+            const rect = copyDataBtn.getBoundingClientRect();
+            const dropdownWidth = 280;
+            
+            // Posicionar o dropdown para crescer para a esquerda
+            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
+            copyDropdown.style.left = leftPosition + 'px';
+            copyDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
+            copyDropdown.style.width = dropdownWidth + 'px';
+            
+            const willOpen = copyDropdown.style.display === 'none' || !copyDropdown.style.display;
+            copyDropdown.style.display = willOpen ? 'block' : 'none';
+            if (willOpen) {
+                buildCopyColumnsList();
             }
+        };
+        
+        copyDataBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Fechar dropdown de configuração se estiver aberto
+            if (configDropdown) configDropdown.style.display = 'none';
+            toggleCopyDropdown();
         });
+        
+        document.addEventListener('mousedown', (e) => {
+            if (!copyDropdown) return;
+            const clickInside = copyDropdown.contains(e.target) || copyDataBtn.contains(e.target);
+            if (!clickInside) copyDropdown.style.display = 'none';
+        });
+        
+        // Event listener para copiar tabela completa
+        const copyTableBtn = document.getElementById('copyTableBtn');
+        if (copyTableBtn) {
+            copyTableBtn.addEventListener('click', async () => {
+                await copyVisibleTable();
+                copyDropdown.style.display = 'none';
+            });
+        }
     }
 
     // Limpar filtros (globais de coluna, selects e ordenação)
@@ -1131,7 +1305,17 @@ function buildVisibilityAndOrderLists() {
         checkbox.type = 'checkbox';
         checkbox.checked = visibleColumns.has(header);
         checkbox.addEventListener('change', () => {
-            if (checkbox.checked) visibleColumns.add(header); else visibleColumns.delete(header);
+            if (checkbox.checked) {
+                visibleColumns.add(header);
+                // Feedback visual positivo
+                label.classList.add('checked');
+                setTimeout(() => { label.classList.remove('checked'); }, 500);
+            } else {
+                visibleColumns.delete(header);
+                // Feedback visual negativo
+                label.classList.add('unchecked');
+                setTimeout(() => { label.classList.remove('unchecked'); }, 500);
+            }
             Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
             updateColumnVisibility();
             rebuildOrderList(orderList, headers);
@@ -1168,8 +1352,20 @@ function rebuildOrderList(orderList, headers) {
         item.textContent = `${idx + 1}. ${header}`;
         item.setAttribute('draggable', 'true');
         item.className = 'order-item';
-        item.addEventListener('dragstart', () => { item.classList.add('dragging'); });
-        item.addEventListener('dragend', () => { item.classList.remove('dragging'); saveOrderFromOrderList(); });
+        item.addEventListener('dragstart', () => { 
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => { 
+            item.classList.remove('dragging'); 
+            saveOrderFromOrderList();
+            // Feedback visual de sucesso
+            item.style.background = 'rgba(34, 197, 94, 0.1)';
+            item.style.borderColor = '#22c55e';
+            setTimeout(() => {
+                item.style.background = '';
+                item.style.borderColor = '';
+            }, 800);
+        });
         orderList.appendChild(item);
     });
 }
@@ -2156,10 +2352,9 @@ async function clearAllData() {
         filteredData = [];
         
         // Limpar interface da tabela
-        elements.tableBody.innerHTML = '';
-        elements.tableHead.innerHTML = '';
-        elements.totalRecords.textContent = '0';
-        elements.filteredRecords.textContent = '0';
+        if (elements.tableBody) elements.tableBody.innerHTML = '';
+        if (elements.tableHead) elements.tableHead.innerHTML = '';
+        if (elements.filteredRecords) elements.filteredRecords.textContent = '0';
         
         // Limpar filtros
         elements.searchInput.value = '';
@@ -2943,7 +3138,7 @@ async function loadStudentData() {
         // Processar CSV de alunos
         const studentData = parseCSV(storage.siaa_students_csv);
         console.log('📊 Dados processados:', {
-            totalRecords: studentData.length,
+            totalStudents: studentData.length,
             firstRecord: studentData[0],
             hasValidData: studentData.length > 0 && typeof studentData[0] === 'object'
         });
@@ -2973,6 +3168,9 @@ async function loadStudentData() {
         // Atualizar selector de preset para mostrar o preset selecionado
         elements.presetSelect.value = '__builtin__PRESET_1_BASICO';
         
+        // Atualizar contadores do header
+        await updateHeaderCounters();
+
         // Configurar tabela e filtros para dados de alunos
         finishDataLoading();
         
@@ -3537,7 +3735,6 @@ async function resetAllData() {
         // Limpar interface
         if (elements.tableBody) elements.tableBody.innerHTML = '';
         if (elements.tableHead) elements.tableHead.innerHTML = '';
-        if (elements.totalRecords) elements.totalRecords.textContent = '0';
         if (elements.filteredRecords) elements.filteredRecords.textContent = '0';
         if (elements.sidebarLastUpdate) elements.sidebarLastUpdate.textContent = 'Sem dados';
         
