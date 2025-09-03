@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Política de Privacidade - SIAA Data Extractor v1.1.0</title>
+    <title>Política de Privacidade - SIAA Data Extractor v1.3.0</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
         h1 { color: #2c3e50; border-bottom: 2px solid #ebb55e; padding-bottom: 10px; }
@@ -14,9 +14,9 @@
 <body>
     <h1>🔒 Política de Privacidade</h1>
     <div class="version">
-        <strong>SIAA Data Extractor v1.1.0</strong><br>
-        Última atualização: Dezembro 2024<br>
-        Interface Responsiva e Headers Fixos
+        <strong>SIAA Data Extractor v1.3.0</strong><br>
+        Última atualização: Janeiro 2025<br>
+        Sistema de Configuração Centralizado + Verificação de Endpoints de Alunos
     </div>
     
     <h2>📋 Resumo</h2>
@@ -25,26 +25,32 @@
     <h2>🔍 Dados Processados</h2>
     <p>A extensão processa apenas dados acadêmicos públicos do sistema SIAA:</p>
     <ul>
-        <li>Informações de disciplinas e ofertas acadêmicas</li>
-        <li>Dados de vagas e disponibilidade</li>
-        <li>Informações de campus e períodos</li>
-        <li>Nomes de professores e disciplinas</li>
+        <li><strong>Ofertas de Disciplinas</strong>: Código, nome, campus, horários, professores, vagas e matrículas</li>
+        <li><strong>Dados de Alunos</strong>: RGM, nome, e-mail, turma, turno, situação acadêmica (v1.3.0)</li>
+        <li><strong>Informações de Campus</strong>: Códigos, siglas e nomes dos campus</li>
+        <li><strong>Dados Temporais</strong>: Períodos acadêmicos e horários de aulas</li>
+        <li><strong>Configurações de Interface</strong>: Presets de visualização e preferências do usuário</li>
     </ul>
     
     <h2>💾 Armazenamento Local</h2>
     <p>Os dados são armazenados apenas no seu navegador através de:</p>
     <ul>
-        <li><strong>chrome.storage.local</strong>: Quando usado como extensão</li>
-        <li><strong>localStorage</strong>: Quando acessado como arquivo local</li>
-        <li><strong>Configurações de interface</strong>: Larguras de colunas, ordem, visibilidade</li>
+        <li><strong>siaa_data_csv</strong>: Dados de ofertas de disciplinas</li>
+        <li><strong>siaa_students_csv</strong>: Dados de alunos por campus (v1.3.0)</li>
+        <li><strong>siaa_manual_courses</strong>: Cursos adicionados manualmente</li>
+        <li><strong>siaa_column_preferences</strong>: Configurações de colunas e layout</li>
+        <li><strong>siaa_user_presets</strong>: Presets personalizados de visualização</li>
+        <li><strong>siaa_view_mode</strong>: Modo de visualização ativo (ofertas/alunos)</li>
     </ul>
     
     <h2>🌐 Transmissão de Dados</h2>
     <p><strong>NENHUM dado é enviado para servidores externos.</strong> A extensão apenas:</p>
     <ul>
-        <li>Acessa o sistema SIAA que você já está logado</li>
-        <li>Processa dados localmente no seu navegador</li>
-        <li>Gera arquivos CSV para download local</li>
+        <li><strong>Acessa endpoints do SIAA</strong>: Ofertas (/wacdcon12/) e Alunos (/wacdrel31/)</li>
+        <li><strong>Verifica saúde dos serviços</strong>: Testa disponibilidade dos endpoints automaticamente</li>
+        <li><strong>Processa dados localmente</strong>: Toda análise ocorre no seu navegador</li>
+        <li><strong>Gera exports locais</strong>: Arquivos CSV criados e baixados localmente</li>
+        <li><strong>Carrega configurações</strong>: Arquivo siaa-config.json local da extensão</li>
     </ul>
     
     <h2>🔐 Permissões Utilizadas</h2>
@@ -54,32 +60,47 @@
         <li><strong>scripting</strong>: Execução de scripts para extração (CSP compliance)</li>
     </ul>
     
-    <h2>📱 Funcionalidades de Interface</h2>
-    <p>A nova interface responsiva (v1.1.0) processa localmente:</p>
+    <h2>⚙️ Sistema de Configuração (v1.3.0)</h2>
+    <p>O novo sistema centralizado de configuração processa localmente:</p>
     <ul>
-        <li>Detecção de dispositivo mobile/desktop</li>
-        <li>Cálculos de altura para headers fixos</li>
-        <li>Configurações de layout responsivo</li>
-        <li>Persistência de preferências do usuário</li>
+        <li><strong>Arquivo siaa-config.json</strong>: Configurações unificadas da aplicação</li>
+        <li><strong>Presets de Visualização</strong>: Configurações predefinidas para diferentes necessidades</li>
+        <li><strong>Endpoints Dinâmicos</strong>: URLs configuráveis para ofertas e alunos</li>
+        <li><strong>Mapeamento de Campus</strong>: Códigos e siglas organizados centralmente</li>
+        <li><strong>Verificação de Saúde</strong>: Testes automáticos de disponibilidade dos serviços</li>
+        <li><strong>Temas Configuráveis</strong>: Cores e aparência personalizáveis via JSON</li>
     </ul>
     
     <h2>🚫 O Que NÃO Fazemos</h2>
     <ul>
-        <li>❌ Não coletamos dados pessoais</li>
-        <li>❌ Não enviamos dados para servidores</li>
+        <li>❌ Não coletamos dados pessoais além dos acadêmicos do SIAA</li>
+        <li>❌ Não enviamos dados para servidores externos</li>
         <li>❌ Não rastreamos atividade do usuário</li>
-        <li>❌ Não acessamos dados fora do SIAA</li>
+        <li>❌ Não acessamos dados fora do domínio SIAA</li>
         <li>❌ Não compartilhamos informações com terceiros</li>
+        <li>❌ Não armazenamos dados em nuvem ou serviços externos</li>
+        <li>❌ Não modificamos ou alteram dados no sistema SIAA</li>
     </ul>
     
     <h2>🔄 Atualizações</h2>
-    <p>Esta política é atualizada quando há mudanças significativas na extensão. A versão atual corresponde ao SIAA Data Extractor v1.1.0.</p>
+    <p>Esta política é atualizada quando há mudanças significativas na extensão. A versão atual corresponde ao SIAA Data Extractor v1.3.0 com sistema de configuração centralizado e suporte completo para dados de alunos.</p>
+    
+    <h2>📋 Controle de Dados</h2>
+    <p>Você tem controle total sobre seus dados:</p>
+    <ul>
+        <li><strong>Visualização</strong>: Todos os dados ficam visíveis na interface</li>
+        <li><strong>Exportação</strong>: Baixe seus dados em formato CSV a qualquer momento</li>
+        <li><strong>Limpeza</strong>: Use "🗑️ Limpar Todos os Dados" para remover informações</li>
+        <li><strong>Duplicatas</strong>: Sistema automático de deduplicação</li>
+        <li><strong>Backup</strong>: Faça backup manual via exportação CSV</li>
+    </ul>
     
     <h2>📞 Contato</h2>
     <p>Para dúvidas sobre privacidade ou funcionamento da extensão:</p>
     <p><strong>Email:</strong> guiyti@gmail.com</p>
     
     <hr>
-    <p><small>SIAA Data Extractor v1.1.0 - Extensão para uso acadêmico na Universidade Cruzeiro do Sul</small></p>
+    <p><small>SIAA Data Extractor v1.3.0 - Extensão para uso acadêmico na Universidade Cruzeiro do Sul</small></p>
+    <p><small>Sistema de Configuração Centralizado • Suporte para Dados de Alunos • Verificação Automática de Endpoints</small></p>
 </body>
 </html>

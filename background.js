@@ -106,7 +106,13 @@ async function executeExtraction(tabId, cursoSelecionado = null) {
 
 // Listener para mensagens
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('📨 Mensagem recebida no background:', request);
+    // Filtrar apenas mensagens com actions válidas
+    if (!request || !request.action) {
+        console.warn('⚠️ Mensagem sem action recebida no background:', request);
+        return;
+    }
+    
+    console.log('📨 Mensagem recebida no background:', request.action);
     if (request.cursoSelecionado) {
         console.log('📌 cursoSelecionado recebido no background:', request.cursoSelecionado);
     }
@@ -210,8 +216,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             };
             
             chrome.storage.local.set(saveData, () => {
-                console.log(`💾 Dados armazenados. Total de ofertas: ${mergedObjs.length}`);
-                chrome.runtime.sendMessage({ action: 'dataStored' }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
+                if (chrome.runtime.lastError) {
+                    console.error('❌ Erro ao salvar dados de ofertas:', chrome.runtime.lastError);
+                } else {
+                    console.log(`💾 Dados de ofertas armazenados com sucesso. Total de ofertas: ${mergedObjs.length}`);
+                    console.log(`📊 Tamanho do CSV salvo: ${saveData.siaa_data_csv.length} caracteres`);
+                    chrome.runtime.sendMessage({ action: 'dataStored' }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
+                }
             });
         });
         
@@ -239,6 +250,101 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             action: 'extractionProgress',
             message: request.message
         }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
+        
+        sendResponse({ success: true });
+        return true;
+    }
+    
+    if (request.action === 'captureStudentData') {
+        console.log('🎓 Salvando dados de alunos capturados...');
+        
+        // Primeiro buscar dados antigos de alunos
+        chrome.storage.local.get(['siaa_students_csv'], (oldData) => {
+            // Funções auxiliares para parse/gerar CSV com suporte mínimo a aspas (IGUAIS às das ofertas)
+            function parseCSVLine(line) {
+                const values = [];
+                let currentValue = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+                    if (char === '"') {
+                        if (inQuotes && nextChar === '"') {
+                            // Aspas duplas escapadas
+                            currentValue += '"';
+                            i++; // pular próxima
+                        } else {
+                            inQuotes = !inQuotes;
+                        }
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(currentValue);
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                values.push(currentValue);
+                return values.map(v => v.trim());
+            }
+
+            function csvToObjects(csv) {
+                if (!csv) return [];
+                const lines = csv.split('\n').filter(l => l.trim());
+                if (lines.length < 2) return [];
+                const headers = parseCSVLine(lines[0]);
+                return lines.slice(1).map(line => {
+                    const values = parseCSVLine(line);
+                    const obj = {};
+                    headers.forEach((h, idx) => obj[h] = values[idx] || '');
+                    return obj;
+                });
+            }
+
+            function objectsToCSV(objs, headers) {
+                const headerLine = headers.join(',');
+                const lines = objs.map(obj => headers.map(h => {
+                    const val = String(obj[h] || '').replace(/"/g, '""');
+                    return val.includes(',') ? `"${val}"` : val;
+                }).join(','));
+                return [headerLine, ...lines].join('\n');
+            }
+
+            // Mesclar removendo duplicatas por RGM (chave única dos alunos)
+            const oldObjs = csvToObjects(oldData.siaa_students_csv);
+            const newObjs = csvToObjects(request.csv);
+
+            const map = new Map();
+            [...oldObjs, ...newObjs].forEach(obj => {
+                const key = obj['RGM'] || obj['Rgm'] || obj['rgm'] || obj['Registro'] || obj['registro'];
+                if (key) {
+                    map.set(key, obj); // mantém o último (novo) caso de duplicata
+                }
+            });
+
+            const mergedObjs = Array.from(map.values());
+            // Usar cabeçalhos do novo CSV se existirem, senão do antigo
+            const headerLine = request.csv.split('\n')[0] || oldData.siaa_students_csv?.split('\n')[0];
+            const headers = parseCSVLine(headerLine);
+            const mergedCsv = objectsToCSV(mergedObjs, headers);
+
+            // Prefixar BOM para compatibilidade com Excel / UTF-8
+            const csvWithBom = '\uFEFF' + mergedCsv;
+
+            const studentData = {
+                siaa_students_csv: csvWithBom,
+                siaa_students_timestamp: request.timestamp || Date.now()
+            };
+            
+            chrome.storage.local.set(studentData, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('❌ Erro ao salvar dados de alunos:', chrome.runtime.lastError);
+                } else {
+                    console.log(`💾 Dados de alunos mesclados e armazenados com sucesso. Total de alunos: ${mergedObjs.length}`);
+                    console.log(`📊 Tamanho do CSV de alunos salvo: ${studentData.siaa_students_csv.length} caracteres`);
+                    chrome.runtime.sendMessage({ action: 'studentsDataStored' }).catch(err => console.log('ℹ️ Popup pode estar fechado:', err));
+                }
+            });
+        });
         
         sendResponse({ success: true });
         return true;

@@ -1,0 +1,401 @@
+{
+  "version": "1.3.0",
+  "app": {
+    "name": "SIAA Data Extractor",
+    "description": "Extrair e visualizar dados acadêmicos do SIAA - Cruzeiro do Sul",
+    "author": "Desenvolvimento Interno"
+  },
+  "api": {
+    "baseUrl": "https://siaa.cruzeirodosul.edu.br",
+    "basePaths": {
+      "ofertas": "/siaa/mod/academico/wacdcon12/",
+      "alunos": "/siaa_academico/secure/academico/relatorio/wacdrel31/"
+    },
+    "academicPeriod": {
+      "note": "ano_leti e sem_leti são obtidos dinamicamente do XML comboPeriodo.xml.jsp",
+      "defaultValues": {
+        "ano_leti": null,
+        "sem_leti": null
+      }
+    },
+    "headers": {
+      "Accept": "text/xml, application/xml, */*",
+      "Accept-Charset": "ISO-8859-1",
+      "User-Agent": "Mozilla/5.0 (compatible; DataExtractor/1.0)"
+    },
+    "timeout": 15000,
+    "extraction": {
+      "batchSize": 10,
+      "delayBetweenBatches": 800
+    }
+  },
+  "endpoints": {
+    "health": {
+      "ofertas": "https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp",
+      "alunos": "https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/relatorio/wacdrel31/XML/combo/XMLComboInst.jsp"
+    },
+    "ofertas": {
+      "periodo": "comboPeriodo.xml.jsp",
+      "cursos": "comboCurso.xml.jsp",
+      "grid": "grid_oferta.xml.jsp",
+      "professor": "grid_teacher_ofe.xml.jsp",
+      "curso_oferta": "grid_curso_ofe.xml.jsp"
+    },
+    "alunos": {
+      "campus": "XML/combo/XMLComboInst.jsp",
+      "grid": "XML/grid/XMLGridRel.jsp"
+    }
+  },
+  "dataTypes": {
+    "ofertas_disciplinas": {
+      "name": "Ofertas de Disciplinas",
+      "description": "Extrai dados de ofertas de disciplinas com professores e vagas",
+      "enabled": true,
+      "endpoints": ["health.ofertas"],
+      "steps": [
+        {
+          "id": "periodo_padrao",
+          "name": "Obter Período Padrão",
+          "url": "ofertas.periodo",
+          "params": [],
+          "xmlPath": "option",
+          "fields": {
+            "periodoCompleto": "@value",
+            "nome": "textContent",
+            "selected": "@selected"
+          },
+          "processFields": {
+            "periodoCompleto": "parsePeriodo"
+          },
+          "description": "Obtém ano_leti e sem_leti do período padrão selecionado"
+        },
+        {
+          "id": "cursos_disponiveis",
+          "name": "Buscar Cursos Disponíveis",
+          "url": "ofertas.cursos",
+          "params": ["ano_leti", "sem_leti"],
+          "xmlPath": "option",
+          "fields": {
+            "codigo": "@value",
+            "nomeCompleto": "textContent",
+            "selected": "@selected"
+          },
+          "processFields": {
+            "nomeCompleto": "parseCursoNome"
+          },
+          "description": "Obtém lista de cursos disponíveis com códigos e nomes"
+        },
+        {
+          "id": "ofertas_principais",
+          "name": "Buscar Ofertas do Curso",
+          "url": "ofertas.grid",
+          "params": ["ano_leti", "sem_leti", "cod_curs"],
+          "xmlPath": "row",
+          "fields": {
+            "codigoDisciplinaCompleto": "cell[0]",
+            "nomeCampus": "cell[1]",
+            "sala": "cell[2]",
+            "periodo": "cell[3]",
+            "cargaHoraria": "cell[4]",
+            "vagas": "cell[5]",
+            "matriculados": "cell[6]",
+            "preMatriculados": "cell[7]",
+            "total": "cell[8]",
+            "vagasRestantes": "cell[9]",
+            "descricaoCompleta": "cell[10]",
+            "cursosLink": "cell[11]",
+            "professorLink": "cell[12]",
+            "idOfertaLimpo": "cell[13]",
+            "codigoInstituicao": "cell[14]",
+            "horarioCompleto": "cell[3]@title"
+          },
+          "processFields": {
+            "codigoDisciplinaCompleto": "parseDisciplinaCompleta",
+            "descricaoCompleta": "parseDescricaoOferta",
+            "horarioCompleto": "parseHorarioCompleto"
+          },
+          "description": "Obtém ofertas de disciplinas com todos os dados principais"
+        },
+        {
+          "id": "professor_dados",
+          "name": "Buscar Dados do Professor",
+          "url": "ofertas.professor",
+          "params": ["id_ofert", "ano_leti", "sem_leti"],
+          "xmlPath": "row",
+          "fields": {
+            "codigoProfessor": "cell[0]",
+            "professorCompleto": "cell[1]"
+          },
+          "processFields": {
+            "professorCompleto": "splitByDash"
+          },
+          "description": "Obtém dados do professor para cada oferta (código e nome)"
+        },
+        {
+          "id": "curso_dados",
+          "name": "Buscar Cursos da Oferta",
+          "url": "ofertas.curso_oferta",
+          "params": ["id_ofert", "ano_leti", "sem_leti"],
+          "xmlPath": "row",
+          "fields": {
+            "cursoInfo": "cell[1]"
+          },
+          "description": "Obtém informações de cursos associados à oferta"
+        }
+      ],
+      "output": {
+        "format": "csv",
+        "headers": [
+          "Cód. Disc.",
+          "Nome Disciplina",
+          "Carga Horária",
+          "Cód. Campus",
+          "Sigla Campus",
+          "Nome Campus",
+          "Período",
+          "Vagas",
+          "Matriculados",
+          "Pré-matriculados",
+          "Total Matriculados",
+          "Vagas Restantes",
+          "Sala",
+          "Descrição",
+          "Cód. Horário",
+          "ID Oferta",
+          "Hora",
+          "Curso",
+          "Cód. Prof.",
+          "Nome Professor"
+        ]
+      }
+    },
+    "dados_alunos": {
+      "name": "Dados de Alunos",
+      "description": "Extrai registros de alunos por campus e curso",
+      "enabled": true,
+      "endpoints": ["health.alunos"],
+      "steps": [
+        {
+          "id": "campus_disponiveis",
+          "name": "Buscar Campus Disponíveis",
+          "url": "alunos.campus",
+          "params": [],
+          "xmlPath": "option",
+          "fields": {
+            "codigo": "@value",
+            "textoCompleto": "textContent"
+          },
+          "description": "Obtém lista de campus disponíveis para busca de alunos"
+        },
+        {
+          "id": "alunos_campus",
+          "name": "Buscar Alunos por Campus",
+          "url": "alunos.grid",
+          "params": ["codCurs", "anoSem", "cod_inst"],
+          "xmlPath": "row",
+          "fields": {
+            "rgm": "cell[0]",
+            "nome": "cell[1]",
+            "serie": "cell[2]",
+            "turma": "cell[3]",
+            "turno": "cell[4]",
+            "situacao": "cell[5]",
+            "foneRes": "cell[6]",
+            "foneCel": "cell[7]",
+            "foneCom": "cell[8]",
+            "email": "cell[9]",
+            "idPolo": "cell[10]",
+            "nomePolo": "cell[11]"
+          },
+          "description": "Obtém dados completos dos alunos de um campus específico"
+        }
+      ],
+      "output": {
+        "format": "csv",
+        "headers": [
+          "RGM",
+          "Nome",
+          "Série",
+          "Turma",
+          "Turno",
+          "Situação",
+          "Fone Res.",
+          "Fone Cel.",
+          "Fone Com.",
+          "E-mail",
+          "ID Polo",
+          "Nome Polo",
+          "Código Curso",
+          "Código Campus",
+          "Nome do Curso",
+          "Sigla Campus"
+        ]
+      }
+    }
+  },
+  "presets": {
+    "ofertas": {
+      "PADRAO": {
+        "name": "Padrão Completo",
+        "description": "Todas as colunas disponíveis",
+        "order": ["Cód. Disc.", "Nome Disciplina", "Carga Horária", "Sigla Campus", "Cód. Campus", "Nome Campus", "Período", "Descrição", "Cód. Horário", "Hora", "ID Oferta", "Sala", "Vagas", "Matriculados", "Pré-matriculados", "Total Matriculados", "Vagas Restantes", "Curso", "Cód. Prof.", "Nome Professor"],
+        "visible": ["Cód. Disc.", "Nome Disciplina", "Carga Horária", "Sigla Campus", "Cód. Campus", "Nome Campus", "Período", "Descrição", "Cód. Horário", "Hora", "ID Oferta", "Sala", "Vagas", "Matriculados", "Pré-matriculados", "Total Matriculados", "Vagas Restantes", "Curso", "Cód. Prof.", "Nome Professor"]
+      },
+      "PRESET_1_BASICO": {
+        "name": "Básico",
+        "description": "Informações essenciais: Código, Nome, Campus, Horário, Professor",
+        "order": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor"],
+        "visible": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor"]
+      },
+      "PRESET_2_DETALHADO": {
+        "name": "Detalhado",
+        "description": "Básico + Informações de vagas e matrículas",
+        "order": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor", "Vagas", "Matriculados", "Total Matriculados", "Vagas Restantes"],
+        "visible": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor", "Vagas", "Matriculados", "Total Matriculados", "Vagas Restantes"]
+      },
+      "PRESET_3_CURSO": {
+        "name": "Por Curso",
+        "description": "Foco em informações acadêmicas por curso",
+        "order": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor", "Período", "Curso"],
+        "visible": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus", "Hora", "ID Oferta", "Nome Professor", "Período", "Curso"]
+      },
+      "PRESET_COMPLETO": {
+        "name": "Todas as Colunas",
+        "description": "Exibe todas as colunas disponíveis nos dados",
+        "order": [],
+        "visible": []
+      }
+    },
+    "alunos": {
+      "PADRAO": {
+        "name": "Padrão Completo",
+        "description": "Todas as informações dos alunos",
+        "order": ["RGM", "Nome", "Série", "Turma", "Turno", "Situação", "Fone Res.", "Fone Cel.", "Fone Com.", "E-mail", "ID Polo", "Nome Polo", "Código Curso", "Código Campus", "Nome do Curso", "Sigla Campus"],
+        "visible": ["RGM", "Nome", "Série", "Turma", "Turno", "Situação", "Fone Res.", "Fone Cel.", "Fone Com.", "E-mail", "ID Polo", "Nome Polo", "Código Curso", "Código Campus", "Nome do Curso", "Sigla Campus"]
+      },
+      "PRESET_1_BASICO": {
+        "name": "Básico",
+        "description": "Informações essenciais: RGM, Nome, E-mail",
+        "order": ["RGM", "Nome", "E-mail"],
+        "visible": ["RGM", "Nome", "E-mail"]
+      },
+      "PRESET_2_DETALHADO": {
+        "name": "Detalhado",
+        "description": "Básico + Turma e Turno",
+        "order": ["RGM", "Nome", "E-mail", "Turma", "Turno"],
+        "visible": ["RGM", "Nome", "E-mail", "Turma", "Turno"]
+      },
+      "PRESET_3_CURSO": {
+        "name": "Por Curso",
+        "description": "Informações acadêmicas + Nome do Curso e Campus",
+        "order": ["RGM", "Nome", "E-mail", "Turma", "Turno", "Nome do Curso", "Sigla Campus"],
+        "visible": ["RGM", "Nome", "E-mail", "Turma", "Turno", "Nome do Curso", "Sigla Campus"]
+      },
+      "PRESET_COMPLETO": {
+        "name": "Todas as Colunas",
+        "description": "Exibe todas as colunas disponíveis nos dados",
+        "order": [],
+        "visible": []
+      }
+    }
+  },
+  "fieldProcessors": {
+    "parsePeriodo": {
+      "description": "Extrai ano_leti e sem_leti do período completo",
+      "example": "2025/2 -> {ano_leti: '2025', sem_leti: '2'}"
+    },
+    "parseCursoNome": {
+      "description": "Extrai nome e código do curso do texto completo",
+      "example": "CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS - 68 -> {nome: 'CST EM ANÁLISE...', codigo: '68'}"
+    },
+    "parseDisciplinaCompleta": {
+      "description": "Divide código e nome da disciplina",
+      "example": "MAT001-MATEMÁTICA BÁSICA -> {codigo: 'MAT001', nome: 'MATEMÁTICA BÁSICA'}"
+    },
+    "parseDescricaoOferta": {
+      "description": "Extrai descrição limpa e ID da oferta",
+      "example": "Matemática Básica (12345) -> {descricao: 'Matemática Básica', idOferta: '12345'}"
+    },
+    "splitByDash": {
+      "description": "Divide texto por ' - ' e retorna código e nome",
+      "example": "123 - João Silva -> {codigo: '123', nome: 'João Silva'}"
+    },
+    "extractFromParentheses": {
+      "description": "Extrai texto entre parênteses",
+      "example": "Disciplina (ID123) -> 'ID123'"
+    },
+    "parseHorario": {
+      "description": "Processa horários de format complexo",
+      "example": "Segunda das 19:10 às 20:25 -> 'Segunda 19:10-20:25'"
+    },
+    "parseHorarioCompleto": {
+      "description": "Processa horários completos do SIAA",
+      "example": "Quarta das 19:10 às 20:25.Quarta das 20:35 às 21:50. -> 'Quarta 19:10-20:25 | Quarta 20:35-21:50'"
+    }
+  },
+  "campusMapping": {
+    "SÃO MIGUEL": { "sigla": "SM", "codigo": "1" },
+    "ANÁLIA FRANCO": { "sigla": "AF", "codigo": "5" },
+    "LIBERDADE": { "sigla": "LIB", "codigo": "6" },
+    "VILLA LOBOS": { "sigla": "VL", "codigo": "40" },
+    "GUARULHOS": { "sigla": "GRU", "codigo": "58" },
+    "PAULISTA": { "sigla": "PTA", "codigo": "59" },
+    "SANTO AMARO": { "sigla": "SA", "codigo": "72" },
+    "EAD": { "sigla": "EAD", "codigo": "09" }
+  },
+  "ui": {
+    "colors": {
+      "primary": "#ebb55e",
+      "primaryDark": "#d4a755",
+      "secondary": "#6c757d",
+      "success": "#27ae60",
+      "error": "#e74c3c",
+      "warning": "#f39c12",
+      "text": "#2c3e50",
+      "background": "#f8f9fa"
+    },
+    "table": {
+      "rowsPerPage": 50,
+      "defaultColumnWidth": 150,
+      "minColumnWidth": 80,
+      "maxColumnWidth": 400
+    },
+    "filters": {
+      "debounceDelay": 300,
+      "maxSuggestions": 10
+    }
+  },
+  "storage": {
+    "keys": {
+      "ofertasData": "siaa_data_csv",
+      "ofertasTimestamp": "siaa_data_timestamp",
+      "studentsData": "siaa_students_csv",
+      "studentsTimestamp": "siaa_students_timestamp",
+      "manualCourses": "siaa_manual_courses",
+      "columnPreferences": "siaa_column_preferences",
+      "userPresets": "siaa_user_presets",
+      "viewMode": "siaa_view_mode"
+    }
+  },
+  "validation": {
+    "requiredColumnsOfertas": ["Cód. Disc.", "Nome Disciplina", "Sigla Campus"],
+    "requiredColumnsAlunos": ["RGM", "Nome", "E-mail"],
+    "maxFileSize": 50000000,
+    "allowedFileTypes": [".csv"]
+  },
+  "features": {
+    "enableStudentView": true,
+    "enableColumnReordering": true,
+    "enablePresets": true,
+    "enableManualCourses": true,
+    "enableDataMerging": true,
+    "enableExport": true,
+    "enableImport": true,
+    "enableHealthCheck": true
+  },
+  "developer": {
+    "debugMode": false,
+    "enableLogging": true,
+    "logLevel": "info"
+  }
+}

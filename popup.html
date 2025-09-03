@@ -21,11 +21,12 @@
         }
 
         .header {
-            background: linear-gradient(to bottom, #ebb55e 0%, #FFF 100%);
-            border: 1px solid #ebb55e;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            border: 1px solid rgba(203,213,225,0.4);
             padding: 12px;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(8px);
         }
 
         .logo {
@@ -35,7 +36,7 @@
             gap: 8px;
             font-size: 16px;
             font-weight: 600;
-            color: #2c3e50;
+            color: #1e293b;
         }
 
         .status {
@@ -45,12 +46,13 @@
             gap: 8px;
             margin-top: 8px;
             padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
             font-size: 12px;
-            border: 1px solid rgba(235, 181, 94, 0.3);
+            border: 1px solid rgba(203,213,225,0.4);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
 
         .progress-container {
@@ -113,27 +115,79 @@
         }
 
         .btn-primary {
-            background: #ebb55e;
-            color: white;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            color: #1e293b;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15), 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #3b82f6;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: #d4a755;
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
             transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59,130,246,0.2), 0 2px 6px rgba(0,0,0,0.15);
         }
 
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
         }
 
         .btn-secondary:hover:not(:disabled) {
-            background: #5a6268;
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            box-shadow: 0 4px 12px rgba(100,116,139,0.15), 0 2px 6px rgba(0,0,0,0.12);
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        /* Estilos para ofuscação quando não estiver no SIAA */
+        .obfuscated {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(100%);
+            transition: all 0.3s ease;
+        }
+
+        .warning-message {
+            background: rgba(255,255,255,0.9);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.4);
+            border-left: 3px solid #f59e0b;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 15px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.1), 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .warning-message.show {
+            display: block;
+        }
+        
+        .endpoint-warning {
+            background: rgba(255,255,255,0.9);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.4);
+            border-left: 3px solid #f59e0b;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.1), 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .endpoint-warning strong {
+            color: #334155;
+        }
+
+        /* Garantir que o botão visualizar sempre seja acessível */
+        .btn-always-accessible {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            filter: none !important;
         }
 
         .message {
@@ -146,15 +200,19 @@
         }
 
         .message.error {
-            background: #ffe6e6;
-            color: #d63384;
-            border: 1px solid #f5c6cb;
+            background: rgba(255,255,255,0.95);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.4);
+            border-left: 3px solid #ef4444;
+            box-shadow: 0 2px 8px rgba(239,68,68,0.1), 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .message.success {
-            background: #e6f7e6;
-            color: #198754;
-            border: 1px solid #badbcc;
+            background: rgba(255,255,255,0.95);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.4);
+            border-left: 3px solid #22c55e;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.1), 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .hidden {
@@ -190,6 +248,65 @@
             gap: 6px;
             margin-bottom: 12px;
         }
+
+        /* Aviso estático para falhas de storage */
+        .storage-failure-warning {
+            display: none;
+            margin: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            color: #dc2626;
+            font-weight: 600;
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.4;
+            box-shadow: 
+                0 4px 16px rgba(239, 68, 68, 0.25), 
+                0 2px 8px rgba(239, 68, 68, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            animation: pulseWarning 2s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .storage-failure-warning::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes pulseWarning {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 
+                    0 4px 16px rgba(239, 68, 68, 0.25), 
+                    0 2px 8px rgba(239, 68, 68, 0.15);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 
+                    0 6px 20px rgba(239, 68, 68, 0.35), 
+                    0 3px 12px rgba(239, 68, 68, 0.25);
+            }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .storage-failure-warning .warning-icon {
+            font-size: 18px;
+            margin-bottom: 8px;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -208,9 +325,24 @@
         </div>
     </div>
 
+    <!-- Aviso estático para falhas de storage -->
+    <div id="storageFailureWarning" class="storage-failure-warning">
+        <span class="warning-icon">⚠️</span>
+        Dados não puderam ser salvos.<br>Recarregue o SIAA
+    </div>
+
+    <!-- Aviso quando não estiver no SIAA -->
+               <div id="warningMessage" class="warning-message">
+               ⚠️ Para capturar dados, você precisa estar na página do SIAA (home.jsf)
+           </div>
+           <div id="endpointWarningMessage" class="warning-message endpoint-warning">
+               🔒 Você está no SIAA, mas os dados não estão acessíveis.<br>
+               📋 Navegue até: <strong>Acadêmico → Consultas → Consultas De Ofertas Por Curso</strong>
+           </div>
+
     <div class="controls">
         <!-- NOVA ÁREA PARA SELEÇÃO DE CURSO -->
-        <div class="field">
+        <div id="courseSelection" class="field">
             <label for="courseSelect" style="font-size:12px;font-weight:600;color:#2c3e50;">Curso:</label>
             <select id="courseSelect" class="select">
                 <option value="">Carregando...</option>
@@ -219,22 +351,16 @@
 
         <div class="button-group">
             <button id="captureButton" class="btn btn-primary">🔄 Capturar Dados</button>
-            <button id="viewButton" class="btn btn-secondary" disabled>👁️ Visualizar</button>
+            <button id="viewButton" class="btn btn-secondary btn-always-accessible" disabled>👁️ Visualizar</button>
             <hr style="width:100%;border:0;border-top:1px solid #ccc;">
             <button id="updateExtButton" class="btn btn-secondary">🧩 Atualizar Extensão</button>
         </div>
     </div>
 
-    <!-- Overlay de comparação -->
-    <div id="comparisonOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;">
-        <div style="background:#fff;padding:20px 25px;border-radius:12px;max-width:240px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-            <h3 style="font-size:16px;color:#2c3e50;margin-bottom:10px;">📊 Alterações encontradas</h3>
-            <p id="cmpDetails" style="font-size:14px;margin-bottom:18px;color:#333;"></p>
-            <button id="btnKeep" class="btn btn-primary" style="width:100%;margin-bottom:8px;">💾 Manter Histórico</button>
-            <button id="btnOverwrite" class="btn btn-secondary" style="width:100%;">✅ Sobrescrever</button>
-        </div>
-    </div>
+    <!-- Overlay removido - não utilizado -->
 
+    <script src="config-manager.js"></script>
+    <script src="xml-processor.js"></script>
     <script src="popup.js"></script>
 </body>
 </html> 

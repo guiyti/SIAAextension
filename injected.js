@@ -1,52 +1,88 @@
-// Função para buscar cursos disponíveis
-async function getCursosDisponiveis() {
+// Variável global para armazenar mapeamento de código -> nome do curso
+window.__SIAA_CURSO_MAPPING = new Map();
+
+// Função para buscar cursos disponíveis - REMOVIDA (usar XMLProcessor)
+
+// Função para extrair e armazenar nomes de cursos do XML grid_curso_ofe
+async function extractAndStoreCursoNames(idOfert, periodo) {
+    if (!idOfert || !periodo) return;
+    
     try {
-        const url = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboCurso.xml.jsp?ano_leti=2025&sem_leti=2';
-        console.log('🌐 Buscando cursos disponíveis...');
+        const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
+        const xml = await fetchXML(urlCurso);
+        const rows = xml.querySelectorAll('row');
         
-        const response = await fetch(url, {
-            headers: {
-                'Accept': 'text/xml, application/xml, */*',
-                'Accept-Charset': 'ISO-8859-1',
-                'User-Agent': 'Mozilla/5.0 (compatible; DataExtractor/1.0)'
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('cell');
+            if (cells.length >= 2) {
+                const cursoText = cells[1].textContent.trim();
+                // Formato: "68 - CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS"
+                const match = cursoText.match(/^(\d+)\s*-\s*(.+)$/);
+                if (match) {
+                    const codigo = match[1].trim();
+                    const nome = match[2].trim();
+                    window.__SIAA_CURSO_MAPPING.set(codigo, nome);
+                    console.log(`📚 Curso mapeado: ${codigo} -> ${nome}`);
+                }
             }
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        // Usar ISO-8859-1 para decodificar corretamente os acentos
-        const arrayBuffer = await response.arrayBuffer();
-        const decoder = new TextDecoder('iso-8859-1');
-        const xmlText = decoder.decode(arrayBuffer);
-        
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        
-        const options = xmlDoc.querySelectorAll('option');
-        const cursos = [];
-        
-        options.forEach(option => {
-            const value = option.getAttribute('value');
-            const text = option.textContent.trim();
-            const isSelected = option.hasAttribute('selected');
-            
-            if (value && text) {
-                cursos.push({
-                    codigo: value,
-                    nome: text,
-                    selected: isSelected
-                });
-            }
-        });
-        
-        console.log(`📚 ${cursos.length} cursos encontrados:`, cursos);
-        return cursos;
-        
     } catch (error) {
-        console.error('❌ Erro ao buscar cursos:', error);
-        throw error;
+        console.warn(`⚠️ Erro ao extrair nomes de cursos da oferta ${idOfert}:`, error);
+    }
+}
+
+// Função para obter nome do curso pelo código
+function getCursoNomeFromMapping(codigoCurso) {
+    if (!codigoCurso) return '';
+    return window.__SIAA_CURSO_MAPPING.get(codigoCurso.toString()) || '';
+}
+
+// Função para debugar o mapeamento de cursos
+function debugCursoMapping() {
+    console.log('🔍 Mapeamento atual de cursos:');
+    if (window.__SIAA_CURSO_MAPPING.size === 0) {
+        console.log('  📭 Nenhum curso mapeado ainda');
+    } else {
+        window.__SIAA_CURSO_MAPPING.forEach((nome, codigo) => {
+            console.log(`  📚 ${codigo} -> ${nome}`);
+        });
+    }
+}
+
+// Salvar mapeamento de cursos no storage
+async function saveCursoMapping() {
+    try {
+        const mappingObj = {};
+        window.__SIAA_CURSO_MAPPING.forEach((nome, codigo) => {
+            mappingObj[codigo] = nome;
+        });
+        
+        await chrome.storage.local.set({ siaa_curso_mapping: mappingObj });
+        console.log('💾 Mapeamento de cursos salvo no storage:', Object.keys(mappingObj).length, 'cursos');
+    } catch (error) {
+        console.error('❌ Erro ao salvar mapeamento de cursos:', error);
+    }
+}
+
+// Carregar mapeamento de cursos do storage
+async function loadCursoMapping() {
+    try {
+        const storage = await chrome.storage.local.get(['siaa_curso_mapping']);
+        const mappingObj = storage.siaa_curso_mapping || {};
+        
+        // Limpar mapeamento atual
+        window.__SIAA_CURSO_MAPPING.clear();
+        
+        // Carregar do storage
+        Object.entries(mappingObj).forEach(([codigo, nome]) => {
+            window.__SIAA_CURSO_MAPPING.set(codigo, nome);
+        });
+        
+        console.log('🔄 Mapeamento de cursos carregado do storage:', Object.keys(mappingObj).length, 'cursos');
+        return Object.keys(mappingObj).length;
+    } catch (error) {
+        console.error('❌ Erro ao carregar mapeamento de cursos:', error);
+        return 0;
     }
 }
 
@@ -124,7 +160,7 @@ function createCourseSelectionOverlay(cursos) {
                 <li>Os dados extraídos incluem disciplinas, professores e vagas</li>
                 <li>A extração é feita em lotes para otimizar a performance</li>
                 <li>Os dados serão salvos para download posterior</li>
-                <li>Período: 2025/2 (conforme configuração)</li>
+                <li>Período: Dinâmico (obtido automaticamente do SIAA)</li>
             </ul>
             </div>
         
@@ -188,6 +224,12 @@ function createCourseSelectionOverlay(cursos) {
 }
 
 async function exportarTabelaSIAA(cursoSelecionado = null) {
+    console.log('🚀 Iniciando extração de dados');
+    return await exportarTabelaSIAAOriginal(cursoSelecionado);
+}
+
+// Sistema original mantido como fallback
+async function exportarTabelaSIAAOriginal(cursoSelecionado = null) {
     // Funções auxiliares visíveis para todo o escopo (incluindo catch)
     function updateStatus(message, progress = null) {
         const payload = { action: 'extractionProgress', message };
@@ -218,6 +260,15 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             throw new Error('Curso não informado pelo popup');
         }
         
+        // Armazenar nome do curso selecionado no mapeamento global
+        if (cursoSelecionado.codigo && cursoSelecionado.nome) {
+            window.__SIAA_CURSO_MAPPING.set(cursoSelecionado.codigo, cursoSelecionado.nome);
+            console.log(`📚 Curso selecionado mapeado: ${cursoSelecionado.codigo} -> ${cursoSelecionado.nome}`);
+            
+            // Salvar mapeamento atualizado no storage
+            saveCursoMapping().catch(err => console.warn('⚠️ Erro ao salvar mapeamento:', err));
+        }
+        
         // Configurações
         const BATCH_SIZE = 10;
         const DELAY_BETWEEN_BATCHES = 800;
@@ -228,49 +279,15 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             message: `🚀 Iniciando extração para ${cursoSelecionado.nome}`
         });
 
-        // Funções stub de overlay para compatibilidade
-        function createLoadingOverlay() { return null; }
-        function removeLoadingOverlay() { /* nada */ }
+        // Funções de overlay removidas - não utilizadas
         
         updateStatus('Buscando dados das disciplinas...');
         
-        // URLs base
-        const baseUrl = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_oferta.xml.jsp?ano_leti=2025&sem_leti=2&cod_curs=${cursoSelecionado.codigo}`;
+        // URLs base com período dinâmico
+        const periodo = await getCurrentAcademicPeriod();
+        const baseUrl = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_oferta.xml.jsp?ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}&cod_curs=${cursoSelecionado.codigo}`;
         
-        // Função auxiliar para fazer fetch com timeout
-        async function fetchXML(url, timeout = 15000) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
-            
-            try {
-                const response = await fetch(url, { 
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'text/xml, application/xml, */*',
-                        'Accept-Charset': 'ISO-8859-1',
-                        'User-Agent': 'Mozilla/5.0 (compatible; DataExtractor/1.0)'
-                    }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                // Usar ISO-8859-1 para decodificar corretamente
-                const arrayBuffer = await response.arrayBuffer();
-                const decoder = new TextDecoder('iso-8859-1');
-                const xmlText = decoder.decode(arrayBuffer);
-                
-                const parser = new DOMParser();
-                return parser.parseFromString(xmlText, 'text/xml');
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
+        // Usar função fetchXML global (movida para fora do escopo)
         
         // Buscar dados principais
         console.log('🌐 Fazendo requisição para:', baseUrl);
@@ -298,7 +315,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         async function getProfessorData(idOfert) {
             if (!idOfert) return { codigo: '', nome: '' };
             try {
-                const urlProf = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
+                const urlProf = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
                 const xml = await fetchXML(urlProf);
                 const row = xml.querySelector('row');
                 if (!row) return { codigo: '', nome: '' };
@@ -316,7 +333,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         async function getCursoData(idOfert) {
             if (!idOfert) return '';
             try {
-                const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=2025&sem_leti=2`;
+                const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
                 const xml = await fetchXML(urlCurso);
                 const rows = xml.querySelectorAll('row');
                 if (!rows || rows.length === 0) return '';
@@ -325,7 +342,20 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                     const cells = r.querySelectorAll('cell');
                     if (cells.length >= 2) {
                         const txt = cells[1].textContent.trim();
-                        if (txt) cursos.push(`(${txt})`);
+                        if (txt) {
+                            cursos.push(`(${txt})`);
+                            
+                            // Também armazenar no mapeamento global
+                            const match = txt.match(/^(\d+)\s*-\s*(.+)$/);
+                            if (match) {
+                                const codigo = match[1].trim();
+                                const nome = match[2].trim();
+                                window.__SIAA_CURSO_MAPPING.set(codigo, nome);
+                                
+                                // Salvar mapeamento atualizado no storage (async sem await para não bloquear)
+                                saveCursoMapping().catch(err => console.warn('⚠️ Erro ao salvar mapeamento:', err));
+                            }
+                        }
                     }
                 });
                 return cursos.join(' - ');
@@ -339,31 +369,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             if (isCanceled) throw new Error('Operação cancelada');
             
             try {
-                // Debug: mostrar todos os atributos disponíveis no primeiro registro
-                if (index === 0) {
-                    console.log('🔍 Atributos disponíveis no primeiro registro:');
-                    for (let i = 0; i < row.attributes.length; i++) {
-                        const attr = row.attributes[i];
-                        console.log(`  ${attr.name}: "${attr.value}"`);
-                    }
-                    
-                    // Verificar se há elementos filhos
-                    console.log('🔍 Elementos filhos:');
-                    for (let i = 0; i < row.children.length; i++) {
-                        const child = row.children[i];
-                        console.log(`  <${child.tagName}>: "${child.textContent}"`);
-                        
-                        // Mostrar atributos dos filhos também
-                        for (let j = 0; j < child.attributes.length; j++) {
-                            const attr = child.attributes[j];
-                            console.log(`    ${attr.name}: "${attr.value}"`);
-                        }
-                    }
-                    
-                    // Mostrar estrutura XML completa do primeiro registro
-                    console.log('🔍 XML completo do primeiro registro:');
-                    console.log(row.outerHTML);
-                }
+
                 
                 // Extrair dados das células em posições específicas
                 const cells = row.querySelectorAll('cell');
@@ -474,13 +480,7 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
                 
                 const parsedDesc = parseDescriptionField(descricaoCompleta);
                 
-                // Debug apenas para os primeiros registros
-                if (index < 2) {
-                    console.log(`🔍 Debug Registro ${index}:`, {
-                        descricaoCompleta,
-                        parsedDesc
-                    });
-                }
+
                 
                 const finalData = {
                     idOferta,
@@ -691,17 +691,150 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
         updateStatus(`✅ Dados capturados! ${processedCount} registros em ${finalTime}s`);
         console.log(`🎉 Dados processados com sucesso em ${finalTime}s!`);
         
-        // Enviar dados para a extensão armazenar no storage
+        // Enviar dados para a extensão armazenar no storage (via content script)
         try {
-            chrome.runtime?.sendMessage({
+            console.log('🔍 Tentando enviar dados de ofertas para extensão...');
+            console.log('📊 Tamanho do CSV:', csvWithBOM.length, 'caracteres');
+            
+            window.postMessage({
                 action: 'captureData',
                 csv: csvWithBOM,
                 timestamp: Date.now()
-            }, () => {
-                console.log('📡 Dados enviados para extensão (storage)');
+            }, '*');
+            console.log('📡 Dados de ofertas enviados para extensão (storage)');
+            
+            // Aguardar resposta por 3 segundos
+            let responseReceived = false;
+            const responseHandler = (event) => {
+                if (event.data && event.data.action === 'extensionResponse' && 
+                    event.data.originalAction === 'captureData') {
+                    responseReceived = true;
+                    
+                    if (event.data.contextInvalidated) {
+                        console.error('🔄 Contexto da extensão invalidado! Recarregue a página e tente novamente.');
+                        updateStatus('⚠️ Extensão foi reiniciada. Recarregue a página!');
+                    } else if (event.data.success) {
+                        console.log('✅ Dados de ofertas armazenados com sucesso:', event.data);
+                    } else {
+                        console.error('❌ Erro ao armazenar dados de ofertas:', event.data.error);
+                        updateStatus('⚠️ Falha no salvamento. Recarregue a página do SIAA!');
+                    }
+                    
+                    window.removeEventListener('message', responseHandler);
+                }
+            };
+            window.addEventListener('message', responseHandler);
+            
+            setTimeout(() => {
+                if (!responseReceived) {
+                    console.warn('⚠️ Nenhuma resposta recebida do content script em 3s - verificar se content script está ativo');
+                    console.warn('📊 Dados de ofertas foram coletados mas podem não ter sido salvos no storage');
+                    updateStatus('⚠️ Dados coletados mas não salvos. Recarregue a página do SIAA!');
+                    window.removeEventListener('message', responseHandler);
+                }
+            }, 3000);
+            
+        } catch (e) {
+            console.error('❌ Erro ao enviar mensagem para extensão:', e);
+            updateStatus('⚠️ Erro na comunicação. Recarregue a página do SIAA!');
+        }
+
+        // ===== CAPTURAR DADOS DE ALUNOS =====
+        updateStatus('Capturando dados de alunos...');
+        
+        // Debug: mostrar mapeamento de cursos coletado
+        debugCursoMapping();
+        
+        try {
+            const studentsCsv = await captureStudentData(cursoSelecionado, updateStatus);
+            
+            console.log('🔍 CSV de alunos gerado:', {
+                length: studentsCsv ? studentsCsv.length : 0,
+                preview: studentsCsv ? studentsCsv.substring(0, 200) : 'undefined',
+                type: typeof studentsCsv
             });
             
+            // Enviar dados de alunos para a extensão (via content script)
+            try {
+                console.log('🔍 Tentando enviar dados de alunos para extensão...');
+                console.log('📊 Tamanho do CSV de alunos:', studentsCsv ? studentsCsv.length : 0, 'caracteres');
+                
+                window.postMessage({
+                    action: 'captureStudentData',
+                    csv: studentsCsv,
+                    timestamp: Date.now()
+                }, '*');
+                console.log('📡 Dados de alunos enviados para extensão (storage)');
+                
+                // Aguardar resposta por 3 segundos
+                let responseReceived = false;
+                const responseHandler = (event) => {
+                    if (event.data && event.data.action === 'extensionResponse' && 
+                        event.data.originalAction === 'captureStudentData') {
+                        responseReceived = true;
+                        
+                        if (event.data.contextInvalidated) {
+                            console.error('🔄 Contexto da extensão invalidado! Recarregue a página e tente novamente.');
+                            updateStatus('⚠️ Extensão foi reiniciada. Recarregue a página!');
+                        } else if (event.data.success) {
+                            console.log('✅ Dados de alunos armazenados com sucesso:', event.data);
+                        } else {
+                            console.error('❌ Erro ao armazenar dados de alunos:', event.data.error);
+                            updateStatus('⚠️ Falha no salvamento. Recarregue a página do SIAA!');
+                        }
+                        
+                        window.removeEventListener('message', responseHandler);
+                    }
+                };
+                window.addEventListener('message', responseHandler);
+                
+                setTimeout(() => {
+                    if (!responseReceived) {
+                        console.warn('⚠️ Nenhuma resposta recebida do content script para alunos em 3s');
+                        console.warn('📊 Dados de alunos foram coletados mas podem não ter sido salvos no storage');
+                        updateStatus('⚠️ Dados coletados mas não salvos. Recarregue a página do SIAA!');
+                        window.removeEventListener('message', responseHandler);
+                    }
+                }, 3000);
+                
+            } catch (e) {
+                console.error('❌ Erro ao enviar dados de alunos para extensão:', e);
+                updateStatus('⚠️ Erro na comunicação. Recarregue a página do SIAA!');
+            }
+            
+            // Verificar se dados foram realmente salvos no storage
+            setTimeout(async () => {
+                try {
+                    const storedData = await chrome.storage.local.get(['siaa_data_csv', 'siaa_students_csv']);
+                    const hasOfertas = storedData.siaa_data_csv && storedData.siaa_data_csv.length > 100;
+                    const hasAlunos = storedData.siaa_students_csv && storedData.siaa_students_csv.length > 100;
+                    
+                    if (!hasOfertas && !hasAlunos) {
+                        console.error('⚠️ NENHUM dado foi salvo no storage!');
+                        updateStatus('⚠️ Dados NÃO foram salvos! Recarregue a página do SIAA!');
+                    } else if (!hasOfertas) {
+                        console.error('⚠️ Dados de OFERTAS não foram salvos no storage!');
+                        updateStatus('⚠️ Ofertas NÃO salvas! Recarregue a página do SIAA!');
+                    } else if (!hasAlunos) {
+                        console.error('⚠️ Dados de ALUNOS não foram salvos no storage!');
+                        updateStatus('⚠️ Alunos NÃO salvos! Recarregue a página do SIAA!');
+                    } else {
+                        updateStatus('✅ Ofertas e alunos capturados e salvos');
+                        console.log('✅ Dados de alunos capturados e salvos com sucesso');
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao verificar storage:', error);
+                    updateStatus('⚠️ Erro na verificação. Recarregue a página do SIAA!');
+                }
+            }, 1000); // Aguardar 1 segundo para garantir que o salvamento foi processado
+            
+        } catch (studentError) {
+            console.error('❌ Erro ao capturar dados de alunos:', studentError);
+            updateStatus('⚠️ Ofertas capturadas. Erro nos dados de alunos.');
+        }
+            
             // Notificar que a captura foi concluída
+        try {
             chrome.runtime?.sendMessage({
                 action: 'extractionComplete'
             });
@@ -709,18 +842,386 @@ async function exportarTabelaSIAA(cursoSelecionado = null) {
             console.log('ℹ️ Não foi possível enviar mensagem para extensão:', e);
         }
         
-        setTimeout(removeLoadingOverlay, 3000);
+        // Overlay removido
         
     } catch (error) {
         if (error.message !== 'Operação cancelada') {
             console.error('❌ Erro durante a captura:', error);
             updateStatus(`❌ Erro: ${error.message}`);
-            setTimeout(removeLoadingOverlay, 5000);
+            // Overlay removido
         }
     }
 }
 
+// ===== FUNÇÃO AUXILIAR PARA PERÍODO ACADÊMICO =====
+
+// Função para obter período acadêmico atual dinamicamente
+async function getCurrentAcademicPeriod() {
+    try {
+        const url = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp';
+        const xmlDoc = await fetchXML(url);
+        
+        // Buscar opção selecionada
+        const selectedOption = xmlDoc.querySelector('option[selected="true"]') || 
+                             xmlDoc.querySelector('option[selected="selected"]') ||
+                             xmlDoc.querySelector('option');
+        
+        if (!selectedOption) {
+            throw new Error('Nenhuma opção de período encontrada');
+        }
+        
+        const periodoCompleto = selectedOption.getAttribute('value');
+        const [ano_leti, sem_leti] = periodoCompleto.split('/');
+        
+        console.log(`📅 Período acadêmico obtido: ${ano_leti}/${sem_leti}`);
+        
+        return {
+            ano_leti: ano_leti.trim(),
+            sem_leti: sem_leti.trim(),
+            periodoCompleto
+        };
+        
+    } catch (error) {
+        console.error('❌ Erro ao obter período acadêmico:', error);
+        // Fallback para valores que funcionem como padrão
+        return {
+            ano_leti: '2025',
+            sem_leti: '2',
+            periodoCompleto: '2025/2',
+            fallback: true
+        };
+    }
+}
+
+// ===== FUNÇÃO AUXILIAR PARA FETCH XML =====
+
+// Função auxiliar para buscar XML (usada tanto para ofertas quanto para alunos)
+async function fetchXML(url, timeout = 15000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, { 
+            signal: controller.signal,
+            headers: {
+                'Accept': 'text/xml, application/xml, */*',
+                'Accept-Charset': 'ISO-8859-1',
+                'User-Agent': 'Mozilla/5.0 (compatible; DataExtractor/1.0)'
+            }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // Usar ISO-8859-1 para decodificar corretamente
+        const arrayBuffer = await response.arrayBuffer();
+        const decoder = new TextDecoder('iso-8859-1');
+        const xmlText = decoder.decode(arrayBuffer);
+        
+        const parser = new DOMParser();
+        return parser.parseFromString(xmlText, 'text/xml');
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
+}
+
+// ===== CAPTURA DE DADOS DE ALUNOS =====
+
+// Função para capturar dados de alunos
+async function captureStudentData(cursoSelecionado, updateStatusFn) {
+    console.log('🎓 Iniciando captura de dados de alunos...');
+    
+    try {
+        // 1. Buscar campus disponíveis
+        updateStatusFn('Buscando campus disponíveis...');
+        
+        // Enviar progresso inicial
+        chrome.runtime?.sendMessage({
+            action: 'studentCaptureProgress',
+            message: 'Buscando campus disponíveis...',
+            progress: 0
+        });
+        
+        const campusList = await fetchCampusList();
+        console.log('🏫 Campus encontrados:', campusList.length);
+        
+        // Enviar progresso após buscar campus
+        chrome.runtime?.sendMessage({
+            action: 'studentCaptureProgress',
+            message: `${campusList.length} campus encontrados`,
+            progress: 10
+        });
+        
+        // 2. Capturar dados de alunos para cada campus
+        const allStudents = [];
+        let processedCampus = 0;
+        
+        for (const campus of campusList) {
+            try {
+                // Progresso: 10% (busca campus) + 80% (processamento) + 10% (finalização)
+                const progressPercent = 10 + Math.floor((processedCampus / campusList.length) * 80);
+                updateStatusFn(`Capturando alunos - Campus ${campus.nome} (${processedCampus + 1}/${campusList.length})`);
+                
+                // Enviar progresso para o popup
+                chrome.runtime?.sendMessage({
+                    action: 'studentCaptureProgress',
+                    message: `Campus ${campus.nome} (${processedCampus + 1}/${campusList.length})`,
+                    progress: progressPercent
+                });
+                
+                const students = await fetchStudentsForCampus(cursoSelecionado.codigo, campus.codigo);
+                allStudents.push(...students);
+                
+                processedCampus++;
+                console.log(`📊 Campus ${campus.nome}: ${students.length} alunos`);
+                
+            } catch (campusError) {
+                console.error(`❌ Erro no campus ${campus.nome}:`, campusError);
+                // Continue com outros campus
+            }
+        }
+        
+        console.log(`🎓 Total de alunos capturados: ${allStudents.length}`);
+        
+        // 3. Converter para CSV
+        chrome.runtime?.sendMessage({
+            action: 'studentCaptureProgress',
+            message: `Processando ${allStudents.length} alunos...`,
+            progress: 90
+        });
+        
+        if (allStudents.length === 0) {
+            throw new Error('Nenhum aluno encontrado');
+        }
+        
+        const csvContent = convertStudentsToCSV(allStudents, cursoSelecionado.nome || '');
+        const csvWithBOM = '\uFEFF' + csvContent;
+        
+        // Progresso final
+        chrome.runtime?.sendMessage({
+            action: 'studentCaptureProgress',
+            message: `✅ ${allStudents.length} alunos capturados`,
+            progress: 100
+        });
+        
+        return csvWithBOM;
+        
+    } catch (error) {
+        console.error('❌ Erro na captura de alunos:', error);
+        throw error;
+    }
+}
+
+// Buscar lista de campus
+async function fetchCampusList() {
+    const url = 'https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/relatorio/wacdrel31/XML/combo/XMLComboInst.jsp';
+    
+    try {
+        console.log('🌐 Buscando campus em:', url);
+        const xmlDoc = await fetchXML(url);
+        const options = xmlDoc.querySelectorAll('option');
+        
+        console.log('🏫 Options encontradas:', options.length);
+        
+        const campusList = [];
+        options.forEach((option, index) => {
+            const codigo = option.getAttribute('value');
+            const texto = option.textContent.trim();
+            
+            console.log(`Campus ${index}: codigo="${codigo}", texto="${texto}"`);
+            
+            if (codigo && texto) {
+                // Extrair nome do campus do texto "1 - UNIVERSIDADE CRUZEIRO DO SUL - SM"
+                const parts = texto.split(' - ');
+                const nome = parts.length >= 3 ? parts[2] : parts[parts.length - 1];
+                
+                campusList.push({
+                    codigo: codigo,
+                    nome: nome,
+                    textoCompleto: texto
+                });
+            }
+        });
+        
+        console.log('🏫 Campus processados:', campusList);
+        return campusList;
+        
+    } catch (error) {
+        console.error('❌ Erro ao buscar campus:', error);
+        throw error;
+    }
+}
+
+// Buscar alunos para um campus específico
+async function fetchStudentsForCampus(codigoCurso, codigoCampus) {
+    // Construir URL com parâmetros
+    // Obter período dinâmico para alunos (formato diferente: "2025,2")
+    const periodo = await getCurrentAcademicPeriod();
+    const anoSemFormatted = `${periodo.ano_leti},${periodo.sem_leti}`;
+    const url = `https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/relatorio/wacdrel31/XML/grid/XMLGridRel.jsp?codCurs=${codigoCurso}&anoSem=${anoSemFormatted}&cod_inst=${codigoCampus}`;
+    
+    try {
+        console.log(`🎓 Buscando alunos em: ${url}`);
+        const xmlDoc = await fetchXML(url);
+        
+        // Verificar se há erro no XML
+        const parseError = xmlDoc.querySelector('parsererror');
+        if (parseError) {
+            throw new Error('Erro ao processar XML de alunos');
+        }
+        
+        // Extrair dados dos alunos
+        const rows = xmlDoc.querySelectorAll('row');
+        const students = [];
+        
+        console.log(`📊 Rows encontradas para campus ${codigoCampus}:`, rows.length);
+        
+        rows.forEach((row, index) => {
+            try {
+                const cells = row.querySelectorAll('cell');
+                
+                if (cells.length >= 12) {
+                    const student = {
+                        rgm: cells[0].textContent.trim(),
+                        nome: cells[1].textContent.trim(),
+                        serie: cells[2].textContent.trim(),
+                        turma: cells[3].textContent.trim(),
+                        turno: cells[4].textContent.trim(),
+                        situacao: cells[5].textContent.trim(),
+                        foneRes: cells[6].textContent.trim(),
+                        foneCel: cells[7].textContent.trim(),
+                        foneCom: cells[8].textContent.trim(),
+                        email: cells[9].textContent.trim(),
+                        idPolo: cells[10].textContent.trim(),
+                        nomePolo: cells[11].textContent.trim(),
+                        codigoCurso: codigoCurso,
+                        codigoCampus: codigoCampus
+                    };
+                    
+                    students.push(student);
+                }
+            } catch (rowError) {
+                console.error(`❌ Erro ao processar linha ${index}:`, rowError);
+            }
+        });
+        
+        console.log(`✅ Campus ${codigoCampus}: ${students.length} alunos processados`);
+        return students;
+        
+    } catch (error) {
+        console.error(`❌ Erro ao buscar alunos do campus ${codigoCampus}:`, error);
+        return []; // Retorna array vazio em caso de erro
+    }
+}
+
+// Funções auxiliares para enriquecimento de dados
+function parseCursoNome(codigoCurso, nomeCompletoTurma = '') {
+    // Primeiro tentar usar o mapeamento global coletado durante a extração de ofertas
+    const nomeFromMapping = getCursoNomeFromMapping(codigoCurso);
+    if (nomeFromMapping) {
+        return {
+            nome: nomeFromMapping,
+            codigo: codigoCurso
+        };
+    }
+    
+    // Fallback: tentar extrair nome do curso da turma se disponível
+    // Formato esperado: "CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS - 68"
+    const cursoMatch = nomeCompletoTurma.match(/^(.+?)\s*-\s*(\d+)$/);
+    if (cursoMatch && cursoMatch[2] === codigoCurso) {
+        return {
+            nome: cursoMatch[1].trim(),
+            codigo: cursoMatch[2].trim()
+        };
+    }
+    
+    // Se não conseguir extrair, retornar apenas o código
+    return { nome: '', codigo: codigoCurso };
+}
+
+function getCampusSigla(codigoCampus) {
+    // Mapping baseado no siaa-config.json
+    const campusMapping = {
+        "1": { "nome": "SÃO MIGUEL", "sigla": "SM" },
+        "5": { "nome": "ANÁLIA FRANCO", "sigla": "AF" },
+        "6": { "nome": "LIBERDADE", "sigla": "LIB" },
+        "40": { "nome": "VILLA LOBOS", "sigla": "VL" },
+        "58": { "nome": "GUARULHOS", "sigla": "GRU" },
+        "59": { "nome": "PAULISTA", "sigla": "PTA" },
+        "72": { "nome": "SANTO AMARO", "sigla": "SA" },
+        "09": { "nome": "EAD", "sigla": "EAD" }
+    };
+    
+    return campusMapping[codigoCampus]?.sigla || '';
+}
+
+// Converter dados de alunos para CSV
+function convertStudentsToCSV(students, cursoNomeCompleto = '') {
+    if (!students || students.length === 0) {
+        return 'RGM,Nome,Série,Turma,Turno,Situação,Fone Res.,Fone Cel.,Fone Com.,E-mail,ID Polo,Nome Polo,Código Curso,Código Campus,Nome do Curso,Sigla Campus\n';
+    }
+    
+    // Cabeçalho atualizado com novas colunas
+    const headers = [
+        'RGM', 'Nome', 'Série', 'Turma', 'Turno', 'Situação',
+        'Fone Res.', 'Fone Cel.', 'Fone Com.', 'E-mail',
+        'ID Polo', 'Nome Polo', 'Código Curso', 'Código Campus',
+        'Nome do Curso', 'Sigla Campus'
+    ];
+    
+    // Construir linhas
+    const lines = [headers.join(',')];
+    
+    students.forEach(student => {
+        // Enriquecer dados do aluno com nome do curso e sigla do campus
+        const cursoInfo = parseCursoNome(student.codigoCurso, cursoNomeCompleto);
+        const siglaCampus = getCampusSigla(student.codigoCampus);
+        
+        const values = [
+            student.rgm || '',
+            student.nome || '',
+            student.serie || '',
+            student.turma || '',
+            student.turno || '',
+            student.situacao || '',
+            student.foneRes || '',
+            student.foneCel || '',
+            student.foneCom || '',
+            student.email || '',
+            student.idPolo || '',
+            student.nomePolo || '',
+            student.codigoCurso || '',
+            student.codigoCampus || '',
+            cursoInfo.nome || '',           // Nome do Curso
+            siglaCampus || ''               // Sigla Campus
+        ];
+        
+        // Escapar valores com vírgulas ou aspas
+        const escapedValues = values.map(value => {
+            const strValue = String(value).replace(/"/g, '""');
+            return strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')
+                ? `"${strValue}"`
+                : strValue;
+        });
+        
+        lines.push(escapedValues.join(','));
+    });
+    
+    return lines.join('\n');
+}
+
 // Expor a função no escopo global para que a extensão possa acessá-la
 window.exportarTabelaSIAA = exportarTabelaSIAA;
+
+// Expor funções de mapeamento de cursos
+window.debugCursoMapping = debugCursoMapping;
+window.saveCursoMapping = saveCursoMapping;
+window.loadCursoMapping = loadCursoMapping;
+window.getCursoNomeFromMapping = getCursoNomeFromMapping;
 
 console.log('✅ Função exportarTabelaSIAA disponível globalmente');

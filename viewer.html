@@ -26,16 +26,16 @@
 
         /* Header da página - sempre fixo no topo */
         .header {
-            background: #ffffffcc;
-            backdrop-filter: saturate(150%) blur(6px);
-            border-bottom: 1px solid #d7d7d7;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            border: 1px solid rgba(203,213,225,0.4);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(8px);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            color: #2b2b2b;
+            color: #1e293b;
         }
 
         .header-top {
@@ -66,20 +66,23 @@
         }
 
         .sidebar-toggle, .columns-btn {
-            background: #ffffff;
-            border: 1px solid #d7d7d7;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            color: #1e293b;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15), 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #3b82f6;
             font-size: 14px;
-            color: #2b2b2b;
             cursor: pointer;
             padding: 8px 12px;
             border-radius: 10px;
-            transition: box-shadow 0.2s ease, transform 0.05s ease, background 0.2s ease;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
 
         .sidebar-toggle:hover, .columns-btn:hover {
-            background: #fafafa;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59,130,246,0.2), 0 2px 6px rgba(0,0,0,0.15);
         }
 
         .app-title { font-weight: 700; font-size: 18px; color: #2b2b2b; }
@@ -740,6 +743,225 @@
             border-bottom: 2px solid #adadad;
         }
 
+        /* Modal para Adicionar Curso */
+        .course-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+        }
+
+        .course-modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: courseModalFadeIn 0.3s ease;
+        }
+
+        @keyframes courseModalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .course-modal-header {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            color: #1e293b;
+            border: 1px solid rgba(203,213,225,0.4);
+            border-bottom: 1px solid rgba(203,213,225,0.6);
+            padding: 20px 25px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .course-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .course-modal-close {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .course-modal-close:hover {
+            background-color: rgba(203,213,225,0.2);
+            color: #1e293b;
+        }
+
+        .course-modal-body {
+            padding: 25px;
+        }
+
+        .course-modal-body p {
+            margin: 0 0 20px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .course-input-group {
+            margin-bottom: 20px;
+        }
+
+        .course-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .course-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+
+        .course-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .course-modal-note {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .course-modal-note small {
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        .course-modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-radius: 0 0 12px 12px;
+            background: #fafafa;
+        }
+
+        .course-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .course-btn-secondary {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .course-btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            box-shadow: 0 4px 12px rgba(100,116,139,0.15), 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        .course-btn-primary {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            color: #1e293b;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15), 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #3b82f6;
+        }
+
+        .course-btn-primary:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(59,130,246,0.2), 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .course-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Switch de modo de visualização no header */
+        .view-mode-switch {
+            display: flex;
+            gap: 2px;
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 2px;
+            margin-left: 20px;
+        }
+
+        .view-mode-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .view-mode-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            color: #495057;
+        }
+
+        .view-mode-btn.active {
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsivo para mobile */
+        @media (max-width: 768px) {
+            .view-mode-switch {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            
+            .view-mode-btn {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+        }
+
         .sidebar-header-nav {
             display: flex;
             align-items: center;
@@ -807,24 +1029,43 @@
         .sidebar-export-btn {
             width: 100%;
             padding: 12px 15px;
-            background: #7a7a7a;
-            color: white;
-            border: 1px solid #adadad;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
+            color: #475569;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
+            border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
-            transition: background-color 0.3s;
+            transition: all 0.2s ease;
         }
 
-        .sidebar-export-btn:hover {
-            background: #666;
+        .sidebar-export-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            box-shadow: 0 4px 12px rgba(100,116,139,0.15), 0 2px 6px rgba(0,0,0,0.12);
+            transform: translateY(-1px);
         }
 
         .sidebar-export-btn:disabled {
-            background: #c9c9c9;
-            color: #777;
+            background: rgba(248,250,252,0.5);
+            color: #94a3b8;
             cursor: not-allowed;
-            border-color: #d6d6d6;
+            border-color: rgba(203,213,225,0.3);
+            box-shadow: none;
+        }
+
+        /* Estilo para títulos das seções do menu */
+        .menu-section-title {
+            color: #2c3e50;
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         /* Seção de Presets */
@@ -932,12 +1173,10 @@
             background: white;
             margin: 20px;
             border: 1px solid #ddd;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            border-radius: 8px;
             min-width: 300px;
-            z-index: 100;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .loading {
@@ -954,7 +1193,11 @@
         <div class="header-top">
             <div class="header-left">
                 <button id="sidebarToggle" class="sidebar-toggle">☰</button>
-                <span class="app-title">SIAA Data Viewer</span>
+                <span class="app-title">Visualizador SIAA</span>
+                <div class="view-mode-switch">
+                    <button id="switchToOfertas" class="view-mode-btn active">📊 Ofertas</button>
+                    <button id="switchToAlunos" class="view-mode-btn">👥 Alunos</button>
+                </div>
             </div>
             <div class="header-center">
                 <div class="columns-controls">
@@ -983,8 +1226,8 @@
             </div>
             <div class="header-right">
                 <div class="stats">
-                    <span class="stat-item">📊 Total de Ofertas: <span id="totalRecords">0</span></span>
-                    <span class="stat-item">🔍 Ofertas Filtradas: <span id="filteredRecords">0</span></span>
+                    <span class="stat-item">Total: <span id="totalRecords">0</span></span>
+                    <span class="stat-item">Filtrados: <span id="filteredRecords">0</span></span>
                 </div>
             </div>
         </div>
@@ -1007,19 +1250,45 @@
                 <div class="date-label">📅 Última Atualização</div>
                 <div class="date-value" id="sidebarLastUpdate">-</div>
             </div>
-            <button id="exportBtn" class="sidebar-export-btn">📥 Exportar Visível</button>
         </div>
+        
         <div class="controls">
+            <!-- Seção de visualização removida - agora no header -->
 
-            <!-- Exportar/Importar CSV Completo -->
-            <div class="export-import-section" style="margin: 12px 12px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                <h4 style="color:#2c3e50; margin: 0 0 8px 0; font-size: 13px;">📦 Exportar / Importar</h4>
-                <div style="display:flex; flex-direction: column; gap:8px;">
+            <!-- Seção: Exportação Rápida -->
+            <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                <h4 class="menu-section-title">📊 Exportação Rápida</h4>
+                <div class="menu-buttons">
+                    <button id="exportBtn" class="sidebar-export-btn">📥 Exportar Visível</button>
+                </div>
+            </div>
+
+            <!-- Seção: Gerenciamento de Dados -->
+            <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                <h4 class="menu-section-title">📦 Gerenciamento de Dados</h4>
+                <div class="menu-buttons">
                     <button id="exportAllBtn" class="sidebar-export-btn">⬇️ Exportar CSV Completo</button>
                     <button id="importAllBtn" class="sidebar-export-btn">⬆️ Importar CSV Completo</button>
                     <button id="mergeAllBtn" class="sidebar-export-btn">🔁 Importar e Mesclar CSV</button>
                     <input id="importFileInput" type="file" accept=".csv" style="display:none;" />
                     <input id="mergeFileInput" type="file" accept=".csv" style="display:none;" />
+                </div>
+            </div>
+
+            <!-- Seção: Configuração -->
+            <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                <h4 class="menu-section-title">⚙️ Configuração</h4>
+                <div class="menu-buttons">
+                    <button id="addCourseBtn" class="sidebar-export-btn">➕ Adicionar Curso</button>
+                </div>
+            </div>
+
+            <!-- Seção: Manutenção de Dados -->
+            <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px;">
+                <h4 class="menu-section-title">🧹 Manutenção</h4>
+                <div class="menu-buttons">
+                    <button id="clearDuplicatesBtn" class="sidebar-export-btn">🔄 Limpar Duplicatas</button>
+                    <button id="resetDataBtn" class="sidebar-export-btn" style="background: #dc3545;">🗑️ Limpar Todos os Dados</button>
                 </div>
             </div>
 
@@ -1060,7 +1329,35 @@
         </div>
     </div>
 
+    <!-- Modal para Adicionar Curso -->
+    <div id="addCourseModal" class="course-modal">
+        <div class="course-modal-content">
+            <div class="course-modal-header">
+                <h3>➕ Adicionar Curso</h3>
+                <button id="closeCourseModal" class="course-modal-close">&times;</button>
+            </div>
+            <div class="course-modal-body">
+                <p>Digite o código do curso que deseja adicionar à lista:</p>
+                <div class="course-input-group">
+                    <label for="courseCodeInput">Código do Curso:</label>
+                    <input type="text" id="courseCodeInput" class="course-input" placeholder="Ex: 16, 68, 121..." maxlength="10">
+                </div>
+                <div class="course-input-group">
+                    <label for="courseNameInput">Nome do Curso (opcional):</label>
+                    <input type="text" id="courseNameInput" class="course-input" placeholder="Ex: Ciência da Computação">
+                </div>
+                <div class="course-modal-note">
+                    <small>💡 O curso será adicionado à sua lista pessoal e ficará disponível no popup da extensão.</small>
+                </div>
+            </div>
+            <div class="course-modal-footer">
+                <button id="cancelCourseBtn" class="course-btn course-btn-secondary">Cancelar</button>
+                <button id="saveCourseBtn" class="course-btn course-btn-primary">Adicionar Curso</button>
+            </div>
+        </div>
+    </div>
 
+    <script src="config-manager.js"></script>
     <script src="viewer.js"></script>
 </body>
 </html> 

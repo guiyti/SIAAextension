@@ -1,42 +1,145 @@
 // viewer.js
 // Variáveis globais
-const PRESETS = {
+
+// Presets para OFERTAS
+const PRESETS_OFERTAS = {
     PADRAO: {
         order: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor'],
         visible: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor']
     },
     PRESET_1_BASICO: {
-        // 1) Cód Disc. - Nome Disciplina - Sigla Campus - Hora - ID Oferta - Nome Professor
+        // Preset 1 (padrão) - Básico: Código, Nome, Campus, Horário, Professor
         order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
         visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
     },
     PRESET_2_DETALHADO: {
-        // 2) Cód Disc. - Nome Disciplina - Sigla Campus - Cód. Horário - Hora - ID Oferta - Sala - Total Matriculados - Nome Professor
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor']
+        // Preset 2 - Detalhado: + Vagas e Matriculados
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes']
     },
     PRESET_3_CURSO: {
-        // 3) Nome Disciplina - Sigla Campus - Hora - Curso - Nome Professor
-        order: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor'],
-        visible: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor']
+        // Preset 3 - Curso: + Período, Curso
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso']
+    },
+    PRESET_COMPLETO: {
+        // Preset 4 - Todas as colunas
+        order: [],
+        visible: []
     }
 };
 
-// Presets fixos (defaults) para restaurar no Redefinir
-const PRESET_DEFAULTS = {
+// Presets para ALUNOS
+const PRESETS_ALUNOS = {
+    PADRAO: {
+        order: ['RGM', 'Nome', 'Série', 'Turma', 'Turno', 'Situação', 'Fone Res.', 'Fone Cel.', 'Fone Com.', 'E-mail', 'ID Polo', 'Nome Polo', 'Código Curso', 'Código Campus', 'Nome do Curso', 'Sigla Campus'],
+        visible: ['RGM', 'Nome', 'Série', 'Turma', 'Turno', 'Situação', 'Fone Res.', 'Fone Cel.', 'Fone Com.', 'E-mail', 'ID Polo', 'Nome Polo', 'Código Curso', 'Código Campus', 'Nome do Curso', 'Sigla Campus']
+    },
+    PRESET_1_BASICO: {
+        // Preset 1 (padrão) - RGM, Nome, E-mail
+        order: ['RGM', 'Nome', 'E-mail'],
+        visible: ['RGM', 'Nome', 'E-mail']
+    },
+    PRESET_2_DETALHADO: {
+        // Preset 2 - + Turma, Turno
+        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno'],
+        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno']
+    },
+    PRESET_3_CURSO: {
+        // Preset 3 - + Nome do Curso, Sigla Campus
+        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus'],
+        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus']
+    },
+    PRESET_COMPLETO: {
+        // Preset 4 - Todas as colunas
+        order: [],
+        visible: []
+    }
+};
+
+// Função para obter presets baseado no modo atual
+function getCurrentPresets() {
+    return currentViewMode === 'alunos' ? PRESETS_ALUNOS : PRESETS_OFERTAS;
+}
+
+// Presets fixos (defaults) para restaurar no Redefinir - OFERTAS
+const PRESET_DEFAULTS_OFERTAS = {
     PRESET_1_BASICO: {
         order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
         visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
     },
     PRESET_2_DETALHADO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Total Matriculados', 'Nome Professor']
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes']
     },
     PRESET_3_CURSO: {
-        order: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor'],
-        visible: ['Nome Disciplina', 'Sigla Campus', 'Hora', 'Curso', 'Nome Professor']
+        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso'],
+        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso']
+    },
+    PRESET_COMPLETO: {
+        order: [],
+        visible: []
     }
 };
+
+// Presets fixos (defaults) para restaurar no Redefinir - ALUNOS
+const PRESET_DEFAULTS_ALUNOS = {
+    PRESET_1_BASICO: {
+        order: ['RGM', 'Nome', 'E-mail'],
+        visible: ['RGM', 'Nome', 'E-mail']
+    },
+    PRESET_2_DETALHADO: {
+        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno'],
+        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno']
+    },
+    PRESET_3_CURSO: {
+        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus'],
+        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus']
+    },
+    PRESET_COMPLETO: {
+        order: [],
+        visible: []
+    }
+};
+
+// Função para obter defaults baseado no modo atual
+function getCurrentPresetDefaults() {
+    return currentViewMode === 'alunos' ? PRESET_DEFAULTS_ALUNOS : PRESET_DEFAULTS_OFERTAS;
+}
+
+// Função para obter configuração de preset
+function getPresetConfig(presetKey, headers) {
+    const presets = getCurrentPresets();
+    const defaults = getCurrentPresetDefaults();
+    
+    if (!presets[presetKey] && !defaults[presetKey]) {
+        console.warn('Preset não encontrado:', presetKey);
+        return null;
+    }
+    
+    let config = presets[presetKey] || defaults[presetKey];
+    
+    // Se for PRESET_COMPLETO, usar todas as colunas disponíveis
+    if (presetKey === 'PRESET_COMPLETO') {
+        config = {
+            order: headers || [],
+            visible: headers || []
+        };
+    }
+    
+    // Filtrar apenas colunas que existem nos dados atuais
+    if (headers && headers.length > 0) {
+        const validOrder = config.order.filter(col => headers.includes(col));
+        const validVisible = config.visible.filter(col => headers.includes(col));
+        
+        return {
+            order: validOrder,
+            visible: validVisible
+        };
+    }
+    
+    return config;
+}
 
 // Overrides em memória para o preset selecionado via botão Salvar
 let PRESETS_CURRENT = {};
@@ -73,7 +176,8 @@ function getPresetConfig(presetKey, headers) {
     // 2) Depois overrides em memória (sessão)
     if (PRESETS_CURRENT[presetKey]) return normalize(PRESETS_CURRENT[presetKey]);
     // 3) Caso contrário, default
-    return normalize(PRESET_DEFAULTS[presetKey]);
+    const defaults = getCurrentPresetDefaults();
+    return normalize(defaults[presetKey]);
 }
 
 function getPresetDefault(presetKey, headers) {
@@ -128,7 +232,7 @@ let visibleColumns = new Set();
 let columnWidths = {}; // Armazenará larguras por cabeçalho
 let columnOrder = [];  // Ordem atual das colunas
 let dragSrcIndex = null; // Aux para DnD
-let columnFilters = {}; // Filtros por coluna
+// Removido: columnFilters agora é parte do filterStates
 let activeDropdown = null; // Dropdown de sugestões ativo
 let currentPresetSelection = ''; // Valor selecionado no select de presets
 
@@ -318,14 +422,15 @@ async function finishDataLoading() {
 
     // Aplicar preset selecionado ANTES de montar a visualização para manter sincronizado
     try {
-        const sel = await Storage.get(['viewer_selected_preset']);
-        currentPresetSelection = sel.viewer_selected_preset || '__builtin__PRESET_COMPLETO';
+        const presetKey = getPresetStorageKey();
+        const sel = await Storage.get([presetKey]);
+        currentPresetSelection = sel[presetKey] || '__builtin__PRESET_1_BASICO';
         // Carregar overrides persistentes em cache para uso imediato
         await getBuiltinOverrides();
-        const presetKey = currentPresetSelection.startsWith('__builtin__')
+        const presetConfigKey = currentPresetSelection.startsWith('__builtin__')
             ? currentPresetSelection.replace('__builtin__','')
-            : 'PRESET_COMPLETO';
-        const cfg = getPresetConfig(presetKey, headers);
+            : 'PRESET_1_BASICO';
+        const cfg = getPresetConfig(presetConfigKey, headers);
         if (cfg) {
             columnOrder = cfg.order;
             visibleColumns = new Set(cfg.visible);
@@ -354,20 +459,74 @@ async function finishDataLoading() {
         updateColumnVisibility();
     }, 100);
     
-    // Esconder loading e mostrar tabela
-    elements.loadingMessage.style.display = 'none';
-    elements.tableWrapper.style.display = 'block';
+    // Mostrar dados (esconder dialog)
+    showData();
     
     console.log('✅ Dados carregados com sucesso!');
     // Atualizar estado dos botões de Importar/Mesclar
     updateDataActionButtonsUI();
 }
 
-// Mostrar mensagem de nenhum dado
+// Mostrar dados na tabela (esconder dialog)
+function showData() {
+    elements.loadingMessage.style.display = 'none';
+    elements.noDataMessage.style.display = 'none';
+    elements.tableWrapper.style.display = 'block';
+}
+
+// Mostrar mensagem de nenhum dado (dinâmica baseada no modo)
 function showNoData() {
     elements.loadingMessage.style.display = 'none';
     elements.noDataMessage.style.display = 'block';
     elements.tableWrapper.style.display = 'none';
+    
+    // Atualizar mensagem baseada no modo atual
+    const noDataElement = document.getElementById('noDataMessage');
+    if (noDataElement) {
+        if (currentViewMode === 'alunos') {
+            noDataElement.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #666;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">🎓</div>
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Nenhum dado de alunos disponível</h3>
+                    <p style="margin-bottom: 20px; line-height: 1.6;">
+                        Não há dados de alunos capturados ainda.<br>
+                        Para capturar dados de alunos:
+                    </p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <strong>📋 Como capturar dados de alunos:</strong><br><br>
+                        <strong>1️⃣ Acesse o SIAA e faça login</strong><br>
+                        <strong>2️⃣ Navegue até:</strong><br>
+                        &nbsp;&nbsp;• <strong>Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br>
+                        &nbsp;&nbsp;• <strong>Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
+                        <strong>3️⃣ Use a extensão para capturar</strong><br>
+                        <strong>4️⃣ Os dados aparecerão automaticamente aqui</strong><br><br>
+                        <small style="color: #e67e22;">💡 <strong>Importante:</strong> Ambas as seções precisam estar acessíveis para captura completa dos dados de alunos</small>
+                    </div>
+                </div>
+            `;
+        } else {
+            noDataElement.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #666;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
+                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Nenhum dado de ofertas disponível</h3>
+                    <p style="margin-bottom: 20px; line-height: 1.6;">
+                        Não há dados de ofertas capturados ainda.<br>
+                        Para capturar dados de ofertas:
+                    </p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        <strong>📋 Como capturar dados de ofertas:</strong><br><br>
+                        <strong>1️⃣ Acesse o SIAA e faça login</strong><br>
+                        <strong>2️⃣ Navegue até:</strong><br>
+                        &nbsp;&nbsp;• <strong>Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br>
+                        &nbsp;&nbsp;• <strong>Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
+                        <strong>3️⃣ Use a extensão para capturar</strong><br>
+                        <strong>4️⃣ Os dados aparecerão automaticamente aqui</strong><br><br>
+                        <small style="color: #e67e22;">💡 <strong>Importante:</strong> Ambas as seções precisam estar acessíveis para captura completa (ofertas + alunos)</small>
+                    </div>
+                </div>
+            `;
+        }
+    }
     
     // Limpar elementos de estatísticas
     elements.totalRecords.textContent = '0';
@@ -532,9 +691,9 @@ function setupTable() {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'column-filter-input';
-        input.placeholder = 'Filtrar...';
-        input.value = columnFilters[header] || '';
-        if (columnFilters[header]) {
+        input.placeholder = 'Filtrar... (use ; para múltiplos valores)';
+        input.value = getCurrentColumnFilters()[header] || '';
+        if (getCurrentColumnFilters()[header]) {
             th.classList.add('column-filter-active');
             input.classList.add('active');
         }
@@ -544,11 +703,7 @@ function setupTable() {
         });
         input.addEventListener('input', debounce(() => {
             const val = input.value || '';
-            if (val) {
-                columnFilters[header] = val;
-            } else {
-                delete columnFilters[header];
-            }
+            setCurrentColumnFilter(header, val);
             toggleFilterActiveStyles(header, th, input);
             applyFilters();
             showColumnFilterDropdown(input, header);
@@ -571,7 +726,7 @@ function setupTable() {
 
 // Aplicar estilos ativos ao cabeçalho/input conforme estado do filtro
 function toggleFilterActiveStyles(header, th, input) {
-    const isActive = Boolean(columnFilters[header]);
+    const isActive = Boolean(getCurrentColumnFilters()[header]);
     if (isActive) {
         th.classList.add('column-filter-active');
         input.classList.add('active');
@@ -1051,6 +1206,27 @@ function saveOrderFromOrderList() {
     }
 }
 
+// Função auxiliar para verificar se um valor corresponde a múltiplos termos separados por ponto e vírgula
+function matchesMultipleValues(valueToCheck, filterTerm) {
+    if (!filterTerm || !filterTerm.trim()) return true;
+    
+    const value = String(valueToCheck || '').toLowerCase();
+    const filterStr = String(filterTerm).toLowerCase();
+    
+    // Se contém ponto e vírgula, trata como múltiplos valores (OR)
+    if (filterStr.includes(';')) {
+        const terms = filterStr.split(';')
+            .map(term => term.trim())
+            .filter(term => term.length > 0);
+        
+        // Retorna true se qualquer um dos termos for encontrado
+        return terms.some(term => value.includes(term));
+    } else {
+        // Comportamento original: busca simples por inclusão
+        return value.includes(filterStr);
+    }
+}
+
 // Aplicar filtros
 function applyFilters() {
     let filtered = [...allData];
@@ -1071,49 +1247,46 @@ function applyFilters() {
         console.log('📊 Resultados da busca:', filtered.length, 'registros encontrados');
     }
     
-    // Filtros por coluna (AND cumulativo)
-    const entries = Object.entries(columnFilters);
+    // Filtros por coluna (AND cumulativo) - com suporte a múltiplos valores
+    const entries = Object.entries(getCurrentColumnFilters());
     if (entries.length > 0) {
         filtered = filtered.filter(row => {
             return entries.every(([col, term]) => {
                 const value = row[col] || '';
-                return String(value).toLowerCase().includes(String(term).toLowerCase());
+                return matchesMultipleValues(value, term);
             });
         });
     }
     
-    // Filtros específicos
+    // Filtros específicos - com suporte a múltiplos valores
     const campusFilter = elements.campusFilter ? elements.campusFilter.value : '';
     if (campusFilter) {
-        filtered = filtered.filter(row => row['Sigla Campus'] === campusFilter);
+        filtered = filtered.filter(row => matchesMultipleValues(row['Sigla Campus'], campusFilter));
     }
     
     const periodoFilter = elements.periodoFilter ? elements.periodoFilter.value : '';
     if (periodoFilter) {
-        filtered = filtered.filter(row => row['Período'] === periodoFilter);
+        filtered = filtered.filter(row => matchesMultipleValues(row['Período'], periodoFilter));
     }
     
     const disciplinaFilter = elements.disciplinaFilter ? elements.disciplinaFilter.value : '';
     if (disciplinaFilter) {
-        filtered = filtered.filter(row => row['Nome Disciplina'] === disciplinaFilter);
+        filtered = filtered.filter(row => matchesMultipleValues(row['Nome Disciplina'], disciplinaFilter));
     }
     
     const professorFilter = elements.professorFilter ? elements.professorFilter.value : '';
     if (professorFilter) {
-        filtered = filtered.filter(row => row['Nome Professor'] === professorFilter);
+        filtered = filtered.filter(row => matchesMultipleValues(row['Nome Professor'], professorFilter));
     }
 
     const cursoFilter = elements.cursoFilter ? elements.cursoFilter.value : '';
     if (cursoFilter) {
-        filtered = filtered.filter(row => (row['Curso'] || '').includes(cursoFilter));
+        filtered = filtered.filter(row => matchesMultipleValues(row['Curso'], cursoFilter));
     }
 
     const horarioFilter = elements.horarioFilter ? elements.horarioFilter.value : '';
     if (horarioFilter) {
-        filtered = filtered.filter(row => {
-            const horario = row['Hora'] || '';
-            return horario.includes(horarioFilter);
-        });
+        filtered = filtered.filter(row => matchesMultipleValues(row['Hora'], horarioFilter));
     }
     
     filteredData = filtered;
@@ -1124,10 +1297,21 @@ function applyFilters() {
 
 // Renderizar tabela
 function renderTable() {
+    console.log('📋 renderTable iniciado');
+    console.log('📊 Estado atual:', {
+        filteredDataLength: filteredData.length,
+        currentViewMode: currentViewMode,
+        currentDataLength: window.currentData ? window.currentData.length : 0,
+        currentColumns: window.currentColumns ? window.currentColumns.length : 0
+    });
+    
     if (filteredData.length === 0) {
+        console.log('❌ Nenhum dado filtrado encontrado');
         elements.tableBody.innerHTML = '<tr><td colspan="100%" style="text-align: center; padding: 20px; color: #666;">Nenhum registro encontrado com os filtros aplicados</td></tr>';
         return;
     }
+    
+    console.log('✅ Renderizando', filteredData.length, 'registros');
     
     const headers = columnOrder;
     elements.tableBody.innerHTML = '';
@@ -1266,7 +1450,8 @@ function sortTable(column) {
 
 // Limpar filtros
 function clearFilters() {
-    // limpar selects (se existirem)
+    // Limpar apenas os filtros do modo atual
+    if (elements.searchInput) elements.searchInput.value = '';
     if (elements.campusFilter) elements.campusFilter.value = '';
     if (elements.periodoFilter) elements.periodoFilter.value = '';
     if (elements.disciplinaFilter) elements.disciplinaFilter.value = '';
@@ -1275,7 +1460,7 @@ function clearFilters() {
     if (elements.horarioFilter) elements.horarioFilter.value = '';
     
     // Limpar filtros por coluna + inputs
-    columnFilters = {};
+    filterStates[currentViewMode].columnFilters = {};
     document.querySelectorAll('.column-filter-input').forEach(inp => { inp.value = ''; inp.classList.remove('active'); });
     document.querySelectorAll('thead th').forEach(th => th.classList.remove('column-filter-active'));
     closeActiveDropdown();
@@ -1286,9 +1471,19 @@ function clearFilters() {
         th.classList.remove('sorted-asc', 'sorted-desc');
     });
     
-    // Feedback visual
-    // sem foco em busca global
-    console.log('🧹 Filtros limpos');
+    // Limpar também o estado salvo para o modo atual
+    filterStates[currentViewMode] = {
+        searchInput: '',
+        campusFilter: '',
+        periodoFilter: '',
+        disciplinaFilter: '',
+        professorFilter: '',
+        cursoFilter: '',
+        horarioFilter: '',
+        columnFilters: {}
+    };
+    
+    console.log(`🧹 Filtros limpos para modo ${currentViewMode}`);
     
     applyFilters();
 }
@@ -1297,7 +1492,7 @@ function clearFilters() {
 function showColumnFilterDropdown(inputEl, header) {
     closeActiveDropdown();
     // Base: aplicar todos os filtros exceto o da coluna atual
-    const tempFilters = { ...columnFilters };
+    const tempFilters = { ...getCurrentColumnFilters() };
     delete tempFilters[header];
     let base = [...allData];
     // Busca global
@@ -1306,34 +1501,44 @@ function showColumnFilterDropdown(inputEl, header) {
         const visibleColumnsList = Array.from(visibleColumns);
         base = base.filter(row => visibleColumnsList.some(c => String(row[c]||'').toLowerCase().includes(searchTerm)));
     }
-    // Filtros específicos (sidebar) - null safe
+    // Filtros específicos (sidebar) - null safe - com suporte a múltiplos valores
     const campusFilter = elements.campusFilter ? elements.campusFilter.value : '';
-    if (campusFilter) base = base.filter(r => r['Sigla Campus'] === campusFilter);
+    if (campusFilter) base = base.filter(r => matchesMultipleValues(r['Sigla Campus'], campusFilter));
     const periodoFilter = elements.periodoFilter ? elements.periodoFilter.value : '';
-    if (periodoFilter) base = base.filter(r => r['Período'] === periodoFilter);
+    if (periodoFilter) base = base.filter(r => matchesMultipleValues(r['Período'], periodoFilter));
     const disciplinaFilter = elements.disciplinaFilter ? elements.disciplinaFilter.value : '';
-    if (disciplinaFilter) base = base.filter(r => r['Nome Disciplina'] === disciplinaFilter);
+    if (disciplinaFilter) base = base.filter(r => matchesMultipleValues(r['Nome Disciplina'], disciplinaFilter));
     const professorFilter = elements.professorFilter ? elements.professorFilter.value : '';
-    if (professorFilter) base = base.filter(r => r['Nome Professor'] === professorFilter);
+    if (professorFilter) base = base.filter(r => matchesMultipleValues(r['Nome Professor'], professorFilter));
     const cursoFilter = elements.cursoFilter ? elements.cursoFilter.value : '';
-    if (cursoFilter) base = base.filter(r => (r['Curso']||'').includes(cursoFilter));
+    if (cursoFilter) base = base.filter(r => matchesMultipleValues(r['Curso'], cursoFilter));
     const horarioFilter = elements.horarioFilter ? elements.horarioFilter.value : '';
-    if (horarioFilter) base = base.filter(r => (r['Hora']||'').includes(horarioFilter));
-    // Filtros por coluna (exceto atual)
+    if (horarioFilter) base = base.filter(r => matchesMultipleValues(r['Hora'], horarioFilter));
+    // Filtros por coluna (exceto atual) - com suporte a múltiplos valores
     const other = Object.entries(tempFilters);
     if (other.length) {
-        base = base.filter(row => other.every(([col, term]) => String(row[col]||'').toLowerCase().includes(String(term).toLowerCase())));
+        base = base.filter(row => other.every(([col, term]) => matchesMultipleValues(row[col], term)));
     }
 
     // Valores únicos
     const uniques = [...new Set(base.map(r => (r[header]||'').trim()).filter(v => v !== ''))]
         .sort((a,b)=>String(a).localeCompare(String(b),'pt-BR'));
 
-    // Filtrar sugestões conforme texto digitado no input
+    // Filtrar sugestões conforme texto digitado no input - considerando múltiplos valores
     const typed = String(inputEl.value || '').toLowerCase();
-    let list = typed
-        ? uniques.filter(v => String(v).toLowerCase().includes(typed))
-        : uniques;
+    let list;
+    if (typed) {
+        // Se há ponto e vírgula, filtrar pelo último termo (o que está sendo digitado)
+        const lastTerm = typed.includes(';') 
+            ? typed.split(';').pop().trim() 
+            : typed;
+        
+        list = lastTerm 
+            ? uniques.filter(v => String(v).toLowerCase().includes(lastTerm))
+            : uniques;
+    } else {
+        list = uniques;
+    }
 
     // Ordenação especial para coluna Hora: Seg→Sáb e horário inicial
     if (header === 'Hora') {
@@ -1390,8 +1595,34 @@ function showColumnFilterDropdown(inputEl, header) {
             opt.title = val;
             opt.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                inputEl.value = val;
-                columnFilters[header] = val;
+                
+                // Lidar com múltiplos valores separados por ponto e vírgula
+                const currentValue = inputEl.value || '';
+                let newValue;
+                
+                if (currentValue.includes(';')) {
+                    // Se já há múltiplos valores, substituir o último termo incompleto
+                    const terms = currentValue.split(';');
+                    const lastTerm = terms[terms.length - 1].trim();
+                    
+                    if (lastTerm === '' || val.toLowerCase().startsWith(lastTerm.toLowerCase())) {
+                        // Se o último termo está vazio ou a sugestão completa o termo atual
+                        terms[terms.length - 1] = val;
+                        newValue = terms.join(';');
+                    } else {
+                        // Se é um termo completamente novo, adicionar
+                        newValue = currentValue.trim() + ';' + val;
+                    }
+                } else if (currentValue.trim() === '' || val.toLowerCase().startsWith(currentValue.trim().toLowerCase())) {
+                    // Se não há valor ou a sugestão completa o valor atual, substituir
+                    newValue = val;
+                } else {
+                    // Se há um valor e é diferente, substituir (usuário clicou numa opção específica)
+                    newValue = val;
+                }
+                
+                inputEl.value = newValue;
+                setCurrentColumnFilter(header, newValue);
                 toggleFilterActiveStyles(header, inputEl.closest('th'), inputEl);
                 applyFilters();
                 closeActiveDropdown();
@@ -1436,7 +1667,7 @@ function resetColumns() {
     const headers = Object.keys(allData[0]);
     
     // Redefinir de acordo com o preset atualmente selecionado
-    let presetKey = 'PRESET_COMPLETO';
+    let presetKey = 'PRESET_1_BASICO';
     if (currentPresetSelection && currentPresetSelection.startsWith('__builtin__')) {
         presetKey = currentPresetSelection.replace('__builtin__','');
     }
@@ -1482,14 +1713,19 @@ function resetColumns() {
     const btn = elements.resetColumnsBtn;
     const originalText = btn.textContent;
     const originalBg = btn.style.background;
+    const originalColor = btn.style.color;
     btn.textContent = '✅ Redefinido!';
-    btn.style.background = '#27ae60';
-    btn.style.color = 'white';
+    btn.style.background = 'rgba(255,255,255,0.95)';
+    btn.style.color = '#1e293b';
+    btn.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.2), inset 0 1px 0 rgba(255,255,255,0.4)';
+    btn.style.borderLeft = '3px solid #22c55e';
     
     setTimeout(() => {
         btn.textContent = originalText;
-        btn.style.background = '';
-        btn.style.color = '';
+        btn.style.background = originalBg;
+        btn.style.color = originalColor;
+        btn.style.boxShadow = '';
+        btn.style.borderLeft = '';
     }, 1500);
 }
 
@@ -1519,13 +1755,19 @@ function savePreset() {
     const btn = elements.savePresetBtn;
     if (btn) {
     const originalText = btn.textContent;
+    const originalBg = btn.style.background;
+    const originalColor = btn.style.color;
     btn.textContent = '✅ Salvo!';
-    btn.style.background = '#27ae60';
-    btn.style.color = 'white';
+    btn.style.background = 'rgba(255,255,255,0.95)';
+    btn.style.color = '#1e293b';
+    btn.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.2), inset 0 1px 0 rgba(255,255,255,0.4)';
+    btn.style.borderLeft = '3px solid #22c55e';
     setTimeout(() => {
         btn.textContent = originalText;
-        btn.style.background = '';
-        btn.style.color = '';
+        btn.style.background = originalBg;
+        btn.style.color = originalColor;
+        btn.style.boxShadow = '';
+        btn.style.borderLeft = '';
         }, 1200);
     }
 }
@@ -1537,8 +1779,11 @@ function loadSelectedPreset() {
         return; // Nada selecionado, não faz nada
     }
     currentPresetSelection = selectedPreset;
-    // Persistir seleção para sincronizar na próxima carga
-    Storage.set({ viewer_selected_preset: currentPresetSelection });
+    // Persistir seleção para sincronizar na próxima carga (específico por modo)
+    const storageKey = getPresetStorageKey();
+    const storageData = {};
+    storageData[storageKey] = currentPresetSelection;
+    Storage.set(storageData);
     if (selectedPreset.startsWith('__builtin__')) {
         const key = selectedPreset.replace('__builtin__','');
         applyBuiltInPreset(key);
@@ -1651,12 +1896,24 @@ async function getPresets() {
 // Carregar select de presets no header (fixos)
 async function loadPresetsSelect() {
     elements.presetSelect.innerHTML = '';
-    const builtins = [
-        { key: 'PRESET_1_BASICO', label: 'Preset 1 • Básico' },
-        { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • Detalhado' },
-        { key: 'PRESET_3_CURSO', label: 'Preset 3 • Curso' },
-        { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
-    ];
+    
+    // Definir labels baseado no modo atual
+    let builtins;
+    if (currentViewMode === 'alunos') {
+        builtins = [
+            { key: 'PRESET_1_BASICO', label: 'Preset 1 • RGM, Nome, E-mail' },
+            { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • + Turma, Turno' },
+            { key: 'PRESET_3_CURSO', label: 'Preset 3 • + Código Curso, Campus' },
+            { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
+        ];
+    } else {
+        builtins = [
+            { key: 'PRESET_1_BASICO', label: 'Preset 1 • Básico' },
+            { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • Detalhado' },
+            { key: 'PRESET_3_CURSO', label: 'Preset 3 • Curso' },
+            { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
+        ];
+    }
     builtins.forEach(b => {
         const option = document.createElement('option');
         option.value = `__builtin__${b.key}`;
@@ -1935,12 +2192,19 @@ async function clearAllData() {
         const clearDataBtn = document.getElementById('clearDataBtn');
         if (clearDataBtn) {
             const originalText = clearDataBtn.innerHTML;
+            const originalBg = clearDataBtn.style.background;
             clearDataBtn.innerHTML = '✅ Dados Limpos!';
-            clearDataBtn.style.background = '#4caf50';
+            clearDataBtn.style.background = 'rgba(255,255,255,0.95)';
+            clearDataBtn.style.color = '#1e293b';
+            clearDataBtn.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.2), inset 0 1px 0 rgba(255,255,255,0.4)';
+            clearDataBtn.style.borderLeft = '3px solid #22c55e';
             
             setTimeout(() => {
                 clearDataBtn.innerHTML = originalText;
-                clearDataBtn.style.background = '#d32f2f';
+                clearDataBtn.style.background = originalBg;
+                clearDataBtn.style.color = '';
+                clearDataBtn.style.boxShadow = '';
+                clearDataBtn.style.borderLeft = '';
             }, 3000);
         }
         
@@ -2085,5 +2349,1206 @@ function setupHeaderEvents() {
         if (header) {
             headerObserver.observe(header);
         }
+    }
+
+    // ===== FUNCIONALIDADE DE ADICIONAR CURSO =====
+    setupAddCourseModal();
+
+    // ===== FUNCIONALIDADE DE MODO DE VISUALIZAÇÃO =====
+    setupViewModeToggle();
+    
+    // ===== FUNCIONALIDADE DE MANUTENÇÃO DE DADOS =====
+    setupDataMaintenanceButtons();
+}
+
+// Configurar modal de adicionar curso
+function setupAddCourseModal() {
+    const addCourseBtn = document.getElementById('addCourseBtn');
+    const modal = document.getElementById('addCourseModal');
+    const closeBtn = document.getElementById('closeCourseModal');
+    const cancelBtn = document.getElementById('cancelCourseBtn');
+    const saveBtn = document.getElementById('saveCourseBtn');
+    const codeInput = document.getElementById('courseCodeInput');
+    const nameInput = document.getElementById('courseNameInput');
+
+    if (!addCourseBtn || !modal) return;
+
+    // Abrir modal
+    addCourseBtn.addEventListener('click', () => {
+        modal.style.display = 'block';
+        codeInput.focus();
+        codeInput.value = '';
+        nameInput.value = '';
+    });
+
+    // Fechar modal
+    const closeModal = () => {
+        modal.style.display = 'none';
+        codeInput.value = '';
+        nameInput.value = '';
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+
+    // Fechar ao clicar fora do modal
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Fechar com ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            closeModal();
+        }
+    });
+
+    // Permitir Enter para salvar
+    codeInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveBtn?.click();
+        }
+    });
+
+    nameInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveBtn?.click();
+        }
+    });
+
+    // Salvar curso
+    saveBtn?.addEventListener('click', async () => {
+        const code = codeInput.value.trim();
+        
+        if (!code) {
+            alert('Por favor, digite o código do curso.');
+            codeInput.focus();
+            return;
+        }
+
+        // Validar código (apenas números)
+        if (!/^\d+$/.test(code)) {
+            alert('O código do curso deve conter apenas números.');
+            codeInput.focus();
+            return;
+        }
+
+        const name = nameInput.value.trim() || `Curso ${code}`;
+
+        try {
+            await addCourseToStorage(code, name);
+            closeModal();
+            
+            // Mostrar sucesso
+            showNotification(`✅ Curso ${code} adicionado com sucesso!`, 'success');
+            
+        } catch (error) {
+            console.error('Erro ao adicionar curso:', error);
+            alert('Erro ao adicionar curso. Tente novamente.');
+        }
+    });
+}
+
+// Adicionar curso ao storage
+async function addCourseToStorage(code, name) {
+    // Buscar cursos manuais existentes
+    const storage = await Storage.get(['siaa_manual_courses']);
+    const manualCourses = storage.siaa_manual_courses || [];
+    
+    // Verificar se já existe
+    const exists = manualCourses.find(course => course.codigo === code);
+    if (exists) {
+        throw new Error(`Curso ${code} já está na lista.`);
+    }
+    
+    // Adicionar novo curso
+    const newCourse = {
+        codigo: code,
+        nome: name,
+        manual: true,
+        addedAt: Date.now()
+    };
+    
+    manualCourses.push(newCourse);
+    
+    // Salvar no storage
+    await Storage.set({
+        siaa_manual_courses: manualCourses
+    });
+    
+    console.log('✅ Curso manual adicionado:', newCourse);
+}
+
+// Função para mostrar notificações
+function showNotification(message, type = 'info') {
+    // Criar elemento de notificação
+    const notification = document.createElement('div');
+    notification.className = `course-notification course-notification-${type}`;
+    notification.textContent = message;
+    
+    // Estilos inline para a notificação - design sóbrio com sombras
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        padding: '14px 20px',
+        borderRadius: '8px',
+        fontWeight: '500',
+        fontSize: '14px',
+        zIndex: '10001',
+        maxWidth: '320px',
+        wordWrap: 'break-word',
+        transition: 'all 0.3s ease',
+        opacity: '0',
+        transform: 'translateY(-20px)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid rgba(255,255,255,0.2)'
+    });
+    
+    // Design sóbrio por tipo usando gradientes sutis e sombras
+    if (type === 'success') {
+        Object.assign(notification.style, {
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
+            color: '#1e293b',
+            boxShadow: '0 8px 32px rgba(34, 197, 94, 0.15), 0 4px 16px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #22c55e'
+        });
+    } else if (type === 'error') {
+        Object.assign(notification.style, {
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(254,252,252,0.95) 100%)',
+            color: '#1e293b',
+            boxShadow: '0 8px 32px rgba(239, 68, 68, 0.15), 0 4px 16px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #ef4444'
+        });
+    } else {
+        Object.assign(notification.style, {
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
+            color: '#1e293b',
+            boxShadow: '0 8px 32px rgba(59, 130, 246, 0.15), 0 4px 16px rgba(0,0,0,0.1)',
+            borderLeft: '4px solid #3b82f6'
+        });
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Animar entrada
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Remover após 3 segundos
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// ===== SISTEMA DE MODO DE VISUALIZAÇÃO =====
+
+// Estado global do modo
+let currentViewMode = 'ofertas'; // 'ofertas' ou 'alunos'
+
+// Estados de filtros separados por modo
+let filterStates = {
+    ofertas: {
+        searchInput: '',
+        campusFilter: '',
+        periodoFilter: '',
+        disciplinaFilter: '',
+        professorFilter: '',
+        cursoFilter: '',
+        horarioFilter: '',
+        columnFilters: {}
+    },
+    alunos: {
+        searchInput: '',
+        campusFilter: '',
+        periodoFilter: '',
+        disciplinaFilter: '',
+        professorFilter: '',
+        cursoFilter: '',
+        horarioFilter: '',
+        columnFilters: {}
+    }
+};
+
+// Função para obter os filtros de coluna do modo atual
+function getCurrentColumnFilters() {
+    return filterStates[currentViewMode].columnFilters;
+}
+
+// Função para definir um filtro de coluna no modo atual
+function setCurrentColumnFilter(header, value) {
+    if (value) {
+        filterStates[currentViewMode].columnFilters[header] = value;
+    } else {
+        delete filterStates[currentViewMode].columnFilters[header];
+    }
+}
+
+// Salvar estado atual dos filtros
+function saveCurrentFilterState() {
+    const currentState = filterStates[currentViewMode];
+    
+    // Salvar filtros da sidebar
+    if (elements.searchInput) currentState.searchInput = elements.searchInput.value;
+    if (elements.campusFilter) currentState.campusFilter = elements.campusFilter.value;
+    if (elements.periodoFilter) currentState.periodoFilter = elements.periodoFilter.value;
+    if (elements.disciplinaFilter) currentState.disciplinaFilter = elements.disciplinaFilter.value;
+    if (elements.professorFilter) currentState.professorFilter = elements.professorFilter.value;
+    if (elements.cursoFilter) currentState.cursoFilter = elements.cursoFilter.value;
+    if (elements.horarioFilter) currentState.horarioFilter = elements.horarioFilter.value;
+    
+    // Salvar filtros de colunas
+    currentState.columnFilters = { ...getCurrentColumnFilters() };
+    
+    console.log(`💾 Estado de filtros salvo para modo ${currentViewMode}:`, currentState);
+}
+
+// Restaurar estado dos filtros
+function restoreFilterState() {
+    const currentState = filterStates[currentViewMode];
+    
+    // Restaurar filtros da sidebar
+    if (elements.searchInput) elements.searchInput.value = currentState.searchInput || '';
+    if (elements.campusFilter) elements.campusFilter.value = currentState.campusFilter || '';
+    if (elements.periodoFilter) elements.periodoFilter.value = currentState.periodoFilter || '';
+    if (elements.disciplinaFilter) elements.disciplinaFilter.value = currentState.disciplinaFilter || '';
+    if (elements.professorFilter) elements.professorFilter.value = currentState.professorFilter || '';
+    if (elements.cursoFilter) elements.cursoFilter.value = currentState.cursoFilter || '';
+    if (elements.horarioFilter) elements.horarioFilter.value = currentState.horarioFilter || '';
+    
+    // Garantir que os filtros de colunas estão sincronizados
+    filterStates[currentViewMode].columnFilters = { ...currentState.columnFilters };
+    
+    // Limpar todos os filtros visuais de colunas primeiro
+    document.querySelectorAll('.column-filter-input').forEach(inp => {
+        inp.value = '';
+        inp.classList.remove('active');
+    });
+    document.querySelectorAll('thead th').forEach(th => {
+        th.classList.remove('column-filter-active');
+    });
+    
+    // Aplicar estilos visuais aos filtros de colunas ativos do modo atual
+    const table = document.querySelector('#csvTable');
+    if (table) {
+        const headers = table.querySelectorAll('thead th');
+        headers.forEach(th => {
+            const headerText = th.textContent.trim();
+            const input = th.querySelector('input[type="text"]');
+            const filterValue = getCurrentColumnFilters()[headerText];
+            
+            if (input) {
+                if (filterValue) {
+                    input.value = filterValue;
+                    toggleFilterActiveStyles(headerText, th, input);
+                } else {
+                    input.value = '';
+                    th.classList.remove('column-filter-active');
+                    input.classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    console.log(`🔄 Estado de filtros restaurado para modo ${currentViewMode}:`, currentState);
+    console.log(`📊 Filtros de coluna ativos para ${currentViewMode}:`, getCurrentColumnFilters());
+}
+
+// Configurar alternância de modo de visualização
+function setupViewModeToggle() {
+    console.log('🔧 setupViewModeToggle iniciado');
+    
+    const switchToOfertasBtn = document.getElementById('switchToOfertas');
+    const switchToAlunosBtn = document.getElementById('switchToAlunos');
+    
+    if (!switchToOfertasBtn || !switchToAlunosBtn) {
+        console.log('❌ Botões de switch não encontrados!');
+        return;
+    }
+    
+    console.log('✅ Botões de switch encontrados');
+
+    // Carregar modo salvo
+    loadViewMode();
+
+    // Evento do botão Ofertas
+    switchToOfertasBtn.addEventListener('click', async () => {
+        console.log('🔄 Switch para ofertas clicado');
+        if (currentViewMode !== 'ofertas') {
+            // Salvar estado atual antes de trocar
+            saveCurrentFilterState();
+            await switchToOffersMode();
+        }
+    });
+    
+    // Evento do botão Alunos
+    switchToAlunosBtn.addEventListener('click', async () => {
+        console.log('🔄 Switch para alunos clicado');
+        if (currentViewMode !== 'alunos') {
+            // Salvar estado atual antes de trocar
+            saveCurrentFilterState();
+            await switchToStudentsMode();
+        }
+    });
+    
+    console.log('✅ setupViewModeToggle concluído');
+}
+
+// Obter chave de storage específica para preset baseada no modo
+function getPresetStorageKey() {
+    return `viewer_selected_preset_${currentViewMode}`;
+}
+
+// Carregar preset específico do modo atual
+async function loadModeSpecificPreset() {
+    try {
+        const presetKey = getPresetStorageKey();
+        const sel = await Storage.get([presetKey]);
+        const savedPreset = sel[presetKey] || '__builtin__PRESET_1_BASICO';
+        
+        console.log(`🎛️ Carregando preset para modo ${currentViewMode}:`, savedPreset);
+        
+        currentPresetSelection = savedPreset;
+        
+        // Atualizar o select
+        if (elements.presetSelect) {
+            elements.presetSelect.value = savedPreset;
+        }
+        
+        // Aplicar o preset se for builtin
+        if (savedPreset.startsWith('__builtin__')) {
+            const key = savedPreset.replace('__builtin__','');
+            applyBuiltInPreset(key);
+        } else {
+            await loadPreset(savedPreset);
+        }
+        
+        console.log(`✅ Preset ${savedPreset} aplicado para modo ${currentViewMode}`);
+    } catch (error) {
+        console.error('❌ Erro ao carregar preset específico do modo:', error);
+    }
+}
+
+// Carregar modo de visualização do storage
+async function loadViewMode() {
+    try {
+        console.log('🔄 loadViewMode iniciado');
+        
+        const storage = await Storage.get(['siaa_view_mode']);
+        const savedMode = storage.siaa_view_mode || 'ofertas';
+        
+        console.log('📦 Modo salvo encontrado:', savedMode);
+        
+        if (savedMode === 'alunos') {
+            console.log('🔄 Carregando modo alunos...');
+            await switchToStudentsMode(false); // false = não salvar novamente
+        } else {
+            console.log('🔄 Carregando modo ofertas...');
+            await switchToOffersMode(false);
+        }
+        
+        console.log('✅ loadViewMode concluído');
+    } catch (error) {
+        console.error('❌ Erro ao carregar modo:', error);
+        await switchToOffersMode(false);
+    }
+}
+
+// Alternar para modo de ofertas
+async function switchToOffersMode(save = true) {
+    currentViewMode = 'ofertas';
+    
+    const switchToOfertasBtn = document.getElementById('switchToOfertas');
+    const switchToAlunosBtn = document.getElementById('switchToAlunos');
+    const title = document.querySelector('.app-title');
+    
+    // Atualizar interface dos botões
+    if (switchToOfertasBtn && switchToAlunosBtn) {
+        switchToOfertasBtn.classList.add('active');
+        switchToAlunosBtn.classList.remove('active');
+    }
+    
+    if (title) {
+        title.textContent = 'Visualizador SIAA';
+    }
+    
+    // Salvar no storage
+    if (save) {
+        await Storage.set({ siaa_view_mode: 'ofertas' });
+    }
+    
+    // Recarregar dados de ofertas
+    await loadData();
+    
+    // Carregar preset específico do modo ofertas
+    await loadModeSpecificPreset();
+    
+    // Garantir que a tabela seja exibida (caso tenha dados)
+    if (allData && allData.length > 0) {
+        showData();
+    }
+    
+    console.log('📊 Modo alterado para: Ofertas');
+}
+
+// Alternar para modo de alunos
+async function switchToStudentsMode(save = true) {
+    currentViewMode = 'alunos';
+    
+    const switchToOfertasBtn = document.getElementById('switchToOfertas');
+    const switchToAlunosBtn = document.getElementById('switchToAlunos');
+    const title = document.querySelector('.app-title');
+    
+    // Atualizar interface dos botões
+    if (switchToOfertasBtn && switchToAlunosBtn) {
+        switchToOfertasBtn.classList.remove('active');
+        switchToAlunosBtn.classList.add('active');
+    }
+    
+    if (title) {
+        title.textContent = 'Visualizador SIAA';
+    }
+    
+    // Salvar no storage
+    if (save) {
+        await Storage.set({ siaa_view_mode: 'alunos' });
+    }
+    
+    // Verificar se há dados de alunos
+    console.log('🔍 Verificando dados de alunos no storage...');
+    const studentData = await Storage.get(['siaa_students_csv']);
+    
+    console.log('📦 Storage resultado:', {
+        hasStudentsData: !!studentData.siaa_students_csv,
+        dataSize: studentData.siaa_students_csv ? studentData.siaa_students_csv.length : 0
+    });
+    
+    if (!studentData.siaa_students_csv) {
+        // Não há dados de alunos - mostrar opção de capturar
+        console.log('❌ Nenhum dado de aluno encontrado - chamando showStudentCaptureOption');
+        showStudentCaptureOption();
+    } else {
+        // Carregar dados de alunos
+        console.log('✅ Dados encontrados - chamando loadStudentData...');
+        await loadStudentData();
+    }
+    
+    // Carregar preset específico do modo alunos
+    await loadModeSpecificPreset();
+    
+    // Restaurar estado dos filtros específicos para alunos
+    restoreFilterState();
+    
+    console.log('👥 Modo alterado para: Alunos');
+}
+
+// Alternar para modo de ofertas
+async function switchToOffersMode(save = true) {
+    console.log('🔄 switchToOffersMode iniciado, save:', save);
+    
+    currentViewMode = 'ofertas';
+    
+    const switchToOfertasBtn = document.getElementById('switchToOfertas');
+    const switchToAlunosBtn = document.getElementById('switchToAlunos');
+    const title = document.querySelector('.app-title');
+    
+    console.log('🎛️ Elementos encontrados:', {
+        switchToOfertasBtn: !!switchToOfertasBtn,
+        switchToAlunosBtn: !!switchToAlunosBtn,
+        title: !!title
+    });
+    
+    // Atualizar interface dos botões
+    if (switchToOfertasBtn && switchToAlunosBtn) {
+        switchToOfertasBtn.classList.add('active');
+        switchToAlunosBtn.classList.remove('active');
+        console.log('✅ Botões atualizados para modo ofertas');
+    }
+    
+    if (title) {
+        title.textContent = 'Visualizador SIAA';
+        console.log('✅ Título atualizado para modo ofertas');
+    }
+    
+    // Salvar no storage
+    if (save) {
+        await Storage.set({ siaa_view_mode: 'ofertas' });
+        console.log('✅ Modo ofertas salvo no storage');
+    }
+    
+    // Recarregar presets para modo ofertas
+    await loadPresetsSelect();
+    
+    // Verificar se existem dados de ofertas
+    console.log('🔍 Verificando dados de ofertas no storage...');
+    const storage = await Storage.get(['siaa_data_csv']);
+    
+    console.log('📦 Storage resultado:', {
+        hasOffersData: !!storage.siaa_data_csv,
+        dataSize: storage.siaa_data_csv ? storage.siaa_data_csv.length : 0
+    });
+    
+    if (!storage.siaa_data_csv) {
+        // Não há dados de ofertas - mostrar mensagem
+        console.log('❌ Nenhum dado de ofertas encontrado - mostrando mensagem');
+        showNoData();
+    } else {
+        // Carregar dados de ofertas
+        console.log('✅ Dados encontrados - carregando dados de ofertas...');
+        await loadData();
+        
+        // Carregar preset específico do modo ofertas
+        await loadModeSpecificPreset();
+        
+        // Garantir que a tabela seja exibida
+        showData();
+        
+        // Restaurar estado dos filtros específicos para ofertas
+        restoreFilterState();
+    }
+    
+    console.log('📊 Modo alterado para: Ofertas');
+}
+
+// Mostrar opção de capturar dados de alunos
+function showStudentCaptureOption() {
+    // Usar a função showNoData que agora é dinâmica baseada no modo
+    showNoData();
+}
+
+// Carregar dados de alunos existentes
+async function loadStudentData() {
+    try {
+        console.log('🔄 Carregando dados de alunos...');
+        const storage = await Storage.get(['siaa_students_csv', 'siaa_students_timestamp']);
+        
+        if (!storage.siaa_students_csv) {
+            console.log('❌ Dados não encontrados');
+            showStudentCaptureOption();
+            return;
+        }
+        
+        console.log('📄 CSV encontrado, processando...');
+        console.log('📄 CSV size:', storage.siaa_students_csv.length);
+        console.log('📄 CSV preview:', storage.siaa_students_csv.substring(0, 200));
+        
+        // Processar CSV de alunos
+        const studentData = parseCSV(storage.siaa_students_csv);
+        console.log('📊 Dados processados:', {
+            totalRecords: studentData.length,
+            firstRecord: studentData[0],
+            hasValidData: studentData.length > 0 && typeof studentData[0] === 'object'
+        });
+        
+        if (studentData.length === 0) {
+            console.log('❌ CSV vazio ou mal formatado');
+            showStudentCaptureOption();
+            return;
+        }
+        
+        // Configurar dados globais para alunos
+        window.currentData = studentData;
+        window.currentColumns = studentData.length > 0 ? Object.keys(studentData[0]) : [];
+        
+        // IMPORTANTE: Atualizar allData para que renderTable funcione
+        allData = studentData;
+        
+        console.log('🗂️ Colunas detectadas:', window.currentColumns);
+        console.log('🔄 Configurando dados para renderização...');
+        
+        // Recarregar presets para modo alunos
+        await loadPresetsSelect();
+        
+        // Aplicar preset padrão para alunos (Preset 1)
+        applyBuiltInPreset('PRESET_1_BASICO');
+        
+        // Atualizar selector de preset para mostrar o preset selecionado
+        elements.presetSelect.value = '__builtin__PRESET_1_BASICO';
+        
+        // Configurar tabela e filtros para dados de alunos
+        finishDataLoading();
+        
+        console.log('✅ Dados de alunos configurados e renderizados');
+        
+        // Atualizar timestamp
+        if (storage.siaa_students_timestamp) {
+            const dateStr = new Date(storage.siaa_students_timestamp).toLocaleString('pt-BR');
+            elements.sidebarLastUpdate.textContent = dateStr;
+        } else {
+            elements.sidebarLastUpdate.textContent = 'Não disponível';
+        }
+        
+        console.log(`📊 Dados de alunos carregados: ${studentData.length} registros`);
+        
+        // Garantir que a tabela seja exibida
+        showData();
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados de alunos:', error);
+        showStudentCaptureOption();
+    }
+}
+
+// ===== FUNCIONALIDADE DE MANUTENÇÃO DE DADOS =====
+
+// Configurar botões de manutenção de dados
+function setupDataMaintenanceButtons() {
+    const clearDuplicatesBtn = document.getElementById('clearDuplicatesBtn');
+    const resetDataBtn = document.getElementById('resetDataBtn');
+    
+    if (clearDuplicatesBtn) {
+        clearDuplicatesBtn.addEventListener('click', async () => {
+            await clearDuplicatesFromStorage();
+        });
+    }
+    
+    if (resetDataBtn) {
+        resetDataBtn.addEventListener('click', async () => {
+            if (confirm('🗑️ ATENÇÃO: Esta ação irá REMOVER TODOS OS DADOS armazenados!\n\nSerão deletados:\n• Todos os dados de ofertas\n• Todos os dados de alunos\n• Todos os cursos manuais\n• Todas as configurações\n\nEsta ação NÃO PODE ser desfeita!\n\nTem certeza que deseja continuar?')) {
+                await resetAllData();
+            }
+        });
+    }
+}
+
+// Função para limpar duplicatas dos dados armazenados
+async function clearDuplicatesFromStorage() {
+    try {
+        showNotification('🔄 Analisando duplicatas...', 'info');
+        
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        const duplicatesInfo = [];
+        
+        // Analisar duplicatas de ofertas
+        if (storage.siaa_data_csv) {
+            const duplicates = await findDuplicatesInCSV(storage.siaa_data_csv, 'ofertas');
+            if (duplicates.length > 0) {
+                duplicatesInfo.push({
+                    type: 'ofertas',
+                    duplicates: duplicates,
+                    csv: storage.siaa_data_csv
+                });
+            }
+        }
+        
+        // Analisar duplicatas de alunos
+        if (storage.siaa_students_csv) {
+            const duplicates = await findDuplicatesInCSV(storage.siaa_students_csv, 'alunos');
+            if (duplicates.length > 0) {
+                duplicatesInfo.push({
+                    type: 'alunos',
+                    duplicates: duplicates,
+                    csv: storage.siaa_students_csv
+                });
+            }
+        }
+        
+        if (duplicatesInfo.length > 0) {
+            // Mostrar diálogo com as duplicatas encontradas para seleção manual
+            const selectedForRemoval = await showDuplicatesDialog(duplicatesInfo);
+            if (selectedForRemoval && selectedForRemoval.length > 0) {
+                await removeSelectedDuplicates(selectedForRemoval);
+            } else if (selectedForRemoval && selectedForRemoval.length === 0) {
+                showNotification('ℹ️ Nenhum registro foi selecionado para remoção', 'info');
+            }
+            // Se selectedForRemoval for null, o usuário cancelou
+        } else {
+            showNotification('ℹ️ Nenhuma duplicata encontrada nos dados', 'info');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao analisar duplicatas:', error);
+        showNotification('❌ Erro ao analisar duplicatas', 'error');
+    }
+}
+
+// Função para encontrar duplicatas em um CSV (sem removê-las)
+async function findDuplicatesInCSV(csvData, type) {
+    const cleanCsv = csvData.replace(/^\uFEFF/, '');
+    const lines = cleanCsv.split('\n').filter(line => line.trim());
+    
+    if (lines.length <= 1) return [];
+    
+    const header = lines[0];
+    const data = lines.slice(1);
+    const headerFields = header.split(',');
+    
+    let keyIndex;
+    let keyName;
+    if (type === 'ofertas') {
+        keyIndex = headerFields.findIndex(field => 
+            field.includes('ID Oferta') || field.includes('ID') || field.includes('Oferta')
+        );
+        keyName = 'ID Oferta';
+    } else if (type === 'alunos') {
+        keyIndex = headerFields.findIndex(field => 
+            field.includes('RGM') || field.includes('Registro')
+        );
+        keyName = 'RGM';
+    }
+    
+    if (keyIndex === -1) return [];
+    
+    const duplicatesMap = new Map();
+    const allOccurrences = new Map(); // Para armazenar TODAS as ocorrências, incluindo a primeira
+    
+    data.forEach((line, index) => {
+        const fields = line.split(',');
+        const key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        
+        if (key) {
+            if (!allOccurrences.has(key)) {
+                allOccurrences.set(key, []);
+            }
+            
+            // Criar objeto com dados mais detalhados
+            const recordData = {
+                lineIndex: index + 2, // +2 porque começamos do índice 1 e há o cabeçalho
+                originalLineIndex: index + 1, // Para referência na remoção
+                line: line,
+                fields: fields,
+                key: key,
+                displayData: {} // Para mostrar dados importantes do registro
+            };
+            
+            // Extrair dados importantes para exibição
+            if (type === 'ofertas') {
+                recordData.displayData = {
+                    disciplina: fields[headerFields.findIndex(f => f.includes('Nome Disciplina') || f.includes('Disciplina'))] || '',
+                    professor: fields[headerFields.findIndex(f => f.includes('Nome Professor') || f.includes('Professor'))] || '',
+                    campus: fields[headerFields.findIndex(f => f.includes('Sigla Campus') || f.includes('Campus'))] || '',
+                    periodo: fields[headerFields.findIndex(f => f.includes('Período') || f.includes('Periodo'))] || '',
+                    sala: fields[headerFields.findIndex(f => f.includes('Sala'))] || '',
+                    horario: fields[headerFields.findIndex(f => f.includes('Hora'))] || ''
+                };
+            } else if (type === 'alunos') {
+                recordData.displayData = {
+                    nome: fields[headerFields.findIndex(f => f.includes('Nome') && !f.includes('Professor'))] || '',
+                    curso: fields[headerFields.findIndex(f => f.includes('Curso'))] || '',
+                    situacao: fields[headerFields.findIndex(f => f.includes('Situação') || f.includes('Status'))] || '',
+                    periodo: fields[headerFields.findIndex(f => f.includes('Período') || f.includes('Periodo'))] || ''
+                };
+            }
+            
+            allOccurrences.get(key).push(recordData);
+        }
+    });
+    
+    // Filtrar apenas chaves que têm duplicatas
+    const duplicates = [];
+    for (const [key, occurrences] of allOccurrences) {
+        if (occurrences.length > 1) {
+            duplicates.push({
+                key: key,
+                keyName: keyName,
+                count: occurrences.length,
+                allOccurrences: occurrences // Todas as ocorrências para seleção
+            });
+        }
+    }
+    
+    return duplicates;
+}
+
+// Função para remover duplicatas de um CSV
+async function removeDuplicatesFromCSV(csvData, type) {
+    const cleanCsv = csvData.replace(/^\uFEFF/, '');
+    const lines = cleanCsv.split('\n').filter(line => line.trim());
+    
+    if (lines.length <= 1) return { csv: csvData, duplicatesRemoved: 0 };
+    
+    const header = lines[0];
+    const data = lines.slice(1);
+    const headerFields = header.split(',');
+    
+    let keyIndex;
+    if (type === 'ofertas') {
+        keyIndex = headerFields.findIndex(field => 
+            field.includes('ID Oferta') || field.includes('ID') || field.includes('Oferta')
+        );
+    } else if (type === 'alunos') {
+        keyIndex = headerFields.findIndex(field => 
+            field.includes('RGM') || field.includes('Registro')
+        );
+    }
+    
+    if (keyIndex === -1) return { csv: csvData, duplicatesRemoved: 0 };
+    
+    const seen = new Set();
+    const uniqueData = [];
+    let duplicatesRemoved = 0;
+    
+    data.forEach(line => {
+        const fields = line.split(',');
+        const key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        
+        if (!key || !seen.has(key)) {
+            if (key) seen.add(key);
+            uniqueData.push(line);
+        } else {
+            duplicatesRemoved++;
+        }
+    });
+    
+    const finalCsv = '\uFEFF' + [header, ...uniqueData].join('\n');
+    return { csv: finalCsv, duplicatesRemoved };
+}
+
+// Função para mostrar diálogo de duplicatas com seleção manual
+async function showDuplicatesDialog(duplicatesInfo) {
+    return new Promise((resolve) => {
+        // Criar modal de duplicatas
+        const modal = document.createElement('div');
+        modal.id = 'duplicatesModal';
+        modal.className = 'course-modal';
+        modal.style.display = 'flex';
+        
+        const content = document.createElement('div');
+        content.className = 'course-modal-content';
+        content.style.maxWidth = '95vw';
+        content.style.maxHeight = '90vh';
+        content.style.width = '900px';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'course-modal-header';
+        header.innerHTML = `
+            <h3>🔍 Selecionar Duplicatas para Remoção</h3>
+            <button id="closeDuplicatesModal" class="course-modal-close">&times;</button>
+        `;
+        
+        // Body
+        const body = document.createElement('div');
+        body.className = 'course-modal-body';
+        body.style.maxHeight = '60vh';
+        body.style.overflowY = 'auto';
+        body.style.padding = '15px';
+        
+        let bodyContent = `
+            <div style="background: rgba(248,250,252,0.6); border: 1px solid rgba(203,213,225,0.4); border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <p style="margin: 0; color: #334155;"><strong>📝 Instruções:</strong> Para cada grupo de duplicatas, <span style="color: #475569; font-weight: 600; background: rgba(239,68,68,0.1); padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ef4444;">marque quais registros você deseja REMOVER</span>. Pelo menos um registro deve permanecer desmarcado (será mantido).</p>
+            </div>
+        `;
+        
+        let duplicateIndex = 0;
+        
+        duplicatesInfo.forEach(info => {
+            const typeLabel = info.type === 'ofertas' ? 'Ofertas' : 'Alunos';
+            bodyContent += `<h4 style="color: #2c3e50; margin: 20px 0 10px 0;">📋 ${typeLabel}:</h4>`;
+            
+            info.duplicates.forEach(duplicate => {
+                bodyContent += `
+                    <div class="duplicate-group" style="background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                        <h5 style="color: #495057; margin: 0 0 12px 0;">
+                            <strong>${duplicate.keyName}: ${duplicate.key}</strong>
+                            <span style="color: #6c757d; font-size: 14px; font-weight: normal;">
+                                (${duplicate.count} ocorrências encontradas)
+                            </span>
+                        </h5>
+                        
+                        <div style="background: white; border-radius: 6px; overflow: hidden;">
+                `;
+                
+                duplicate.allOccurrences.forEach((occurrence, occIndex) => {
+                    const checkboxId = `duplicate_${duplicateIndex}_${occIndex}`;
+                    const displayInfo = occurrence.displayData;
+                    
+                    let displayText = '';
+                    if (info.type === 'ofertas') {
+                        displayText = `
+                            <strong>${displayInfo.disciplina}</strong><br>
+                            👨‍🏫 ${displayInfo.professor} | 🏛️ ${displayInfo.campus} | 
+                            📅 ${displayInfo.periodo} | 🚪 ${displayInfo.sala} | 
+                            🕐 ${displayInfo.horario}
+                        `;
+                    } else if (info.type === 'alunos') {
+                        displayText = `
+                            <strong>${displayInfo.nome}</strong><br>
+                            🎓 ${displayInfo.curso} | 📊 ${displayInfo.situacao} | 
+                            📅 ${displayInfo.periodo}
+                        `;
+                    }
+                    
+                    bodyContent += `
+                        <div style="display: flex; align-items: flex-start; padding: 12px; border-bottom: 1px solid #f0f0f0; ${occIndex === duplicate.allOccurrences.length - 1 ? 'border-bottom: none;' : ''}">
+                            <div style="margin-right: 12px; margin-top: 2px;">
+                                <input type="checkbox" id="${checkboxId}" 
+                                       data-duplicate-group="${duplicateIndex}" 
+                                       data-line-index="${occurrence.originalLineIndex}" 
+                                       data-type="${info.type}"
+                                       style="transform: scale(1.2);">
+                            </div>
+                            <label for="${checkboxId}" style="flex: 1; cursor: pointer; line-height: 1.4;">
+                                <div style="font-size: 13px; color: #333;">
+                                    ${displayText}
+                                </div>
+                                <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                    Linha ${occurrence.lineIndex} no arquivo
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                });
+                
+                bodyContent += `
+                        </div>
+                        <div style="margin-top: 8px; padding: 8px; background: #e9ecef; border-radius: 4px; font-size: 12px; color: #495057;">
+                            💡 <strong>Dica:</strong> Deixe pelo menos um registro desmarcado para manter.
+                        </div>
+                    </div>
+                `;
+                
+                duplicateIndex++;
+            });
+        });
+        
+        // Adicionar botões de seleção rápida
+        bodyContent += `
+            <div style="background: rgba(248,250,252,0.6); border: 1px solid rgba(203,213,225,0.4); border-radius: 8px; padding: 16px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <strong style="color: #334155;">⚡ Ações Rápidas:</strong><br>
+                <button id="selectAllDuplicates" class="course-btn" style="background: rgba(255,255,255,0.9); color: #475569; border: 1px solid rgba(203,213,225,0.6); margin: 8px 5px 5px 0; padding: 6px 12px; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); border-radius: 6px;">
+                    Marcar Todas as Duplicatas (exceto primeiras)
+                </button>
+                <button id="clearAllSelections" class="course-btn" style="background: rgba(255,255,255,0.9); color: #475569; border: 1px solid rgba(203,213,225,0.6); margin: 5px; padding: 6px 12px; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.06); border-radius: 6px;">
+                    Desmarcar Todas
+                </button>
+            </div>
+        `;
+        
+        body.innerHTML = bodyContent;
+        
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'course-modal-footer';
+        footer.innerHTML = `
+            <div style="flex: 1; text-align: left; color: #6c757d; font-size: 14px;">
+                <span id="selectionCount">0 registros selecionados para remoção</span>
+            </div>
+            <button id="cancelDuplicatesBtn" class="course-btn course-btn-secondary">❌ Cancelar</button>
+            <button id="removeDuplicatesBtn" class="course-btn course-btn-primary" style="background: rgba(248,250,252,0.9); color: #475569; border: 1px solid rgba(203,213,225,0.6); box-shadow: 0 2px 8px rgba(239,68,68,0.15), 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid #ef4444;" disabled>🗑️ Remover Selecionados</button>
+        `;
+        
+        content.appendChild(header);
+        content.appendChild(body);
+        content.appendChild(footer);
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        // Funções auxiliares
+        const updateSelectionCount = () => {
+            const selectedCheckboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
+            const count = selectedCheckboxes.length;
+            const countDisplay = document.getElementById('selectionCount');
+            const removeBtn = document.getElementById('removeDuplicatesBtn');
+            
+            countDisplay.textContent = `${count} registros selecionados para remoção`;
+            removeBtn.disabled = count === 0;
+            
+            // Verificar se algum grupo ficaria sem registros
+            const groups = new Set();
+            selectedCheckboxes.forEach(cb => groups.add(cb.dataset.duplicateGroup));
+            
+            let hasInvalidGroup = false;
+            groups.forEach(groupId => {
+                const groupCheckboxes = modal.querySelectorAll(`input[data-duplicate-group="${groupId}"]`);
+                const groupChecked = modal.querySelectorAll(`input[data-duplicate-group="${groupId}"]:checked`);
+                if (groupCheckboxes.length === groupChecked.length) {
+                    hasInvalidGroup = true;
+                }
+            });
+            
+            if (hasInvalidGroup) {
+                countDisplay.innerHTML = `<span style="color: #dc3545;">${count} selecionados - ⚠️ Atenção: Pelo menos um registro deve permanecer em cada grupo!</span>`;
+                removeBtn.disabled = true;
+            }
+        };
+        
+        // Event listeners para checkboxes
+        modal.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox') {
+                updateSelectionCount();
+            }
+        });
+        
+        // Event listeners para botões de ação rápida
+        document.getElementById('selectAllDuplicates').addEventListener('click', () => {
+            const allGroups = new Set();
+            modal.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                allGroups.add(cb.dataset.duplicateGroup);
+            });
+            
+            allGroups.forEach(groupId => {
+                const groupCheckboxes = modal.querySelectorAll(`input[data-duplicate-group="${groupId}"]`);
+                groupCheckboxes.forEach((cb, index) => {
+                    if (index > 0) { // Manter o primeiro desmarcado
+                        cb.checked = true;
+                    }
+                });
+            });
+            updateSelectionCount();
+        });
+        
+        document.getElementById('clearAllSelections').addEventListener('click', () => {
+            modal.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectionCount();
+        });
+        
+        // Event listeners principais
+        const closeBtn = document.getElementById('closeDuplicatesModal');
+        const cancelBtn = document.getElementById('cancelDuplicatesBtn');
+        const removeBtn = document.getElementById('removeDuplicatesBtn');
+        
+        const closeModal = () => {
+            document.body.removeChild(modal);
+            resolve(null);
+        };
+        
+        const confirmRemoval = () => {
+            const selectedCheckboxes = modal.querySelectorAll('input[type="checkbox"]:checked');
+            const selectedForRemoval = [];
+            
+            selectedCheckboxes.forEach(cb => {
+                selectedForRemoval.push({
+                    type: cb.dataset.type,
+                    lineIndex: parseInt(cb.dataset.lineIndex)
+                });
+            });
+            
+            document.body.removeChild(modal);
+            resolve(selectedForRemoval);
+        };
+        
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        removeBtn.addEventListener('click', confirmRemoval);
+        
+        // Fechar ao clicar fora do modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        // Inicializar contagem
+        updateSelectionCount();
+    });
+}
+
+// Função para remover registros específicos selecionados pelo usuário
+async function removeSelectedDuplicates(selectedForRemoval) {
+    try {
+        showNotification('🔄 Removendo registros selecionados...', 'info');
+        
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        let totalRemoved = 0;
+        
+        // Agrupar seleções por tipo
+        const ofertasToRemove = selectedForRemoval
+            .filter(item => item.type === 'ofertas')
+            .map(item => item.lineIndex)
+            .sort((a, b) => b - a); // Ordenar em ordem decrescente para remoção
+        
+        const alunosToRemove = selectedForRemoval
+            .filter(item => item.type === 'alunos')
+            .map(item => item.lineIndex)
+            .sort((a, b) => b - a); // Ordenar em ordem decrescente para remoção
+        
+        // Remover linhas selecionadas de ofertas
+        if (ofertasToRemove.length > 0 && storage.siaa_data_csv) {
+            const cleanedCsv = removeSpecificLines(storage.siaa_data_csv, ofertasToRemove);
+            await Storage.set({ siaa_data_csv: cleanedCsv });
+            totalRemoved += ofertasToRemove.length;
+            console.log(`✅ ${ofertasToRemove.length} ofertas duplicadas removidas`);
+        }
+        
+        // Remover linhas selecionadas de alunos
+        if (alunosToRemove.length > 0 && storage.siaa_students_csv) {
+            const cleanedCsv = removeSpecificLines(storage.siaa_students_csv, alunosToRemove);
+            await Storage.set({ siaa_students_csv: cleanedCsv });
+            totalRemoved += alunosToRemove.length;
+            console.log(`✅ ${alunosToRemove.length} alunos duplicados removidos`);
+        }
+        
+        showNotification(`✅ ${totalRemoved} registros removidos com sucesso!`, 'success');
+        
+        // Recarregar dados se estivermos visualizando
+        if (window.currentData && window.currentData.length > 0) {
+            if (currentViewMode === 'alunos') {
+                await loadStudentData();
+            } else {
+                await loadData();
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao remover registros:', error);
+        showNotification('❌ Erro ao remover registros', 'error');
+    }
+}
+
+// Função auxiliar para remover linhas específicas de um CSV
+function removeSpecificLines(csvData, lineIndicesToRemove) {
+    const cleanCsv = csvData.replace(/^\uFEFF/, '');
+    const lines = cleanCsv.split('\n');
+    
+    // Remover linhas específicas (lineIndicesToRemove já está em ordem decrescente)
+    lineIndicesToRemove.forEach(lineIndex => {
+        if (lineIndex > 0 && lineIndex < lines.length) {
+            lines.splice(lineIndex, 1);
+        }
+    });
+    
+    return '\uFEFF' + lines.join('\n');
+}
+
+// Função para resetar todos os dados
+async function resetAllData() {
+    try {
+        showNotification('🗑️ Removendo todos os dados...', 'info');
+        
+        // Limpar todos os dados do storage
+        await Storage.remove([
+            'siaa_data_csv',
+            'siaa_data_timestamp', 
+            'siaa_students_csv',
+            'siaa_students_timestamp',
+            'siaa_manual_courses',
+            'siaa_view_mode',
+            'viewer_selected_preset',
+            'siaa_column_presets'
+        ]);
+        
+        // Limpar variáveis locais
+        allData = [];
+        filteredData = [];
+        window.currentData = [];
+        window.currentColumns = [];
+        
+        // Limpar interface
+        if (elements.tableBody) elements.tableBody.innerHTML = '';
+        if (elements.tableHead) elements.tableHead.innerHTML = '';
+        if (elements.totalRecords) elements.totalRecords.textContent = '0';
+        if (elements.filteredRecords) elements.filteredRecords.textContent = '0';
+        if (elements.sidebarLastUpdate) elements.sidebarLastUpdate.textContent = 'Sem dados';
+        
+        // Mostrar mensagem de sem dados
+        showNoData();
+        
+        showNotification('✅ Todos os dados foram removidos com sucesso!', 'success');
+        console.log('🗑️ Reset completo dos dados executado');
+        
+    } catch (error) {
+        console.error('❌ Erro ao resetar dados:', error);
+        showNotification('❌ Erro ao resetar dados', 'error');
     }
 } 
