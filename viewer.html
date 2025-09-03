@@ -248,10 +248,7 @@
             white-space: nowrap;
         }
 
-        #savePresetBtn {
-            padding: 6px 10px;
-            font-size: 11px;
-        }
+
 
         .columns-btn:hover {
             background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
@@ -564,12 +561,12 @@
             border-bottom: 2px solid #e2e8f0;
         }
         .visibility-list {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 4px;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
-            padding: 6px;
+            padding: 8px;
             background: rgba(255,255,255,0.8);
             border-radius: 6px;
             border: 1px solid rgba(203,213,225,0.4);
@@ -577,15 +574,19 @@
         .visibility-list label {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 11px;
+            gap: 6px;
+            font-size: 10px;
             cursor: pointer;
-            padding: 6px 8px;
+            padding: 4px 6px;
             background: rgba(255, 255, 255, 0.8);
             border: 1px solid rgba(203,213,225,0.4);
             border-radius: 4px;
             transition: all 0.2s ease;
             font-weight: 500;
+            min-height: 28px;
+            word-break: break-word;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
         .visibility-list label:hover {
             background: rgba(248,250,252,0.9);
@@ -683,6 +684,25 @@
         .visibility-list::-webkit-scrollbar-thumb:hover,
         .order-list::-webkit-scrollbar-thumb:hover {
             background: rgba(100,116,139,0.5);
+        }
+
+        /* Grid responsivo para visibility-list */
+        @media (max-width: 600px) {
+            .visibility-list {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                max-height: 200px;
+            }
+            .visibility-list label {
+                font-size: 9px;
+                padding: 3px 5px;
+                min-height: 24px;
+            }
+        }
+
+        @media (min-width: 800px) {
+            .visibility-list {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
         }
 
         /* Dropdown de cópia de dados */
@@ -868,10 +888,7 @@
                 text-align: center;
             }
 
-            #savePresetBtn {
-                padding: 6px 10px;
-                font-size: 13px;
-            }
+
 
             .preset-select {
                 width: 100%;
@@ -1541,9 +1558,8 @@
                     <div id="columnConfigDropdown" class="config-dropdown">
                         <div class="config-section">
                             <div class="config-title">Presets</div>
-                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-                                <select id="presetSelect" class="preset-select"></select>
-                                <button id="savePresetBtn" class="columns-btn">💾 Salvar</button>
+                            <div style="display:flex;gap:8px;align-items:center;width:100%;margin-bottom:6px;">
+                                <select id="presetSelect" class="preset-select" style="flex:1;"></select>
                                 <button id="resetColumnsBtn" class="columns-btn">🔄 Redefinir</button>
                             </div>
                         </div>

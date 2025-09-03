@@ -1,123 +1,35 @@
 // viewer.js
 // Variáveis globais
 
-// Presets para OFERTAS
-const PRESETS_OFERTAS = {
-    PADRAO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 'Cód. Campus', 'Nome Campus', 'Período', 'Descrição', 'Cód. Horário', 'Hora', 'ID Oferta', 'Sala', 'Vagas', 'Matriculados', 'Pré-matriculados', 'Total Matriculados', 'Vagas Restantes', 'Curso', 'Cód. Prof.', 'Nome Professor']
-    },
-    PRESET_1_BASICO: {
-        // Preset 1 (padrão) - Básico: Código, Nome, Campus, Horário, Professor
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
-    },
-    PRESET_2_DETALHADO: {
-        // Preset 2 - Detalhado: + Vagas e Matriculados
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes']
-    },
-    PRESET_3_CURSO: {
-        // Preset 3 - Curso: + Período, Curso
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso']
-    },
-    PRESET_COMPLETO: {
-        // Preset 4 - Todas as colunas
-        order: [],
-        visible: []
-    }
-};
+// REMOVIDO: Presets hardcoded de ofertas - agora vem do siaa-config.json
 
-// Presets para ALUNOS
-const PRESETS_ALUNOS = {
-    PADRAO: {
-        order: ['RGM', 'Nome', 'Série', 'Turma', 'Turno', 'Situação', 'Fone Res.', 'Fone Cel.', 'Fone Com.', 'E-mail', 'ID Polo', 'Nome Polo', 'Código Curso', 'Código Campus', 'Nome do Curso', 'Sigla Campus'],
-        visible: ['RGM', 'Nome', 'Série', 'Turma', 'Turno', 'Situação', 'Fone Res.', 'Fone Cel.', 'Fone Com.', 'E-mail', 'ID Polo', 'Nome Polo', 'Código Curso', 'Código Campus', 'Nome do Curso', 'Sigla Campus']
-    },
-    PRESET_1_BASICO: {
-        // Preset 1 (padrão) - RGM, Nome, E-mail
-        order: ['RGM', 'Nome', 'E-mail'],
-        visible: ['RGM', 'Nome', 'E-mail']
-    },
-    PRESET_2_DETALHADO: {
-        // Preset 2 - + Turma, Turno
-        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno'],
-        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno']
-    },
-    PRESET_3_CURSO: {
-        // Preset 3 - + Nome do Curso, Sigla Campus
-        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus'],
-        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus']
-    },
-    PRESET_COMPLETO: {
-        // Preset 4 - Todas as colunas
-        order: [],
-        visible: []
-    }
-};
+// REMOVIDO: Presets hardcoded de alunos - agora vem do siaa-config.json
 
 // Função para obter presets baseado no modo atual
 function getCurrentPresets() {
-    return currentViewMode === 'alunos' ? PRESETS_ALUNOS : PRESETS_OFERTAS;
+    return getConfigPresets(currentViewMode);
 }
 
-// Presets fixos (defaults) para restaurar no Redefinir - OFERTAS
-const PRESET_DEFAULTS_OFERTAS = {
-    PRESET_1_BASICO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor']
-    },
-    PRESET_2_DETALHADO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Vagas', 'Matriculados', 'Total Matriculados', 'Vagas Restantes']
-    },
-    PRESET_3_CURSO: {
-        order: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso'],
-        visible: ['Cód. Disc.', 'Nome Disciplina', 'Sigla Campus', 'Hora', 'ID Oferta', 'Nome Professor', 'Período', 'Curso']
-    },
-    PRESET_COMPLETO: {
-        order: [],
-        visible: []
-    }
-};
-
-// Presets fixos (defaults) para restaurar no Redefinir - ALUNOS
-const PRESET_DEFAULTS_ALUNOS = {
-    PRESET_1_BASICO: {
-        order: ['RGM', 'Nome', 'E-mail'],
-        visible: ['RGM', 'Nome', 'E-mail']
-    },
-    PRESET_2_DETALHADO: {
-        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno'],
-        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno']
-    },
-    PRESET_3_CURSO: {
-        order: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus'],
-        visible: ['RGM', 'Nome', 'E-mail', 'Turma', 'Turno', 'Nome do Curso', 'Sigla Campus']
-    },
-    PRESET_COMPLETO: {
-        order: [],
-        visible: []
-    }
-};
+// REMOVIDO: Preset defaults hardcoded - agora vem do siaa-config.json
 
 // Função para obter defaults baseado no modo atual
 function getCurrentPresetDefaults() {
-    return currentViewMode === 'alunos' ? PRESET_DEFAULTS_ALUNOS : PRESET_DEFAULTS_OFERTAS;
+    return getConfigPresets(currentViewMode);
 }
 
 // Função para obter configuração de preset
 function getPresetConfig(presetKey, headers) {
-    const presets = getCurrentPresets();
-    const defaults = getCurrentPresetDefaults();
+    const configPreset = getConfigPreset(presetKey, currentViewMode);
     
-    if (!presets[presetKey] && !defaults[presetKey]) {
-        console.warn('Preset não encontrado:', presetKey);
+    if (!configPreset) {
+        console.warn('Preset não encontrado no siaa-config:', presetKey);
         return null;
     }
     
-    let config = presets[presetKey] || defaults[presetKey];
+    let config = {
+        order: configPreset.order || [],
+        visible: configPreset.visible || []
+    };
     
     // Se for PRESET_COMPLETO, usar todas as colunas disponíveis
     if (presetKey === 'PRESET_COMPLETO') {
@@ -139,6 +51,24 @@ function getPresetConfig(presetKey, headers) {
     }
     
     return config;
+}
+
+// Função para carregar customizações salvas do preset
+async function loadPresetCustomizations(presetKey) {
+    const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
+    const saved = await Storage.get([storageKey]);
+    const customization = saved[storageKey];
+    
+    if (customization && customization.viewMode === currentViewMode) {
+        console.log(`📦 Carregando customizações salvas para preset ${presetKey} (modo: ${currentViewMode})`);
+        return {
+            order: customization.order || [],
+            visible: customization.visible || [],
+            widths: customization.widths || {}
+        };
+    }
+    
+    return null;
 }
 
 // Overrides em memória para o preset selecionado via botão Salvar
@@ -184,11 +114,18 @@ function getPresetDefault(presetKey, headers) {
     if (presetKey === 'PRESET_COMPLETO') {
         return { order: [...headers], visible: [...headers] };
     }
-    const base = PRESET_DEFAULTS[presetKey];
-    if (!base) return { order: [...headers], visible: [...headers] };
-    const order = base.order.filter(h => headers.includes(h));
+    
+    const configPreset = getConfigPreset(presetKey, currentViewMode);
+    if (!configPreset) {
+        return { order: [...headers], visible: [...headers] };
+    }
+    
+    const order = configPreset.order.filter(h => headers.includes(h));
     const rest = headers.filter(h => !order.includes(h));
-    return { order: [...order, ...rest], visible: base.visible.filter(h => headers.includes(h)) };
+    return { 
+        order: [...order, ...rest], 
+        visible: configPreset.visible.filter(h => headers.includes(h)) 
+    };
 }
 
 // Função para atualizar contadores do header
@@ -402,7 +339,6 @@ const elements = {
     searchInput: document.getElementById('searchInput'),
     clearBtn: document.getElementById('clearBtn'),
     resetColumnsBtn: document.getElementById('resetColumnsBtn'),
-    savePresetBtn: document.getElementById('savePresetBtn'),
     presetSelect: document.getElementById('presetSelect'),
     exportBtn: document.getElementById('exportBtn'),
     sidebarLastUpdate: document.getElementById('sidebarLastUpdate'),
@@ -467,24 +403,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     try {
-        // Configurar header responsivo
+        // 1. Carregar configuração do siaa-config.json primeiro
+        console.log('🔧 Carregando configuração SIAA...');
+        await loadSiaaConfig();
+        
+        // 2. Carregar estados salvos
+        console.log('📦 Carregando estados salvos...');
+        await loadSavedStates();
+        
+        // 3. Configurar header responsivo
         setupHeaderEvents();
         
-        // Carregar configurações armazenadas (larguras, ordem, visibilidade)
+        // 4. Configurar controles de modo de visualização
+        await setupViewModeControls();
+        
+        // 5. Sincronizar estados carregados com variáveis globais
+        syncLocalStates();
+        
+        // 5. Carregar configurações antigas (compatibilidade)
         const stored = await Storage.get(['viewer_column_widths', 'viewer_column_order', 'viewer_column_visibility']);
-        columnWidths = stored.viewer_column_widths || {};
-        if (Array.isArray(stored.viewer_column_order)) {
+        if (stored.viewer_column_widths && Object.keys(columnWidths).length === 0) {
+            columnWidths = stored.viewer_column_widths;
+        }
+        if (Array.isArray(stored.viewer_column_order) && columnOrder.length === 0) {
             columnOrder = stored.viewer_column_order;
         }
-        if (Array.isArray(stored.viewer_column_visibility)) {
+        if (Array.isArray(stored.viewer_column_visibility) && visibleColumns.size === 0) {
             visibleColumns = new Set(stored.viewer_column_visibility);
         }
 
+        // 6. Carregar dados e configurar interface
         await loadData();
         setupEventListeners();
         
-        // Atualizar contadores na inicialização
+        // 7. Atualizar contadores na inicialização
         await updateHeaderCounters();
+        
+        // 8. Forçar salvamento inicial para sincronizar todos os estados
+        await forceSave();
+        
+        console.log('✅ Inicialização completa com persistência automática');
         
     } catch (error) {
         console.error('❌ Erro na inicialização:', error);
@@ -607,9 +565,12 @@ async function finishDataLoading() {
             visibleColumns = new Set(cfg.visible);
         }
     } catch (e) {
-        // fallback silencioso
+        // fallback silencioso - usar preset padrão do siaa-config
     if (columnOrder.length === 0) {
-        columnOrder = PRESETS.PADRAO.order.filter(h => headers.includes(h));
+        const defaultPreset = getConfigPreset('PADRAO', currentViewMode);
+        if (defaultPreset && defaultPreset.order) {
+            columnOrder = defaultPreset.order.filter(h => headers.includes(h));
+        }
         headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
     }
     if (visibleColumns.size === 0) {
@@ -620,7 +581,7 @@ async function finishDataLoading() {
 
     setupTable();
     setupFilters();
-    setupColumnToggle();
+    await setupColumnToggle();
     await loadPresetsList();
     await loadPresetsSelect();
     applyFilters();
@@ -819,6 +780,7 @@ function setupTable() {
                 const finalWidth = th.offsetWidth;
                 columnWidths[header] = finalWidth;
                 Storage.set({ viewer_column_widths: columnWidths });
+                debouncedAutoSave(); // Salvar estados automaticamente
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
             }
@@ -840,7 +802,7 @@ function setupTable() {
             e.preventDefault(); 
             e.dataTransfer.dropEffect = 'move';
         });
-        th.addEventListener('drop', (e) => {
+        th.addEventListener('drop', async (e) => {
             e.preventDefault();
             const dropIndex = headers.indexOf(header);
             if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
@@ -851,10 +813,11 @@ function setupTable() {
             
             // Salvar nova ordem
             Storage.set({ viewer_column_order: columnOrder });
+            debouncedAutoSave(); // Salvar estados automaticamente
             
             // Atualizar interface
             setupTable();
-            setupColumnToggle(); // Recriar a sidebar na nova ordem
+            await setupColumnToggle(); // Recriar a sidebar na nova ordem
             updateColumnVisibility();
             renderTable();
         });
@@ -994,7 +957,7 @@ function populateSelect(selectElement, values) {
 }
 
 // Configurar toggle de colunas
-function setupColumnToggle() {
+async function setupColumnToggle() {
     if (allData.length === 0) return;
     if (!elements.columnToggle) return; // Se não existe no DOM, não montar
     
@@ -1018,13 +981,15 @@ function setupColumnToggle() {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = visibleColumns.has(header);
-        checkbox.addEventListener('change', (e) => {
+        checkbox.addEventListener('change', async (e) => {
             if (e.target.checked) {
                 visibleColumns.add(header);
             } else {
                 visibleColumns.delete(header);
             }
             Storage.set({ viewer_column_visibility: [...visibleColumns] });
+            debouncedAutoSave(); // Salvar estados automaticamente
+            await autoSaveCurrentPreset(); // Salvar customização do preset atual
             updateColumnVisibility();
         });
         
@@ -1073,7 +1038,7 @@ function setupColumnToggle() {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
         });
-        label.addEventListener('drop', e=>{
+        label.addEventListener('drop', async e=>{
             e.preventDefault();
             label.classList.remove('drag-over');
             
@@ -1087,10 +1052,11 @@ function setupColumnToggle() {
             
             // Salvar nova ordem
             Storage.set({ viewer_column_order: columnOrder });
+            debouncedAutoSave(); // Salvar estados automaticamente
             
             // Atualizar interface
             setupTable();
-            setupColumnToggle(); // Recriar a sidebar na nova ordem
+            await setupColumnToggle(); // Recriar a sidebar na nova ordem
             updateColumnVisibility();
             renderTable();
         });
@@ -1122,7 +1088,6 @@ function updateColumnVisibility() {
 function setupEventListeners() {
     // Botões
     elements.resetColumnsBtn.addEventListener('click', resetColumns);
-    if (elements.savePresetBtn) elements.savePresetBtn.addEventListener('click', savePreset);
     elements.presetSelect.addEventListener('change', loadSelectedPreset);
     elements.exportBtn.addEventListener('click', exportFilteredData);
     
@@ -1132,7 +1097,7 @@ function setupEventListeners() {
     const copyDataBtn = document.getElementById('copyDataBtn');
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (configBtn && configDropdown) {
-        const toggle = () => {
+        const toggle = async () => {
             const rect = configBtn.getBoundingClientRect();
             const dropdownWidth = 350; // Largura fixa aumentada
             
@@ -1145,7 +1110,7 @@ function setupEventListeners() {
             const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
             configDropdown.style.display = willOpen ? 'block' : 'none';
             if (willOpen) {
-                buildVisibilityAndOrderLists();
+                await buildVisibilityAndOrderLists();
             }
         };
         configBtn.addEventListener('click', (e) => {
@@ -1218,12 +1183,12 @@ function setupEventListeners() {
     }
     
     // Filtros
-    if (elements.campusFilter) elements.campusFilter.addEventListener('change', applyFilters);
-    if (elements.periodoFilter) elements.periodoFilter.addEventListener('change', applyFilters);
-    if (elements.disciplinaFilter) elements.disciplinaFilter.addEventListener('change', applyFilters);
-    if (elements.professorFilter) elements.professorFilter.addEventListener('change', applyFilters);
-    if (elements.cursoFilter) elements.cursoFilter.addEventListener('change', applyFilters);
-    if (elements.horarioFilter) elements.horarioFilter.addEventListener('change', applyFilters);
+    if (elements.campusFilter) elements.campusFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
+    if (elements.periodoFilter) elements.periodoFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
+    if (elements.disciplinaFilter) elements.disciplinaFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
+    if (elements.professorFilter) elements.professorFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
+    if (elements.cursoFilter) elements.cursoFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
+    if (elements.horarioFilter) elements.horarioFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
 
     // Exportar/Importar CSV Completo no menu hamburger
     const exportAllBtn = document.getElementById('exportAllBtn');
@@ -1288,7 +1253,7 @@ function updateDataActionButtonsUI() {
 }
 
 // Construir listas de Visibilidade e Ordem no menu header
-function buildVisibilityAndOrderLists() {
+async function buildVisibilityAndOrderLists() {
     const visibilityList = document.getElementById('visibilityList');
     const orderList = document.getElementById('orderList');
     if (!visibilityList || !orderList) return;
@@ -1304,7 +1269,7 @@ function buildVisibilityAndOrderLists() {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = visibleColumns.has(header);
-        checkbox.addEventListener('change', () => {
+        checkbox.addEventListener('change', async () => {
             if (checkbox.checked) {
                 visibleColumns.add(header);
                 // Feedback visual positivo
@@ -1317,6 +1282,8 @@ function buildVisibilityAndOrderLists() {
                 setTimeout(() => { label.classList.remove('unchecked'); }, 500);
             }
             Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
+            debouncedAutoSave(); // Salvar estados automaticamente
+            await autoSaveCurrentPreset(); // Salvar customização do preset atual
             updateColumnVisibility();
             rebuildOrderList(orderList, headers);
         });
@@ -1383,7 +1350,7 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
 }
 
-function saveOrderFromOrderList() {
+async function saveOrderFromOrderList() {
     const orderList = document.getElementById('orderList');
     if (!orderList) return;
     const newOrderVisible = [...orderList.querySelectorAll('.order-item')]
@@ -1394,11 +1361,13 @@ function saveOrderFromOrderList() {
     if (newOrder.length) {
         columnOrder = newOrder;
         Storage.set({ viewer_column_order: columnOrder });
+        debouncedAutoSave(); // Salvar estados automaticamente
+        await autoSaveCurrentPreset(); // Salvar customização do preset atual
         setupTable();
         updateColumnVisibility();
         renderTable();
         // Reconstroi para refletir ordem após salvar
-        buildVisibilityAndOrderLists();
+        await buildVisibilityAndOrderLists();
     }
 }
 
@@ -1854,7 +1823,7 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // Redefinir colunas para o padrão
-function resetColumns() {
+async function resetColumns() {
     if (!allData || allData.length === 0) {
         console.log('⚠️ Nenhum dado disponível para redefinir colunas');
         return;
@@ -1877,9 +1846,23 @@ function resetColumns() {
     })();
     if (PRESETS_CURRENT && PRESETS_CURRENT[presetKey]) delete PRESETS_CURRENT[presetKey];
 
-    const base = getPresetDefault(presetKey, headers);
-    columnOrder = base.order;
-    visibleColumns = new Set(base.visible);
+    // Obter configuração original do siaa-config (sem customizações)
+    const configPreset = getConfigPreset(presetKey, currentViewMode);
+    if (configPreset) {
+        const validOrder = configPreset.order.filter(h => headers.includes(h));
+        const rest = headers.filter(h => !validOrder.includes(h));
+        columnOrder = [...validOrder, ...rest];
+        visibleColumns = new Set(configPreset.visible.filter(h => headers.includes(h)));
+    } else {
+        // Fallback se não encontrar no config
+        const base = getPresetDefault(presetKey, headers);
+        columnOrder = base.order;
+        visibleColumns = new Set(base.visible);
+    }
+    
+    // Limpar customizações do storage para este preset
+    const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
+    await Storage.set({ [storageKey]: null });
     
     // Limpar larguras personalizadas
     columnWidths = {};
@@ -1893,13 +1876,13 @@ function resetColumns() {
     
     // Atualizar interface
     setupTable();
-    setupColumnToggle();
+    await setupColumnToggle();
     updateColumnVisibility();
     renderTable();
     // Sincronizar menu se aberto
     const configDropdown = document.getElementById('columnConfigDropdown');
     if (configDropdown && configDropdown.style.display === 'block') {
-        buildVisibilityAndOrderLists();
+        await buildVisibilityAndOrderLists();
     }
     
     // Feedback visual
@@ -1925,7 +1908,35 @@ function resetColumns() {
     }, 1500);
 }
 
-// Salvar preset: sobrescreve em memória o preset fixo selecionado
+// Função para salvar automaticamente as customizações do preset atual
+async function autoSaveCurrentPreset() {
+    if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
+        return; // Só salva presets builtin
+    }
+    
+    const key = currentPresetSelection.replace('__builtin__','');
+    const headers = Object.keys(allData[0] || {});
+    const normalizedOrder = columnOrder.filter(h => headers.includes(h));
+    const rest = headers.filter(h => !normalizedOrder.includes(h));
+    
+    // Criar chave específica para o modo atual
+    const storageKey = `siaa_preset_override_${currentViewMode}_${key}`;
+    
+    const customization = {
+        order: [...normalizedOrder, ...rest],
+        visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
+        widths: { ...columnWidths },
+        viewMode: currentViewMode, // Garantir separação
+        timestamp: Date.now()
+    };
+    
+    // Salvar no storage com chave específica do modo
+    await Storage.set({ [storageKey]: customization });
+    
+    console.log(`💾 Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
+}
+
+// DEPRECADO: Salvar preset: sobrescreve em memória o preset fixo selecionado
 function savePreset() {
     if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
         alert('Selecione um dos 4 presets para salvar suas configurações.');
@@ -1969,7 +1980,7 @@ function savePreset() {
 }
 
 // Carregar preset selecionado no header
-function loadSelectedPreset() {
+async function loadSelectedPreset() {
     const selectedPreset = elements.presetSelect.value;
     if (!selectedPreset) {
         return; // Nada selecionado, não faz nada
@@ -1980,40 +1991,53 @@ function loadSelectedPreset() {
     const storageData = {};
     storageData[storageKey] = currentPresetSelection;
     Storage.set(storageData);
+    debouncedAutoSave(); // Salvar estados automaticamente
     if (selectedPreset.startsWith('__builtin__')) {
         const key = selectedPreset.replace('__builtin__','');
-        applyBuiltInPreset(key);
+        await applyBuiltInPreset(key);
     } else {
-    loadPreset(selectedPreset);
+    await loadPreset(selectedPreset);
     }
 }
 
-function applyBuiltInPreset(presetKey) {
+async function applyBuiltInPreset(presetKey) {
     const headers = Object.keys(allData[0] || {});
+    
+    // Primeiro, obter configuração base do siaa-config
     const cfg = getPresetConfig(presetKey, headers);
     if (!cfg) return;
-    columnOrder = cfg.order;
-    visibleColumns = new Set(cfg.visible);
-
-    // Se houver larguras salvas no override, restaurá-las
-    const overrides = builtinOverridesCache || {};
-    if (overrides[presetKey] && overrides[presetKey].widths) {
-        columnWidths = { ...overrides[presetKey].widths };
+    
+    // Verificar se há customizações salvas para este preset no modo atual
+    const customizations = await loadPresetCustomizations(presetKey);
+    
+    if (customizations) {
+        // Usar customizações salvas
+        columnOrder = customizations.order.filter(h => headers.includes(h));
+        visibleColumns = new Set(customizations.visible.filter(h => headers.includes(h)));
+        columnWidths = customizations.widths || {};
+        console.log(`🎨 Aplicando customizações salvas para preset ${presetKey} (modo: ${currentViewMode})`);
+    } else {
+        // Usar configuração padrão do siaa-config
+        columnOrder = cfg.order;
+        visibleColumns = new Set(cfg.visible);
+        columnWidths = {};
+        console.log(`📋 Aplicando configuração padrão para preset ${presetKey} (modo: ${currentViewMode})`);
     }
 
     Storage.set({
         viewer_column_order: columnOrder,
-        viewer_column_visibility: Array.from(visibleColumns)
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
     });
 
     setupTable();
-    setupColumnToggle();
+    await setupColumnToggle();
     updateColumnVisibility();
     renderTable();
 
     const configDropdown = document.getElementById('columnConfigDropdown');
     if (configDropdown && configDropdown.style.display === 'block') {
-        buildVisibilityAndOrderLists();
+        await buildVisibilityAndOrderLists();
     }
     if (elements.presetSelect && currentPresetSelection) {
         elements.presetSelect.value = currentPresetSelection;
@@ -2049,7 +2073,7 @@ async function loadPreset(presetName) {
     
     // Atualizar interface
     setupTable();
-    setupColumnToggle();
+    await setupColumnToggle();
     updateColumnVisibility();
     renderTable();
     
@@ -2093,28 +2117,20 @@ async function getPresets() {
 async function loadPresetsSelect() {
     elements.presetSelect.innerHTML = '';
     
-    // Definir labels baseado no modo atual
-    let builtins;
-    if (currentViewMode === 'alunos') {
-        builtins = [
-            { key: 'PRESET_1_BASICO', label: 'Preset 1 • RGM, Nome, E-mail' },
-            { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • + Turma, Turno' },
-            { key: 'PRESET_3_CURSO', label: 'Preset 3 • + Código Curso, Campus' },
-            { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
-        ];
-    } else {
-        builtins = [
-            { key: 'PRESET_1_BASICO', label: 'Preset 1 • Básico' },
-            { key: 'PRESET_2_DETALHADO', label: 'Preset 2 • Detalhado' },
-            { key: 'PRESET_3_CURSO', label: 'Preset 3 • Curso' },
-            { key: 'PRESET_COMPLETO', label: 'Preset 4 • Completo' }
-        ];
+    // Obter presets do siaa-config para o modo atual
+    const configPresets = getConfigPresets(currentViewMode);
+    
+    if (!configPresets || Object.keys(configPresets).length === 0) {
+        console.warn('⚠️ Nenhum preset encontrado no siaa-config para modo:', currentViewMode);
+        return;
     }
-    builtins.forEach(b => {
+    
+    // Criar options baseados no siaa-config
+    Object.entries(configPresets).forEach(([key, preset]) => {
         const option = document.createElement('option');
-        option.value = `__builtin__${b.key}`;
-        option.textContent = b.label;
-        option.title = b.label;
+        option.value = `__builtin__${key}`;
+        option.textContent = preset.name || key;
+        option.title = preset.description || preset.name || key;
         elements.presetSelect.appendChild(option);
     });
     if (currentPresetSelection) {
@@ -2773,6 +2789,236 @@ let filterStates = {
     }
 };
 
+// ===== CONFIGURAÇÃO CENTRALIZADA =====
+
+// Cache da configuração do siaa-config.json
+let siaaConfig = null;
+
+// Função para carregar configuração do siaa-config.json
+async function loadSiaaConfig() {
+    if (siaaConfig) return siaaConfig; // Usar cache se já carregado
+    
+    try {
+        const response = await fetch('/siaa-config.json');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        siaaConfig = await response.json();
+        console.log('✅ Configuração SIAA carregada:', siaaConfig.version);
+        return siaaConfig;
+    } catch (error) {
+        console.error('❌ Erro ao carregar siaa-config.json:', error);
+        // Fallback para configuração mínima
+        siaaConfig = {
+            version: 'fallback',
+            presets: {
+                ofertas: {},
+                alunos: {}
+            }
+        };
+        return siaaConfig;
+    }
+}
+
+// Função para obter presets do siaa-config
+function getConfigPresets(viewMode = null) {
+    if (!siaaConfig) {
+        console.warn('⚠️ Configuração SIAA não carregada');
+        return {};
+    }
+    
+    const mode = viewMode || currentViewMode;
+    return siaaConfig.presets?.[mode] || {};
+}
+
+// Função para obter preset específico do siaa-config
+function getConfigPreset(presetKey, viewMode = null) {
+    const presets = getConfigPresets(viewMode);
+    return presets[presetKey] || null;
+}
+
+// ===== SISTEMA DE PERSISTÊNCIA AUTOMÁTICA =====
+
+// Configurações gerais da aplicação que devem ser persistidas
+let appSettings = {
+    currentViewMode: 'ofertas',
+    lastUpdate: null,
+    autoSave: true,
+    theme: 'default'
+};
+
+// Estados de colunas por modo
+let columnStates = {
+    ofertas: {
+        order: [],
+        visibility: [],
+        widths: {},
+        sort: { column: null, direction: 'asc' }
+    },
+    alunos: {
+        order: [],
+        visibility: [],
+        widths: {},
+        sort: { column: null, direction: 'asc' }
+    }
+};
+
+// Estados de presets por modo
+let presetStates = {
+    ofertas: {
+        currentSelection: '__builtin__PRESET_1_BASICO',
+        customPresets: {},
+        lastUsed: '__builtin__PRESET_1_BASICO'
+    },
+    alunos: {
+        currentSelection: '__builtin__PRESET_1_BASICO',
+        customPresets: {},
+        lastUsed: '__builtin__PRESET_1_BASICO'
+    }
+};
+
+// Função para salvar automaticamente todos os estados
+async function autoSaveStates() {
+    if (!appSettings.autoSave) return;
+    
+    try {
+        const stateData = {
+            // Estados principais
+            siaa_app_settings: appSettings,
+            siaa_filter_states: filterStates,
+            siaa_column_states: columnStates,
+            siaa_preset_states: presetStates,
+            
+            // Modo atual
+            siaa_view_mode: currentViewMode,
+            
+            // Estados específicos do modo atual
+            [`viewer_selected_preset_${currentViewMode}`]: presetStates[currentViewMode].currentSelection,
+            viewer_column_order: columnStates[currentViewMode].order,
+            viewer_column_visibility: columnStates[currentViewMode].visibility,
+            viewer_column_widths: columnStates[currentViewMode].widths,
+            
+            // Timestamp da última atualização
+            siaa_states_timestamp: Date.now()
+        };
+        
+        await Storage.set(stateData);
+        console.log('✅ Estados salvos automaticamente');
+    } catch (error) {
+        console.error('❌ Erro ao salvar estados:', error);
+    }
+}
+
+// Função para carregar todos os estados salvos
+async function loadSavedStates() {
+    try {
+        const keys = [
+            'siaa_app_settings',
+            'siaa_filter_states',
+            'siaa_column_states',
+            'siaa_preset_states',
+            'siaa_view_mode',
+            'siaa_states_timestamp'
+        ];
+        
+        const saved = await Storage.get(keys);
+        
+        // Carregar configurações da aplicação
+        if (saved.siaa_app_settings) {
+            appSettings = { ...appSettings, ...saved.siaa_app_settings };
+        }
+        
+        // Carregar estados de filtros
+        if (saved.siaa_filter_states) {
+            filterStates = { ...filterStates, ...saved.siaa_filter_states };
+        }
+        
+        // Carregar estados de colunas
+        if (saved.siaa_column_states) {
+            columnStates = { ...columnStates, ...saved.siaa_column_states };
+        }
+        
+        // Carregar estados de presets
+        if (saved.siaa_preset_states) {
+            presetStates = { ...presetStates, ...saved.siaa_preset_states };
+        }
+        
+        // Carregar modo de visualização
+        if (saved.siaa_view_mode) {
+            currentViewMode = saved.siaa_view_mode;
+            appSettings.currentViewMode = currentViewMode;
+        }
+        
+        console.log('✅ Estados carregados do storage');
+        return true;
+    } catch (error) {
+        console.error('❌ Erro ao carregar estados:', error);
+        return false;
+    }
+}
+
+// Função para sincronizar estados locais com variáveis globais
+function syncLocalStates() {
+    // Sincronizar estados de colunas do modo atual
+    const currentMode = currentViewMode;
+    
+    // Atualizar variáveis globais com estados salvos
+    if (columnStates[currentMode].order.length > 0) {
+        columnOrder = [...columnStates[currentMode].order];
+    }
+    
+    if (columnStates[currentMode].visibility.length > 0) {
+        visibleColumns = new Set(columnStates[currentMode].visibility);
+    }
+    
+    if (Object.keys(columnStates[currentMode].widths).length > 0) {
+        columnWidths = { ...columnStates[currentMode].widths };
+    }
+    
+    if (columnStates[currentMode].sort.column) {
+        currentSort = { ...columnStates[currentMode].sort };
+    }
+    
+    // Sincronizar preset atual
+    if (presetStates[currentMode].currentSelection) {
+        currentPresetSelection = presetStates[currentMode].currentSelection;
+    }
+}
+
+// Função para atualizar estados com variáveis globais atuais
+function updateStatesFromGlobals() {
+    const currentMode = currentViewMode;
+    
+    // Atualizar estados de colunas
+    columnStates[currentMode].order = [...columnOrder];
+    columnStates[currentMode].visibility = Array.from(visibleColumns);
+    columnStates[currentMode].widths = { ...columnWidths };
+    columnStates[currentMode].sort = { ...currentSort };
+    
+    // Atualizar preset atual
+    presetStates[currentMode].currentSelection = currentPresetSelection;
+    
+    // Atualizar configurações da aplicação
+    appSettings.currentViewMode = currentViewMode;
+    appSettings.lastUpdate = Date.now();
+}
+
+// Debounce para evitar salvamentos excessivos
+let autoSaveTimeout = null;
+function debouncedAutoSave() {
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(async () => {
+        updateStatesFromGlobals();
+        await autoSaveStates();
+    }, 1000); // Salvar após 1 segundo de inatividade
+}
+
+// Função para forçar salvamento imediato
+async function forceSave() {
+    updateStatesFromGlobals();
+    await autoSaveStates();
+}
+
 // Função para obter os filtros de coluna do modo atual
 function getCurrentColumnFilters() {
     return filterStates[currentViewMode].columnFilters;
@@ -2785,6 +3031,7 @@ function setCurrentColumnFilter(header, value) {
     } else {
         delete filterStates[currentViewMode].columnFilters[header];
     }
+    debouncedAutoSave(); // Salvar estados automaticamente
 }
 
 // Salvar estado atual dos filtros
@@ -2802,6 +3049,8 @@ function saveCurrentFilterState() {
     
     // Salvar filtros de colunas
     currentState.columnFilters = { ...getCurrentColumnFilters() };
+    
+    debouncedAutoSave(); // Salvar estados automaticamente
     
     console.log(`💾 Estado de filtros salvo para modo ${currentViewMode}:`, currentState);
 }
@@ -2921,7 +3170,7 @@ async function loadModeSpecificPreset() {
         // Aplicar o preset se for builtin
         if (savedPreset.startsWith('__builtin__')) {
             const key = savedPreset.replace('__builtin__','');
-            applyBuiltInPreset(key);
+            await applyBuiltInPreset(key);
         } else {
             await loadPreset(savedPreset);
         }
@@ -2978,6 +3227,7 @@ async function switchToOffersMode(save = true) {
     // Salvar no storage
     if (save) {
         await Storage.set({ siaa_view_mode: 'ofertas' });
+        await forceSave(); // Forçar salvamento completo ao mudar modo
     }
     
     // Recarregar dados de ofertas
@@ -3015,6 +3265,7 @@ async function switchToStudentsMode(save = true) {
     // Salvar no storage
     if (save) {
         await Storage.set({ siaa_view_mode: 'alunos' });
+        await forceSave(); // Forçar salvamento completo ao mudar modo
     }
     
     // Verificar se há dados de alunos
@@ -3163,7 +3414,7 @@ async function loadStudentData() {
         await loadPresetsSelect();
         
         // Aplicar preset padrão para alunos (Preset 1)
-        applyBuiltInPreset('PRESET_1_BASICO');
+        await applyBuiltInPreset('PRESET_1_BASICO');
         
         // Atualizar selector de preset para mostrar o preset selecionado
         elements.presetSelect.value = '__builtin__PRESET_1_BASICO';
@@ -3287,10 +3538,25 @@ async function findDuplicatesInCSV(csvData, type) {
         );
         keyName = 'ID Oferta';
     } else if (type === 'alunos') {
-        keyIndex = headerFields.findIndex(field => 
-            field.includes('RGM') || field.includes('Registro')
+        // Para alunos, vamos usar uma combinação de Nome + Código Campus
+        const nomeIndex = headerFields.findIndex(field => 
+            field.includes('Nome') && !field.includes('Professor') && !field.includes('Curso')
         );
-        keyName = 'RGM';
+        const campusCodigoIndex = headerFields.findIndex(field => 
+            field.includes('Código Campus') || field.includes('Cód. Campus')
+        );
+        
+        if (nomeIndex === -1 || campusCodigoIndex === -1) {
+            // Fallback para RGM se não encontrar os campos necessários
+            keyIndex = headerFields.findIndex(field => 
+                field.includes('RGM') || field.includes('Registro')
+            );
+            keyName = 'RGM';
+        } else {
+            // Usar combinação Nome + Código Campus
+            keyIndex = -2; // Valor especial para indicar chave combinada
+            keyName = 'Nome + Campus';
+        }
     }
     
     if (keyIndex === -1) return [];
@@ -3300,7 +3566,26 @@ async function findDuplicatesInCSV(csvData, type) {
     
     data.forEach((line, index) => {
         const fields = line.split(',');
-        const key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        let key = '';
+        
+        if (keyIndex === -2 && type === 'alunos') {
+            // Chave combinada para alunos: Nome + Código Campus
+            const nomeIndex = headerFields.findIndex(field => 
+                field.includes('Nome') && !field.includes('Professor') && !field.includes('Curso')
+            );
+            const campusCodigoIndex = headerFields.findIndex(field => 
+                field.includes('Código Campus') || field.includes('Cód. Campus')
+            );
+            
+            const nome = fields[nomeIndex] ? fields[nomeIndex].trim() : '';
+            const campusCodigo = fields[campusCodigoIndex] ? fields[campusCodigoIndex].trim() : '';
+            
+            if (nome && campusCodigo) {
+                key = `${nome}|${campusCodigo}`; // Usar | como separador
+            }
+        } else if (keyIndex >= 0) {
+            key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        }
         
         if (key) {
             if (!allOccurrences.has(key)) {
@@ -3329,10 +3614,12 @@ async function findDuplicatesInCSV(csvData, type) {
                 };
             } else if (type === 'alunos') {
                 recordData.displayData = {
-                    nome: fields[headerFields.findIndex(f => f.includes('Nome') && !f.includes('Professor'))] || '',
-                    curso: fields[headerFields.findIndex(f => f.includes('Curso'))] || '',
+                    nome: fields[headerFields.findIndex(f => f.includes('Nome') && !f.includes('Professor') && !f.includes('Curso'))] || '',
+                    curso: fields[headerFields.findIndex(f => f.includes('Nome do Curso') || (f.includes('Curso') && !f.includes('Código')))] || '',
+                    campusCodigo: fields[headerFields.findIndex(f => f.includes('Código Campus') || f.includes('Cód. Campus'))] || '',
+                    siglaCampus: fields[headerFields.findIndex(f => f.includes('Sigla Campus'))] || '',
                     situacao: fields[headerFields.findIndex(f => f.includes('Situação') || f.includes('Status'))] || '',
-                    periodo: fields[headerFields.findIndex(f => f.includes('Período') || f.includes('Periodo'))] || ''
+                    rgm: fields[headerFields.findIndex(f => f.includes('RGM'))] || ''
                 };
             }
             
@@ -3373,9 +3660,23 @@ async function removeDuplicatesFromCSV(csvData, type) {
             field.includes('ID Oferta') || field.includes('ID') || field.includes('Oferta')
         );
     } else if (type === 'alunos') {
-        keyIndex = headerFields.findIndex(field => 
-            field.includes('RGM') || field.includes('Registro')
+        // Para alunos, vamos usar uma combinação de Nome + Código Campus
+        const nomeIndex = headerFields.findIndex(field => 
+            field.includes('Nome') && !field.includes('Professor') && !field.includes('Curso')
         );
+        const campusCodigoIndex = headerFields.findIndex(field => 
+            field.includes('Código Campus') || field.includes('Cód. Campus')
+        );
+        
+        if (nomeIndex === -1 || campusCodigoIndex === -1) {
+            // Fallback para RGM se não encontrar os campos necessários
+            keyIndex = headerFields.findIndex(field => 
+                field.includes('RGM') || field.includes('Registro')
+            );
+        } else {
+            // Usar combinação Nome + Código Campus
+            keyIndex = -2; // Valor especial para indicar chave combinada
+        }
     }
     
     if (keyIndex === -1) return { csv: csvData, duplicatesRemoved: 0 };
@@ -3386,7 +3687,26 @@ async function removeDuplicatesFromCSV(csvData, type) {
     
     data.forEach(line => {
         const fields = line.split(',');
-        const key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        let key = '';
+        
+        if (keyIndex === -2 && type === 'alunos') {
+            // Chave combinada para alunos: Nome + Código Campus
+            const nomeIndex = headerFields.findIndex(field => 
+                field.includes('Nome') && !field.includes('Professor') && !field.includes('Curso')
+            );
+            const campusCodigoIndex = headerFields.findIndex(field => 
+                field.includes('Código Campus') || field.includes('Cód. Campus')
+            );
+            
+            const nome = fields[nomeIndex] ? fields[nomeIndex].trim() : '';
+            const campusCodigo = fields[campusCodigoIndex] ? fields[campusCodigoIndex].trim() : '';
+            
+            if (nome && campusCodigo) {
+                key = `${nome}|${campusCodigo}`; // Usar | como separador
+            }
+        } else if (keyIndex >= 0) {
+            key = fields[keyIndex] ? fields[keyIndex].trim() : '';
+        }
         
         if (!key || !seen.has(key)) {
             if (key) seen.add(key);
@@ -3446,7 +3766,7 @@ async function showDuplicatesDialog(duplicatesInfo) {
                 bodyContent += `
                     <div class="duplicate-group" style="background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0;">
                         <h5 style="color: #495057; margin: 0 0 12px 0;">
-                            <strong>${duplicate.keyName}: ${duplicate.key}</strong>
+                            <strong>${duplicate.keyName}: ${info.type === 'alunos' && duplicate.key.includes('|') ? duplicate.key.replace('|', ' - Campus: ') : duplicate.key}</strong>
                             <span style="color: #6c757d; font-size: 14px; font-weight: normal;">
                                 (${duplicate.count} ocorrências encontradas)
                             </span>
@@ -3470,8 +3790,8 @@ async function showDuplicatesDialog(duplicatesInfo) {
                     } else if (info.type === 'alunos') {
                         displayText = `
                             <strong>${displayInfo.nome}</strong><br>
-                            🎓 ${displayInfo.curso} | 📊 ${displayInfo.situacao} | 
-                            📅 ${displayInfo.periodo}
+                            🎓 ${displayInfo.curso} | 🏛️ Campus: ${displayInfo.campusCodigo}${displayInfo.siglaCampus ? ` (${displayInfo.siglaCampus})` : ''} | 
+                            📊 ${displayInfo.situacao} | 🆔 RGM: ${displayInfo.rgm}
                         `;
                     }
                     
