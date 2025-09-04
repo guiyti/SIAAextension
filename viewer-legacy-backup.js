@@ -3,9 +3,43 @@
 
 // INTEGRAÇÃO GRADUAL DOS MÓDULOS REFATORADOS
 
-// Sistema moderno sem debug híbrido
+// Sistema de debug condicional (false em produção)
+const DEBUG_MODE = false;
+const debugLog = DEBUG_MODE ? console.log.bind(console) : () => {};
+const debugWarn = DEBUG_MODE ? console.warn.bind(console) : () => {};
+// Erros sempre são mostrados
+const errorLog = console.error.bind(console);
 
-// Função de integração removida - sistema moderno via AppController
+// Variável para verificar se os módulos estão carregados
+let modulesLoaded = false;
+
+// ETAPA 5.1: Verificação básica de módulos
+function initializeBasicModulesIntegration() {
+    debugLog('🔗 [ETAPA 5.1] Verificando módulos disponíveis...');
+    
+    try {
+        const hasEventBus = window.getEventBus;
+        const hasAppController = window.getAppController;
+        
+        if (hasEventBus && hasAppController) {
+            // Teste básico do EventBus
+            const eventBus = window.getEventBus();
+            eventBus.on('test.integration', (data) => {
+                debugLog('🧪 Teste de integração EventBus:', data);
+            });
+            eventBus.emit('test.integration', { status: 'working', timestamp: new Date() });
+            
+            modulesLoaded = true;
+            debugLog('✅ [ETAPA 5.1] Módulos básicos funcionais - pronto para próxima etapa');
+        } else {
+            debugLog('ℹ️ [ETAPA 5.1] Módulos não disponíveis - funcionando em modo legacy');
+        }
+        
+    } catch (error) {
+        debugWarn('⚠️ [ETAPA 5.1] Erro na verificação de módulos:', error);
+        modulesLoaded = false;
+    }
+}
 
 // Variáveis globais (mantidas para compatibilidade)
 
@@ -58,7 +92,7 @@ function getPresetConfig(presetKey, headers) {
 // Função para carregar customizações salvas do preset
 async function loadPresetCustomizations(presetKey) {
     const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
-    const saved = await window.Storage.get([storageKey]);
+    const saved = await Storage.get([storageKey]);
     const customization = saved[storageKey];
     
     if (customization && customization.viewMode === currentViewMode) {
@@ -80,13 +114,13 @@ let PRESETS_CURRENT = {};
 let builtinOverridesCache = null;
 async function getBuiltinOverrides() {
     if (builtinOverridesCache) return builtinOverridesCache;
-    const data = await window.Storage.get(['siaa_builtin_overrides']);
+    const data = await Storage.get(['siaa_builtin_overrides']);
     builtinOverridesCache = data.siaa_builtin_overrides || {};
     return builtinOverridesCache;
 }
 async function setBuiltinOverrides(map) {
     builtinOverridesCache = map;
-    await window.Storage.set({ 'siaa_builtin_overrides': map });
+    await Storage.set({ 'siaa_builtin_overrides': map });
 }
 
 function getPresetConfig(presetKey, headers) {
@@ -134,7 +168,7 @@ function getPresetDefault(presetKey, headers) {
 async function updateHeaderCounters() {
     try {
         // Obter dados de ofertas e alunos do storage
-        const storage = await window.Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
         
         // Contar ofertas
         let ofertasCount = 0;
@@ -171,13 +205,13 @@ async function updateHeaderCounters() {
 // Função para copiar tabela visível (extraída da implementação anterior)
 async function copyVisibleTable() {
     try {
-        const orderedColumns = getTableState('columnOrder')?.length > 0 ? getTableState('columnOrder') : (getAllData()[0] ? getDataHeaders() : []);
-        const visibleHeaders = orderedColumns.filter(h => getTableState('visibleColumns')?.has(h));
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
         if (!visibleHeaders.length) {
             alert('Não há colunas visíveis para copiar.');
             return;
         }
-        const rows = [visibleHeaders, ...getTableState('filteredData')?.map(row => visibleHeaders.map(h => {
+        const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
             // Fallback Total/Total Matriculados
             if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
             if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
@@ -195,7 +229,7 @@ async function copyVisibleTable() {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
         const htmlHead = '<table><thead><tr>' + visibleHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
-        const htmlBody = '<tbody>' + getTableState('filteredData')?.map(row => {
+        const htmlBody = '<tbody>' + filteredData.map(row => {
             const tds = visibleHeaders.map(h => {
                 let v;
                 if (h === 'Total Matriculados') v = row['Total Matriculados'] ?? row['Total'] ?? '';
@@ -227,7 +261,7 @@ async function copyVisibleTable() {
 // Função para copiar coluna individual
 async function copyColumn(columnName, withDuplicates = true) {
     try {
-        const values = getTableState('filteredData')?.map(row => {
+        const values = filteredData.map(row => {
             // Fallback Total/Total Matriculados
             if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
             if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
@@ -255,8 +289,8 @@ function buildCopyColumnsList() {
     const copyColumnsList = document.getElementById('copyColumnsList');
     if (!copyColumnsList) return;
     
-    const orderedColumns = getTableState('columnOrder')?.length > 0 ? getTableState('columnOrder') : (getAllData()[0] ? getDataHeaders() : []);
-    const visibleHeaders = orderedColumns.filter(h => getTableState('visibleColumns')?.has(h));
+    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
     
     copyColumnsList.innerHTML = '';
     
@@ -289,175 +323,40 @@ function buildCopyColumnsList() {
 }
 
 // Sistema de storage universal (funciona em extensão e browser)
-// MICRO-ETAPA B.1.3: Storage legacy REMOVIDO - agora usa window.Storage do sistema moderno
-
-// 🔄 MICRO-D.1: allData agora fornecida pela façade do AppController
-// let allData = []; // ← Removido: substituído por window.allData via façade
-
-// 🚀 MICRO-D.3: Funções auxiliares para acesso aos dados via DataStore
-function getAllData() {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        return dataStore.getRawData() || [];
-    }
-    // Fallback para façade
-    return window.allData || [];
-}
-
-function setAllData(data) {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        dataStore.setRawData(data);
-        console.log(`🚀 [D.3] Dados definidos via DataStore: ${data?.length} registros`);
+const Storage = {
+    async get(keys) {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            return await chrome.storage.local.get(keys);
         } else {
-        // Fallback para façade
-        window.allData = data;
-    }
-}
-
-function getDataHeaders() {
-    const data = getAllData();
-    return data.length > 0 ? Object.keys(data[0]) : [];
-}
-
-// 🚀 MICRO-D.4: Funções auxiliares para estados da tabela via DataStore
-function getTableState(key) {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        return dataStore.getTableState(key, currentViewMode);
-    }
-    // Fallback para variáveis globais durante transição
-    switch(key) {
-        case 'filteredData': return filteredData;
-        case 'currentSort': return currentSort;
-        case 'visibleColumns': return visibleColumns;
-        case 'columnWidths': return columnWidths;
-        case 'columnOrder': return columnOrder;
-        case 'dragSrcIndex': return dragSrcIndex;
-        case 'activeDropdown': return activeDropdown;
-        case 'currentPresetSelection': return currentPresetSelection;
-        default: return null;
-    }
-}
-
-function setTableState(key, value) {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        dataStore.setTableState(key, value, currentViewMode);
-        console.log(`🚀 [D.4] Estado ${key} definido via DataStore: ${typeof value === 'object' ? JSON.stringify(value).slice(0,50)+'...' : value}`);
+            // Fallback para localStorage quando não há chrome.storage
+            const result = {};
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    try {
+                        result[key] = JSON.parse(value);
+                    } catch {
+                        result[key] = value;
+                    }
+                }
+            });
+            return result;
+        }
+    },
+    
+    async set(data) {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            return await chrome.storage.local.set(data);
         } else {
-        // Fallback para variáveis globais durante transição
-        switch(key) {
-            case 'filteredData': filteredData = value; break;
-            case 'currentSort': currentSort = value; break;
-            case 'visibleColumns': visibleColumns = value; break;
-            case 'columnWidths': columnWidths = value; break;
-            case 'columnOrder': columnOrder = value; break;
-            case 'dragSrcIndex': dragSrcIndex = value; break;
-            case 'activeDropdown': activeDropdown = value; break;
-            case 'currentPresetSelection': currentPresetSelection = value; break;
+            // Fallback para localStorage
+            Object.entries(data).forEach(([key, value]) => {
+                localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+            });
         }
     }
-}
+};
 
-// 🚀 MICRO-D.4: Debug helpers avançados para o orquestrador moderno
-function getSystemStatus() {
-    const dataStore = window.getDataStore?.();
-    const appController = window.getAppController?.();
-    const eventBus = window.getEventBus?.();
-    
-    return {
-        timestamp: new Date().toISOString(),
-        systems: {
-            dataStore: !!dataStore,
-            appController: !!appController,
-            eventBus: !!eventBus,
-            configLoader: !!window.getConfigLoader?.(),
-            storage: !!window.Storage
-        },
-        data: {
-            currentMode: currentViewMode,
-            dataCount: getAllData().length,
-            filteredCount: getTableState('filteredData')?.length || 0,
-            hasHeaders: getDataHeaders().length > 0
-        },
-        states: dataStore ? {
-            appState: dataStore.getAppState(),
-            filterStates: dataStore.getFilterStates(),
-            columnStates: dataStore.getColumnStates(),
-            presetStates: dataStore.getPresetStates(),
-            tableStates: dataStore.getTableStates()
-        } : 'DataStore não disponível'
-    };
-}
-
-function debugSystem() {
-    console.group('🔍 SIAA System Status - MICRO-D.4');
-    console.log(getSystemStatus());
-    console.groupEnd();
-}
-
-// 🚀 MICRO-D.4: Função para sincronizar estados legacy → DataStore
-function syncLegacyStatesToDataStore() {
-    const dataStore = window.getDataStore?.();
-    if (!dataStore) {
-        console.warn('⚠️ DataStore não disponível para sincronização');
-        return false;
-    }
-    
-    try {
-        // Sincronizar estados da tabela
-        dataStore.updateTableStates({
-            filteredData: filteredData,
-            currentSort: currentSort,
-            visibleColumns: getTableState('visibleColumns') || new Set(),
-            columnWidths: columnWidths,
-            columnOrder: columnOrder,
-            dragSrcIndex: dragSrcIndex,
-            activeDropdown: activeDropdown,
-            currentPresetSelection: currentPresetSelection
-        }, currentViewMode);
-        
-        console.log(`🔄 [D.4] Estados legacy sincronizados para DataStore (modo: ${currentViewMode})`);
-        return true;
-    } catch (error) {
-        console.error('❌ Erro ao sincronizar estados legacy:', error);
-        return false;
-    }
-}
-
-// Função para sincronizar DataStore → variáveis legacy (fallback)
-function syncDataStoreToLegacyStates() {
-    const dataStore = window.getDataStore?.();
-    if (!dataStore) return false;
-    
-    try {
-        const tableStates = dataStore.getTableStates(currentViewMode);
-        
-        filteredData = tableStates.filteredData || [];
-        currentSort = tableStates.currentSort || { column: null, direction: 'asc' };
-        visibleColumns = tableStates.visibleColumns || new Set();
-        columnWidths = tableStates.columnWidths || {};
-        columnOrder = tableStates.columnOrder || [];
-        dragSrcIndex = tableStates.dragSrcIndex || null;
-        activeDropdown = tableStates.activeDropdown || null;
-        currentPresetSelection = tableStates.currentPresetSelection || '';
-        
-        console.log(`🔄 [D.4] Estados DataStore sincronizados para variáveis legacy (modo: ${currentViewMode})`);
-        return true;
-    } catch (error) {
-        console.error('❌ Erro ao sincronizar DataStore para legacy:', error);
-        return false;
-    }
-}
-
-// Expor helpers globalmente para debug
-window.debugSIAA = debugSystem;
-window.getSIAAStatus = getSystemStatus;
-window.syncLegacyStates = syncLegacyStatesToDataStore;
-window.syncDataStoreStates = syncDataStoreToLegacyStates;
-
-// ⚠️ TEMPORÁRIO: Manter variáveis globais durante transição (D.4)
+let allData = [];
 let filteredData = [];
 let currentSort = { column: null, direction: 'asc' };
 let visibleColumns = new Set();
@@ -469,185 +368,39 @@ let activeDropdown = null; // Dropdown de sugestões ativo
 let currentPresetSelection = ''; // Valor selecionado no select de presets
 
 // Elementos do DOM
-// 🔄 MICRO-D.1: elements agora fornecida pela façade do AppController
-// const elements = { ... }; // ← Removido: substituído por window.elements via façade (proxy dinâmico)
-
-// ⚠️ TEMPORÁRIO: Manter referência legacy durante transição
 const elements = {
-    // Propriedades serão acessadas via window.elements (façade)
-    get filteredRecords() { return document.getElementById('filteredRecords'); },
-    get totalOfertas() { return document.getElementById('totalOfertas'); },
-    get totalAlunos() { return document.getElementById('totalAlunos'); },
-    get searchInput() { return document.getElementById('searchInput'); },
-    get clearBtn() { return document.getElementById('clearBtn'); },
-    get resetColumnsBtn() { return document.getElementById('resetColumnsBtn'); },
-    get presetSelect() { return document.getElementById('presetSelect'); },
-    get exportBtn() { return document.getElementById('exportBtn'); },
-    get sidebarLastUpdate() { return document.getElementById('sidebarLastUpdate'); },
-    get campusFilter() { return document.getElementById('campusFilter'); },
-    get periodoFilter() { return document.getElementById('periodoFilter'); },
-    get disciplinaFilter() { return document.getElementById('disciplinaFilter'); },
-    get professorFilter() { return document.getElementById('professorFilter'); },
-    get cursoFilter() { return document.getElementById('cursoFilterTop'); },
-    get horarioFilter() { return document.getElementById('horarioFilter'); },
-    get columnToggle() { return document.getElementById('columnToggle'); },
-    get presetsList() { return document.getElementById('presetsList'); },
-    get loadingMessage() { return document.getElementById('loadingMessage'); },
-    get tableWrapper() { return document.getElementById('tableWrapper'); },
-    get noDataMessage() { return document.getElementById('noDataMessage'); },
-    get tableHead() { return document.getElementById('tableHead'); },
-    get tableBody() { return document.getElementById('tableBody'); }
+    filteredRecords: document.getElementById('filteredRecords'),
+    totalOfertas: document.getElementById('totalOfertas'),
+    totalAlunos: document.getElementById('totalAlunos'),
+    searchInput: document.getElementById('searchInput'),
+    clearBtn: document.getElementById('clearBtn'),
+    resetColumnsBtn: document.getElementById('resetColumnsBtn'),
+    presetSelect: document.getElementById('presetSelect'),
+    exportBtn: document.getElementById('exportBtn'),
+    sidebarLastUpdate: document.getElementById('sidebarLastUpdate'),
+    campusFilter: document.getElementById('campusFilter'),
+    periodoFilter: document.getElementById('periodoFilter'),
+    disciplinaFilter: document.getElementById('disciplinaFilter'),
+    professorFilter: document.getElementById('professorFilter'),
+    cursoFilter: document.getElementById('cursoFilterTop'),
+    horarioFilter: document.getElementById('horarioFilter'),
+    columnToggle: document.getElementById('columnToggle'),
+    presetsList: document.getElementById('presetsList'),
+    loadingMessage: document.getElementById('loadingMessage'),
+    tableWrapper: document.getElementById('tableWrapper'),
+    noDataMessage: document.getElementById('noDataMessage'),
+    tableHead: document.getElementById('tableHead'),
+    tableBody: document.getElementById('tableBody')
 };
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Iniciando SIAA Data Viewer...');
     
-    // ETAPA B: Sistema de inicialização híbrida segura
-    try {
-        // Verificar se módulos estão disponíveis
-        if (window.getAppController && window.getEventBus) {
-            console.log('✅ Módulos detectados - Inicializando sistema moderno EM PARALELO ao legacy');
-            
-            // Inicializar AppController sem remover código legacy
-            const appController = window.getAppController();
-            const eventBus = window.getEventBus();
-            
-            await appController.initialize({
-                elements: elements,
-                debug: false
-            });
-            
-                        // Configurar sidebar via EventBus
-            try {
-                const eventBus = window.getEventBus();
-                
-                eventBus.on('ui.sidebar.toggle', () => {
-        document.body.classList.toggle('sidebar-open');
-                });
-    
-                eventBus.on('ui.sidebar.close', () => {
-        document.body.classList.remove('sidebar-open');
-                });
-                
-            } catch (error) {
-                console.warn('⚠️ Sistema moderno de sidebar falhou');
-            }
-            
-            console.log('✅ Sistema moderno inicializado - Legacy mantido como backup');
-            
-            // Verificar configuração carregada via sistema moderno
-            try {
-                const configLoader = window.getConfigLoader();
-                if (configLoader && configLoader.isConfigLoaded()) {
-                    const modernConfig = configLoader.getConfig();
-                }
-            } catch (error) {
-                // Sistema moderno de config falhou
-            }
-            
-            // Verificar sistema moderno Storage
-            try {
-                const modernStorage = window.Storage;
-                if (modernStorage) {
-                    const testData = await modernStorage.get(['siaa_view_mode']);
-                }
-            } catch (error) {
-                // Sistema moderno de storage falhou
-            }
-            
-            // Migrar event listeners básicos para sistema moderno
-            try {
-                if (appController.modules?.filterManager) {
-                    const filterManager = appController.modules.filterManager;
-                    
-                    // Migrar searchInput para sistema moderno via EventBus
-                    if (elements.searchInput) {
-                        // Remover listener legacy
-                        elements.searchInput.removeEventListener('input', () => {});
-                        
-                        // Adicionar listener moderno via EventBus
-                        elements.searchInput.addEventListener('input', (e) => {
-                            eventBus.emit('filter.search.changed', e.target.value);
-                        });
-                        
-                        // Listener no EventBus para processar search
-                        eventBus.on('filter.search.changed', (value) => {
-                            applyFilters(); // Ainda chama legacy por enquanto
-                            debouncedAutoSave();
-                        });
-                    }
-                    
-                    // Migrar clearBtn para sistema moderno via EventBus
-                    if (elements.clearBtn) {
-                        // Remover listener legacy
-                        elements.clearBtn.removeEventListener('click', () => {});
-                        
-                        // Adicionar listener moderno via EventBus
-                        elements.clearBtn.addEventListener('click', () => {
-                            eventBus.emit('filter.clear.requested');
-                        });
-                        
-                        // Listener no EventBus para processar clear
-                        eventBus.on('filter.clear.requested', () => {
-                            clearFilters(); // Ainda chama legacy por enquanto
-                        });
-                    }
-                    
-                } else {
-                    // FilterManager não disponível
-                }
-            } catch (error) {
-                // Sistema moderno de event listeners falhou
-            }
-            
-            // Implementar carregamento moderno via DataStore  
-            try {
-                if (appController.modules?.dataStore) {
-                    const dataStore = appController.modules.dataStore;
-                    
-                    // Implementar loadDataFromStorage moderno
-                    dataStore.loadDataFromStorage = async function(mode = 'ofertas') {
-                        try {
-                            const storageKey = mode === 'alunos' ? 'siaa_students_csv' : 'siaa_data_csv';
-                            const timestampKey = mode === 'alunos' ? 'siaa_students_timestamp' : 'siaa_data_timestamp';
-                            
-                            const data = await window.Storage.get([storageKey, timestampKey]);
-                            
-                            if (!data[storageKey]) {
-                                return { success: false, reason: 'no_data' };
-                            }
-                            
-                            // Usar parseCSV global (legacy) por enquanto
-                            const parsedData = parseCSV(data[storageKey]);
-                            
-                            if (parsedData.length === 0) {
-                                return { success: false, reason: 'empty_data' };
-                            }
-                            
-                            // Usar setRawData para popular o DataStore
-                            this.setRawData(parsedData, mode);
-                            this.data[mode].timestamp = data[timestampKey];
-                            
-                            return { success: true, count: parsedData.length, data: parsedData };
-                            
-                        } catch (error) {
-                            return { success: false, reason: 'error', error };
-                        }
-                    };
-                    
-                } else {
-                }
-            } catch (error) {
-            }
-            
-        } else {
-            console.log('⚠️ Módulos não disponíveis - Funcionando apenas em modo legacy');
-        }
-    } catch (error) {
-        console.warn('⚠️ Erro na inicialização moderna:', error);
-        console.log('✅ Sistema legacy mantido funcionando');
-    }
+    // ETAPA 5.1: Integração básica com módulos (apenas EventBus e AppController)
+    setTimeout(() => {
+        initializeBasicModulesIntegration();
+    }, 200); // Delay maior para garantir carregamento
     
     // Configurar sidebar toggle
     const toggleSidebar = () => {
@@ -661,27 +414,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('🔄 Sidebar fechada');
     };
     
-    // MICRO-ETAPA B.1.1: Event listeners da sidebar via sistema moderno
-    try {
-        const eventBus = window.getEventBus();
-        if (eventBus) {
-            // Usar sistema moderno para event listeners da sidebar
-            document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-                eventBus.emit('ui.sidebar.toggle');
-            });
-            document.getElementById('sidebarClose')?.addEventListener('click', () => {
-                eventBus.emit('ui.sidebar.close');
-            });
-            document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
-                eventBus.emit('ui.sidebar.close');
-            });
-        } else {
-            throw new Error('EventBus não disponível');
-        }
-    } catch (error) {
-        console.warn('⚠️ [C.1] Sistema moderno de sidebar falhou - funcionalidade limitada');
-        // MICRO-ETAPA C.1: Fallback legacy REMOVIDO - sidebar funciona via EventBus
-    }
+    // Event listeners para sidebar
+    document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+    document.getElementById('sidebarClose')?.addEventListener('click', closeSidebar);
+    document.getElementById('sidebarOverlay')?.addEventListener('click', closeSidebar);
     
     // Fechar sidebar com ESC
     document.addEventListener('keydown', (e) => {
@@ -691,8 +427,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     try {
-        // MICRO-ETAPA B.1.2: Configuração agora carregada pelo AppController
-        console.log('🔧 Configuração SIAA agora via sistema moderno...');
+        // 1. Carregar configuração do siaa-config.json primeiro
+        console.log('🔧 Carregando configuração SIAA...');
+        await loadSiaaConfig();
         
         // 2. Carregar estados salvos
         console.log('📦 Carregando estados salvos...');
@@ -701,21 +438,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 3. Configurar header responsivo
         setupHeaderEvents();
         
-        // 4. Configurar controles de modo de visualização - REMOVIDO (função não existe)
+        // 4. Configurar controles de modo de visualização
+        await setupViewModeControls();
         
         // 5. Sincronizar estados carregados com variáveis globais
         syncLocalStates();
         
         // 5. Carregar configurações antigas (compatibilidade)
-        const stored = await window.Storage.get(['viewer_column_widths', 'viewer_column_order', 'viewer_column_visibility']);
-        if (stored.viewer_column_widths && Object.keys(getTableState('columnWidths') || {}).length === 0) {
-            setTableState('columnWidths', stored.viewer_column_widths);
+        const stored = await Storage.get(['viewer_column_widths', 'viewer_column_order', 'viewer_column_visibility']);
+        if (stored.viewer_column_widths && Object.keys(columnWidths).length === 0) {
+            columnWidths = stored.viewer_column_widths;
         }
-        if (Array.isArray(stored.viewer_column_order) && getTableState('columnOrder')?.length === 0) {
-            setTableState('columnOrder', stored.viewer_column_order);
+        if (Array.isArray(stored.viewer_column_order) && columnOrder.length === 0) {
+            columnOrder = stored.viewer_column_order;
         }
-        if (Array.isArray(stored.viewer_column_visibility) && (getTableState('visibleColumns')?.size || 0) === 0) {
-            setTableState('visibleColumns', new Set(stored.viewer_column_visibility));
+        if (Array.isArray(stored.viewer_column_visibility) && visibleColumns.size === 0) {
+            visibleColumns = new Set(stored.viewer_column_visibility);
         }
 
         // 6. Carregar dados e configurar interface
@@ -760,33 +498,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('💡 Use window.debugSidebar() no console para debug da sidebar');
 });
 
-// Carregar dados do storage - Sistema híbrido otimizado
+// Carregar dados do storage
 async function loadData() {
     try {
-        // Tentar carregamento via sistema moderno primeiro
-        let dataLoaded = false;
-        let timestamp = null;
-        
-        try {
-            const appController = window.getAppController?.();
-            if (appController?.modules?.dataStore?.loadDataFromStorage) {
-                const result = await appController.modules.dataStore.loadDataFromStorage('ofertas');
-                
-                if (result.success) {
-                    setAllData(appController.modules.dataStore.getRawData());
-                    timestamp = appController.modules.dataStore.data.ofertas.timestamp;
-                    dataLoaded = true;
-                    console.log(`✅ ${getAllData().length} registros via sistema moderno`);
-                }
-            }
-        } catch (modernError) {
-            console.warn('⚠️ Sistema moderno falhou:', modernError);
-        }
-        
-        // Fallback para carregamento legacy se necessário
-        if (!dataLoaded) {
-            console.log('🔙 Usando carregamento legacy...');
-            const data = await window.Storage.get(['siaa_data_csv', 'siaa_data_timestamp']);
+        const data = await Storage.get(['siaa_data_csv', 'siaa_data_timestamp']);
         
         if (!data.siaa_data_csv) {
             console.log('⚠️ Nenhum dado encontrado no storage');
@@ -794,29 +509,27 @@ async function loadData() {
             return;
         }
 
-        setAllData(parseCSV(data.siaa_data_csv));
-            timestamp = data.siaa_data_timestamp;
-            dataLoaded = true;
-            console.log(`✅ ${getAllData().length} registros via sistema legacy`);
-        }
+        console.log('📊 Dados encontrados, processando...');
+        allData = parseCSV(data.siaa_data_csv);
         
-        // Verificar se dados estão válidos
-        if (!dataLoaded || getAllData().length === 0) {
-            console.log('⚠️ Dados do CSV estão vazios ou inválidos');
+        if (allData.length === 0) {
+            console.log('⚠️ Dados do CSV estão vazios');
             showNoData();
             return;
         }
 
-        // Atualizar timestamp na UI (consolidado para ambos os sistemas)
-        if (timestamp) {
-            const dateStr = new Date(timestamp).toLocaleString('pt-BR');
+        // Atualizar informações
+        // totalRecords removido - usando contadores específicos nos botões
+        if (data.siaa_data_timestamp) {
+            const dateStr = new Date(data.siaa_data_timestamp).toLocaleString('pt-BR');
             elements.sidebarLastUpdate.textContent = dateStr;
         } else {
             elements.sidebarLastUpdate.textContent = 'Não disponível';
         }
 
-        // Finalizar carregamento (consolidado)
+        // Atualizar contadores do header
         await updateHeaderCounters();
+
         await finishDataLoading();
         
     } catch (error) {
@@ -831,7 +544,7 @@ async function finishDataLoading() {
         console.log('🔄 finishDataLoading iniciado');
         
         // Headers e configurações iniciais
-        const headers = getDataHeaders();
+        const headers = Object.keys(allData[0]);
 
     // Compatibilidade: alinhar aliases 'Total' ↔ 'Total Matriculados'
     (function reconcileTotalHeaders() {
@@ -840,23 +553,19 @@ async function finishDataLoading() {
         // Se o CSV novo usa 'Total Matriculados', mas há estado salvo com 'Total', trocamos
         if (!hasTotal && hasTotalMatric) {
             let changed = false;
-            if (Array.isArray(getTableState('columnOrder')) && getTableState('columnOrder')?.includes('Total')) {
-                const updatedOrder = getTableState('columnOrder').map(h => h === 'Total' ? 'Total Matriculados' : h);
-                setTableState('columnOrder', updatedOrder);
+            if (Array.isArray(columnOrder) && columnOrder.includes('Total')) {
+                columnOrder = columnOrder.map(h => h === 'Total' ? 'Total Matriculados' : h);
                 changed = true;
             }
-            if (visibleColumns instanceof Set && getTableState('visibleColumns')?.has('Total')) {
-                const currentVisible = getTableState('visibleColumns') || new Set();
-                const newVisible = new Set(currentVisible);
-                newVisible.delete('Total');
-                newVisible.add('Total Matriculados');
-                setTableState('visibleColumns', newVisible);
+            if (visibleColumns instanceof Set && visibleColumns.has('Total')) {
+                visibleColumns.delete('Total');
+                visibleColumns.add('Total Matriculados');
                 changed = true;
             }
             if (changed) {
-                window.Storage.set({
-                    viewer_column_order: getTableState('columnOrder') || [],
-                    viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set())
+                Storage.set({
+                    viewer_column_order: columnOrder,
+                    viewer_column_visibility: Array.from(visibleColumns)
                 });
             }
         }
@@ -867,33 +576,30 @@ async function finishDataLoading() {
     // Aplicar preset selecionado ANTES de montar a visualização para manter sincronizado
     try {
         const presetKey = getPresetStorageKey();
-        const sel = await window.Storage.get([presetKey]);
-        setTableState('currentPresetSelection', sel[presetKey] || '__builtin__PRESET_1_BASICO');
+        const sel = await Storage.get([presetKey]);
+        currentPresetSelection = sel[presetKey] || '__builtin__PRESET_1_BASICO';
         // Carregar overrides persistentes em cache para uso imediato
         await getBuiltinOverrides();
-        const presetConfigKey = getTableState('currentPresetSelection')?.startsWith('__builtin__')
-            ? getTableState('currentPresetSelection').replace('__builtin__','')
+        const presetConfigKey = currentPresetSelection.startsWith('__builtin__')
+            ? currentPresetSelection.replace('__builtin__','')
             : 'PRESET_1_BASICO';
         const cfg = getPresetConfig(presetConfigKey, headers);
         if (cfg) {
-            setTableState('columnOrder', cfg.order);
-            setTableState('visibleColumns', new Set(cfg.visible));
+            columnOrder = cfg.order;
+            visibleColumns = new Set(cfg.visible);
         }
     } catch (e) {
         // fallback silencioso - usar preset padrão do siaa-config
-    if (getTableState('columnOrder')?.length === 0) {
+    if (columnOrder.length === 0) {
         const defaultPreset = getConfigPreset('PADRAO', currentViewMode);
         if (defaultPreset && defaultPreset.order) {
-            setTableState('columnOrder', defaultPreset.order.filter(h => headers.includes(h)));
+            columnOrder = defaultPreset.order.filter(h => headers.includes(h));
         }
-        const currentOrder = getTableState('columnOrder') || [];
-        const newOrder = [...currentOrder];
-        headers.forEach(h => { if (!currentOrder.includes(h)) newOrder.push(h); });
-        setTableState('columnOrder', newOrder);
+        headers.forEach(h => { if (!columnOrder.includes(h)) columnOrder.push(h);});
     }
-    if ((getTableState('visibleColumns')?.size || 0) === 0) {
-            const allHeaders = getDataHeaders();
-            setTableState('visibleColumns', new Set(allHeaders));
+    if (visibleColumns.size === 0) {
+            const allHeaders = Object.keys(allData[0]);
+            allHeaders.forEach(h => visibleColumns.add(h));
         }
     }
 
@@ -913,11 +619,6 @@ async function finishDataLoading() {
     showData();
     
     console.log('✅ Dados carregados com sucesso!');
-    
-    // 🔧 CORREÇÃO D.4.1: Inicializar filteredData após carregar dados
-    console.log('🔄 Inicializando filtros após carregamento...');
-    applyFilters(); // ESSENCIAL: Inicializar filteredData com todos os dados
-    
     // Atualizar estado dos botões de Importar/Mesclar
     updateDataActionButtonsUI();
     
@@ -1064,10 +765,10 @@ function parseCSVLine(line) {
 
 // Configurar cabeçalho da tabela
 function setupTable() {
-    if (getAllData().length === 0) return;
+    if (allData.length === 0) return;
     
-    if (getTableState('columnOrder')?.length === 0) setTableState('columnOrder', getDataHeaders());
-    const headers = getTableState('columnOrder') || [];
+    if (columnOrder.length === 0) columnOrder = Object.keys(allData[0]);
+    const headers = columnOrder;
     elements.tableHead.innerHTML = '';
     
     const headerRow = document.createElement('tr');
@@ -1078,9 +779,8 @@ function setupTable() {
         th.addEventListener('click', () => sortTable(header));
         
         // Aplicar largura salva
-        const savedWidth = getTableState('columnWidths')?.[header];
-        if (savedWidth) {
-            th.style.width = savedWidth + 'px';
+        if (columnWidths[header]) {
+            th.style.width = columnWidths[header] + 'px';
         }
 
         // Adicionar resizer
@@ -1102,10 +802,8 @@ function setupTable() {
             }
             function onMouseUp() {
                 const finalWidth = th.offsetWidth;
-                const currentWidths = { ...(getTableState('columnWidths') || {}) };
-                currentWidths[header] = finalWidth;
-                setTableState('columnWidths', currentWidths);
-                window.Storage.set({ viewer_column_widths: currentWidths });
+                columnWidths[header] = finalWidth;
+                Storage.set({ viewer_column_widths: columnWidths });
                 debouncedAutoSave(); // Salvar estados automaticamente
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
@@ -1117,7 +815,7 @@ function setupTable() {
         // Drag-and-drop para cabeçalhos da tabela
         th.setAttribute('draggable', 'true');
         th.addEventListener('dragstart', (e) => {
-            setTableState('dragSrcIndex', headers.indexOf(header));
+            dragSrcIndex = headers.indexOf(header);
             th.style.opacity = '0.5';
             e.dataTransfer.effectAllowed = 'move';
         });
@@ -1131,17 +829,14 @@ function setupTable() {
         th.addEventListener('drop', async (e) => {
             e.preventDefault();
             const dropIndex = headers.indexOf(header);
-            const dragSrcIndex = getTableState('dragSrcIndex');
             if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
             
             // Reorganizar columnOrder
-            const currentOrder = [...(getTableState('columnOrder') || [])];
-            const moved = currentOrder.splice(dragSrcIndex, 1)[0];
-            currentOrder.splice(dropIndex, 0, moved);
-            setTableState('columnOrder', currentOrder);
+            const moved = columnOrder.splice(dragSrcIndex, 1)[0];
+            columnOrder.splice(dropIndex, 0, moved);
             
             // Salvar nova ordem
-            window.Storage.set({ viewer_column_order: getTableState('columnOrder') || [] });
+            Storage.set({ viewer_column_order: columnOrder });
             debouncedAutoSave(); // Salvar estados automaticamente
             
             // Atualizar interface
@@ -1212,37 +907,37 @@ function toggleFilterActiveStyles(header, th, input) {
 
 // Configurar filtros
 function setupFilters() {
-    if (getAllData().length === 0) return;
+    if (allData.length === 0) return;
     
     // Se os selects não existem no DOM, não executar população
     // Campus
     if (elements.campusFilter) {
-    const campusValues = [...new Set(getAllData().map(row => row['Sigla Campus']).filter(Boolean))].sort();
+    const campusValues = [...new Set(allData.map(row => row['Sigla Campus']).filter(Boolean))].sort();
     populateSelect(elements.campusFilter, campusValues);
     }
     
     // Período
     if (elements.periodoFilter) {
-    const periodoValues = [...new Set(getAllData().map(row => row['Período']).filter(Boolean))].sort();
+    const periodoValues = [...new Set(allData.map(row => row['Período']).filter(Boolean))].sort();
     populateSelect(elements.periodoFilter, periodoValues);
     }
     
     // Disciplina
     if (elements.disciplinaFilter) {
-    const disciplinaValues = [...new Set(getAllData().map(row => row['Nome Disciplina']).filter(Boolean))].sort();
+    const disciplinaValues = [...new Set(allData.map(row => row['Nome Disciplina']).filter(Boolean))].sort();
     populateSelect(elements.disciplinaFilter, disciplinaValues);
     }
     
     // Professor
     if (elements.professorFilter) {
-    const professorValues = [...new Set(getAllData().map(row => row['Nome Professor']).filter(Boolean))].sort();
+    const professorValues = [...new Set(allData.map(row => row['Nome Professor']).filter(Boolean))].sort();
     populateSelect(elements.professorFilter, professorValues);
     }
 
     // Curso
     const cursoSet = new Set();
     const cursoRegex = /\(\d+\s-\s[^)]+\)/g;
-    getAllData().forEach(row => {
+    allData.forEach(row => {
         const field = row['Curso'] || '';
         const matches = field.match(cursoRegex);
         if (matches) {
@@ -1254,7 +949,7 @@ function setupFilters() {
 
     // Horário
     const horarioSet = new Set();
-    getAllData().forEach(row => {
+    allData.forEach(row => {
         const horario = row['Hora'] || '';
         if (horario) {
             // Extrair dias da semana únicos do horário
@@ -1287,7 +982,7 @@ function populateSelect(selectElement, values) {
 
 // Configurar toggle de colunas
 async function setupColumnToggle() {
-    if (getAllData().length === 0) return;
+    if (allData.length === 0) return;
     if (!elements.columnToggle) return; // Se não existe no DOM, não montar
     
     // Preservar o título e a dica
@@ -1302,23 +997,21 @@ async function setupColumnToggle() {
     }
     
     // Usar columnOrder para manter a ordem correta das colunas na sidebar
-    const headers = getTableState('columnOrder')?.length > 0 ? getTableState('columnOrder') : getDataHeaders();
+    const headers = columnOrder.length > 0 ? columnOrder : Object.keys(allData[0]);
     
     headers.forEach(header => {
         const label = document.createElement('label');
         
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = getTableState('visibleColumns')?.has(header);
+        checkbox.checked = visibleColumns.has(header);
         checkbox.addEventListener('change', async (e) => {
-            const currentVisibleColumns = new Set(getTableState('visibleColumns') || new Set());
             if (e.target.checked) {
-                currentVisibleColumns.add(header);
+                visibleColumns.add(header);
             } else {
-                currentVisibleColumns.delete(header);
+                visibleColumns.delete(header);
             }
-            setTableState('visibleColumns', currentVisibleColumns);
-            window.Storage.set({ viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set()) });
+            Storage.set({ viewer_column_visibility: [...visibleColumns] });
             debouncedAutoSave(); // Salvar estados automaticamente
             await autoSaveCurrentPreset(); // Salvar customização do preset atual
             updateColumnVisibility();
@@ -1342,7 +1035,7 @@ async function setupColumnToggle() {
         label.setAttribute('draggable','true');
         label.addEventListener('dragstart', (e)=>{
             const labels = Array.from(elements.columnToggle.children).filter(child => child.tagName === 'LABEL');
-            setTableState('dragSrcIndex', labels.indexOf(label));
+            dragSrcIndex = labels.indexOf(label);
             label.classList.add('dragging');
             e.dataTransfer.effectAllowed='move';
         });
@@ -1375,17 +1068,14 @@ async function setupColumnToggle() {
             
             const labels = Array.from(elements.columnToggle.children).filter(child => child.tagName === 'LABEL');
             const dropIndex = labels.indexOf(label);
-            const dragSrcIndex = getTableState('dragSrcIndex');
             if(dragSrcIndex === null || dragSrcIndex === dropIndex) return;
             
             // Reorganizar columnOrder
-            const currentOrder = [...(getTableState('columnOrder') || [])];
-            const moved = currentOrder.splice(dragSrcIndex, 1)[0];
-            currentOrder.splice(dropIndex, 0, moved);
-            setTableState('columnOrder', currentOrder);
+            const moved = columnOrder.splice(dragSrcIndex, 1)[0];
+            columnOrder.splice(dropIndex, 0, moved);
             
             // Salvar nova ordem
-            window.Storage.set({ viewer_column_order: getTableState('columnOrder') || [] });
+            Storage.set({ viewer_column_order: columnOrder });
             debouncedAutoSave(); // Salvar estados automaticamente
             
             // Atualizar interface
@@ -1400,10 +1090,10 @@ async function setupColumnToggle() {
 // Atualizar visibilidade das colunas
 function updateColumnVisibility() {
     const table = document.getElementById('dataTable');
-    const headers = getTableState('columnOrder') || [];
+    const headers = columnOrder;
     
     headers.forEach((header, index) => {
-        const isVisible = getTableState('visibleColumns')?.has(header);
+        const isVisible = visibleColumns.has(header);
         const className = isVisible ? '' : 'hidden-column';
         
         // Atualizar cabeçalho (todas as linhas do thead)
@@ -1516,8 +1206,6 @@ function setupEventListeners() {
         clearDataBtn.addEventListener('click', clearAllData);
     }
     
-    // MICRO-ETAPA C.1: Event listeners legacy REMOVIDOS - agora funcionam via EventBus moderno
-    
     // Filtros
     if (elements.campusFilter) elements.campusFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
     if (elements.periodoFilter) elements.periodoFilter.addEventListener('change', () => { applyFilters(); debouncedAutoSave(); });
@@ -1570,7 +1258,7 @@ function updateDataActionButtonsUI() {
     const importAllBtn = document.getElementById('importAllBtn');
     const mergeAllBtn = document.getElementById('mergeAllBtn');
     const clearDataBtn = document.getElementById('clearDataBtn');
-    const hasData = Array.isArray(getAllData()) && getAllData().length > 0;
+    const hasData = Array.isArray(allData) && allData.length > 0;
     if (importAllBtn) {
         importAllBtn.disabled = hasData;
         importAllBtn.title = hasData
@@ -1597,29 +1285,27 @@ async function buildVisibilityAndOrderLists() {
     visibilityList.innerHTML = '';
     orderList.innerHTML = '';
 
-    const headers = getTableState('columnOrder')?.length ? getTableState('columnOrder') : Object.keys(getAllData()[0] || {});
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
 
     // Visibilidade
     headers.forEach(header => {
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.checked = getTableState('visibleColumns')?.has(header);
+        checkbox.checked = visibleColumns.has(header);
         checkbox.addEventListener('change', async () => {
-            const currentVisibleColumns = new Set(getTableState('visibleColumns') || new Set());
             if (checkbox.checked) {
-                currentVisibleColumns.add(header);
+                visibleColumns.add(header);
                 // Feedback visual positivo
                 label.classList.add('checked');
                 setTimeout(() => { label.classList.remove('checked'); }, 500);
             } else {
-                currentVisibleColumns.delete(header);
+                visibleColumns.delete(header);
                 // Feedback visual negativo
                 label.classList.add('unchecked');
                 setTimeout(() => { label.classList.remove('unchecked'); }, 500);
             }
-            setTableState('visibleColumns', currentVisibleColumns);
-            window.Storage.set({ viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set()) });
+            Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
             debouncedAutoSave(); // Salvar estados automaticamente
             await autoSaveCurrentPreset(); // Salvar customização do preset atual
             updateColumnVisibility();
@@ -1651,7 +1337,7 @@ async function buildVisibilityAndOrderLists() {
 
 function rebuildOrderList(orderList, headers) {
     orderList.innerHTML = '';
-    const visibleOnly = headers.filter(h => getTableState('visibleColumns')?.has(h));
+    const visibleOnly = headers.filter(h => visibleColumns.has(h));
     visibleOnly.forEach((header, idx) => {
         const item = document.createElement('div');
         item.textContent = `${idx + 1}. ${header}`;
@@ -1693,12 +1379,12 @@ async function saveOrderFromOrderList() {
     if (!orderList) return;
     const newOrderVisible = [...orderList.querySelectorAll('.order-item')]
         .map(el => el.textContent.replace(/^\d+\.\s*/, ''));
-    const headers = getTableState('columnOrder')?.length ? getTableState('columnOrder') : Object.keys(getAllData()[0] || {});
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
     const hidden = headers.filter(h => !newOrderVisible.includes(h));
     const newOrder = [...newOrderVisible, ...hidden];
     if (newOrder.length) {
-        setTableState('columnOrder', newOrder);
-        window.Storage.set({ viewer_column_order: newOrder });
+        columnOrder = newOrder;
+        Storage.set({ viewer_column_order: columnOrder });
         debouncedAutoSave(); // Salvar estados automaticamente
         await autoSaveCurrentPreset(); // Salvar customização do preset atual
         setupTable();
@@ -1710,32 +1396,11 @@ async function saveOrderFromOrderList() {
 }
 
 // Função auxiliar para verificar se um valor corresponde a múltiplos termos separados por ponto e vírgula
-function matchesMultipleValues(valueToCheck, filterTerm, columnName = '') {
+function matchesMultipleValues(valueToCheck, filterTerm) {
     if (!filterTerm || !filterTerm.trim()) return true;
     
     const value = String(valueToCheck || '').toLowerCase();
     const filterStr = String(filterTerm).toLowerCase();
-    
-    // Lógica especial para RGM: permitir busca sem hífen encontrar RGMs com hífen
-    if (columnName && columnName.toLowerCase().includes('rgm')) {
-        // Remove hífens tanto do valor quanto do filtro para comparação
-        const valueWithoutHyphen = value.replace(/-/g, '');
-        const filterWithoutHyphen = filterStr.replace(/-/g, '');
-        
-        // Se contém ponto e vírgula, trata como múltiplos valores (OR)
-        if (filterStr.includes(';')) {
-            const terms = filterStr.split(';')
-                .map(term => term.trim())
-                .filter(term => term.length > 0);
-            
-            return terms.some(term => {
-                const termWithoutHyphen = term.replace(/-/g, '');
-                return valueWithoutHyphen.includes(termWithoutHyphen);
-            });
-        } else {
-            return valueWithoutHyphen.includes(filterWithoutHyphen);
-        }
-    }
     
     // Se contém ponto e vírgula, trata como múltiplos valores (OR)
     if (filterStr.includes(';')) {
@@ -1753,12 +1418,12 @@ function matchesMultipleValues(valueToCheck, filterTerm, columnName = '') {
 
 // Aplicar filtros
 function applyFilters() {
-    let filtered = [...getAllData()];
+    let filtered = [...allData];
     
     // Filtro de busca - apenas nos campos visíveis
-    const searchTerm = elements.searchInput ? elements.searchInput.value.toLowerCase().trim() : '';
+    const searchTerm = '';
     if (searchTerm) {
-        const visibleColumnsList = Array.from(getTableState('visibleColumns') || visibleColumns);
+        const visibleColumnsList = Array.from(visibleColumns);
         console.log('🔍 Buscando por:', searchTerm, 'nas colunas visíveis:', visibleColumnsList);
         
         filtered = filtered.filter(row => {
@@ -1777,7 +1442,7 @@ function applyFilters() {
         filtered = filtered.filter(row => {
             return entries.every(([col, term]) => {
                 const value = row[col] || '';
-                return matchesMultipleValues(value, term, col);
+                return matchesMultipleValues(value, term);
             });
         });
     }
@@ -1813,8 +1478,8 @@ function applyFilters() {
         filtered = filtered.filter(row => matchesMultipleValues(row['Hora'], horarioFilter));
     }
     
-    setTableState('filteredData', filtered);
-    elements.filteredRecords.textContent = getTableState('filteredData')?.length || 0;
+    filteredData = filtered;
+    elements.filteredRecords.textContent = filteredData.length;
     
     renderTable();
 }
@@ -1823,24 +1488,24 @@ function applyFilters() {
 function renderTable() {
     console.log('📋 renderTable iniciado');
     console.log('📊 Estado atual:', {
-        filteredDataLength: getTableState('filteredData')?.length || 0,
+        filteredDataLength: filteredData.length,
         currentViewMode: currentViewMode,
         currentDataLength: window.currentData ? window.currentData.length : 0,
         currentColumns: window.currentColumns ? window.currentColumns.length : 0
     });
     
-    if ((getTableState('filteredData')?.length || 0) === 0) {
+    if (filteredData.length === 0) {
         console.log('❌ Nenhum dado filtrado encontrado');
         elements.tableBody.innerHTML = '<tr><td colspan="100%" style="text-align: center; padding: 20px; color: #666;">Nenhum registro encontrado com os filtros aplicados</td></tr>';
         return;
     }
     
-    console.log('✅ Renderizando', getTableState('filteredData')?.length || 0, 'registros');
+    console.log('✅ Renderizando', filteredData.length, 'registros');
     
-    const headers = getTableState('columnOrder') || [];
+    const headers = columnOrder;
     elements.tableBody.innerHTML = '';
     
-    getTableState('filteredData')?.forEach(row => {
+    filteredData.forEach(row => {
         const tr = document.createElement('tr');
 
         const isInactive = (row['Descrição'] || '').toUpperCase().startsWith('INATIV');
@@ -1863,13 +1528,12 @@ function renderTable() {
             }
             td.textContent = cellText;
 
-            const savedWidth = getTableState('columnWidths')?.[header];
-            if (savedWidth) {
-                td.style.width = savedWidth + 'px';
+            if (columnWidths[header]) {
+                td.style.width = columnWidths[header] + 'px';
             }
 
             // Aplicar classe de visibilidade
-            if (!getTableState('visibleColumns')?.has(header)) {
+            if (!visibleColumns.has(header)) {
                 td.className = 'hidden-column';
             }
 
@@ -1920,18 +1584,11 @@ function sortTable(column) {
         return [dayIndex, minutes];
     }
 
-    const currentSortState = getTableState('currentSort') || { column: null, direction: 'asc' };
-    
-    if (currentSortState.column === column) {
-        setTableState('currentSort', {
-            column: column,
-            direction: currentSortState.direction === 'asc' ? 'desc' : 'asc'
-        });
+    if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
     } else {
-        setTableState('currentSort', {
-            column: column,
-            direction: 'asc'
-        });
+        currentSort.column = column;
+        currentSort.direction = 'asc';
     }
     
     // Atualizar indicadores visuais
@@ -1941,22 +1598,21 @@ function sortTable(column) {
     
     const currentHeader = document.querySelector(`th[data-column="${column}"]`);
     if (currentHeader) {
-        currentHeader.classList.add(`sorted-${getTableState('currentSort')?.direction}`);
+        currentHeader.classList.add(`sorted-${currentSort.direction}`);
     }
     
     // Ordenar dados
-    const dataToSort = getTableState('filteredData') || [];
     if (column === 'Hora') {
-        dataToSort.sort((a, b) => {
+        filteredData.sort((a, b) => {
             const [dA, mA] = extractHoraSortTuple(a[column]);
             const [dB, mB] = extractHoraSortTuple(b[column]);
             let cmp = 0;
             if (dA !== dB) cmp = dA < dB ? -1 : 1;
             else if (mA !== mB) cmp = mA < mB ? -1 : 1;
-            return getTableState('currentSort').direction === 'asc' ? cmp : -cmp;
+            return currentSort.direction === 'asc' ? cmp : -cmp;
         });
     } else {
-    dataToSort.sort((a, b) => {
+    filteredData.sort((a, b) => {
         let valueA = a[column] || '';
         let valueB = b[column] || '';
         
@@ -1972,14 +1628,11 @@ function sortTable(column) {
             valueB = String(valueB).toLowerCase();
         }
         
-        if (valueA < valueB) return getTableState('currentSort').direction === 'asc' ? -1 : 1;
-        if (valueA > valueB) return getTableState('currentSort').direction === 'asc' ? 1 : -1;
+        if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+        if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
         return 0;
     });
     }
-    
-    // Salvar dados ordenados de volta no estado
-    setTableState('filteredData', dataToSort);
     
     renderTable();
 }
@@ -1995,26 +1648,19 @@ function clearFilters() {
     if (elements.cursoFilter) elements.cursoFilter.value = '';
     if (elements.horarioFilter) elements.horarioFilter.value = '';
     
-    // 🔧 CORREÇÃO D.2: Limpar filtros via DataStore (não direto)
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        // Resetar todos os filtros para valores vazios via DataStore
-        const clearedFilters = {
-            searchInput: '',
-            campusFilter: '',
-            periodoFilter: '',
-            disciplinaFilter: '',
-            professorFilter: '',
-            cursoFilter: '',
-            horarioFilter: '',
-            columnFilters: {}
-        };
-        dataStore.updateFilterStates(clearedFilters, currentViewMode);
-        console.log(`🔧 [D.2-FIX] Filtros limpos via DataStore para modo: ${currentViewMode}`);
-    } else {
-        // Fallback legacy (não deveria ser necessário)
-        console.warn('⚠️ DataStore não disponível, usando fallback legacy');
+    // Limpar filtros por coluna + inputs
     filterStates[currentViewMode].columnFilters = {};
+    document.querySelectorAll('.column-filter-input').forEach(inp => { inp.value = ''; inp.classList.remove('active'); });
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('column-filter-active'));
+    closeActiveDropdown();
+    
+    // Resetar ordenação
+    currentSort = { column: null, direction: 'asc' };
+    document.querySelectorAll('th').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+    });
+    
+    // Limpar também o estado salvo para o modo atual
     filterStates[currentViewMode] = {
         searchInput: '',
         campusFilter: '',
@@ -2025,18 +1671,6 @@ function clearFilters() {
         horarioFilter: '',
         columnFilters: {}
     };
-    }
-    
-    // Limpar filtros por coluna + inputs
-    document.querySelectorAll('.column-filter-input').forEach(inp => { inp.value = ''; inp.classList.remove('active'); });
-    document.querySelectorAll('thead th').forEach(th => th.classList.remove('column-filter-active'));
-    closeActiveDropdown();
-    
-    // Resetar ordenação
-    setTableState('currentSort', { column: null, direction: 'asc' });
-    document.querySelectorAll('th').forEach(th => {
-        th.classList.remove('sorted-asc', 'sorted-desc');
-    });
     
     console.log(`🧹 Filtros limpos para modo ${currentViewMode}`);
     
@@ -2049,11 +1683,11 @@ function showColumnFilterDropdown(inputEl, header) {
     // Base: aplicar todos os filtros exceto o da coluna atual
     const tempFilters = { ...getCurrentColumnFilters() };
     delete tempFilters[header];
-    let base = [...getAllData()];
+    let base = [...allData];
     // Busca global
-    const searchTerm = elements.searchInput ? elements.searchInput.value.toLowerCase().trim() : '';
+    const searchTerm = '';
     if (searchTerm) {
-        const visibleColumnsList = Array.from(getTableState('visibleColumns') || new Set());
+        const visibleColumnsList = Array.from(visibleColumns);
         base = base.filter(row => visibleColumnsList.some(c => String(row[c]||'').toLowerCase().includes(searchTerm)));
     }
     // Filtros específicos (sidebar) - null safe - com suporte a múltiplos valores
@@ -2072,7 +1706,7 @@ function showColumnFilterDropdown(inputEl, header) {
     // Filtros por coluna (exceto atual) - com suporte a múltiplos valores
     const other = Object.entries(tempFilters);
     if (other.length) {
-        base = base.filter(row => other.every(([col, term]) => matchesMultipleValues(row[col], term, col)));
+        base = base.filter(row => other.every(([col, term]) => matchesMultipleValues(row[col], term)));
     }
 
     // Valores únicos
@@ -2214,18 +1848,17 @@ document.addEventListener('mousedown', (e) => {
 
 // Redefinir colunas para o padrão
 async function resetColumns() {
-    if (!getAllData() || getAllData().length === 0) {
+    if (!allData || allData.length === 0) {
         console.log('⚠️ Nenhum dado disponível para redefinir colunas');
         return;
     }
     
-    const headers = getDataHeaders();
+    const headers = Object.keys(allData[0]);
     
     // Redefinir de acordo com o preset atualmente selecionado
     let presetKey = 'PRESET_1_BASICO';
-    const currentSelection = getTableState('currentPresetSelection');
-    if (currentSelection && currentSelection.startsWith('__builtin__')) {
-        presetKey = currentSelection.replace('__builtin__','');
+    if (currentPresetSelection && currentPresetSelection.startsWith('__builtin__')) {
+        presetKey = currentPresetSelection.replace('__builtin__','');
     }
     // Remover overrides persistentes e em memória para este preset
     (async () => {
@@ -2242,27 +1875,27 @@ async function resetColumns() {
     if (configPreset) {
         const validOrder = configPreset.order.filter(h => headers.includes(h));
         const rest = headers.filter(h => !validOrder.includes(h));
-        setTableState('columnOrder', [...validOrder, ...rest]);
-        setTableState('visibleColumns', new Set(configPreset.visible.filter(h => headers.includes(h))));
+        columnOrder = [...validOrder, ...rest];
+        visibleColumns = new Set(configPreset.visible.filter(h => headers.includes(h)));
     } else {
         // Fallback se não encontrar no config
     const base = getPresetDefault(presetKey, headers);
-    setTableState('columnOrder', base.order);
-    setTableState('visibleColumns', new Set(base.visible));
+    columnOrder = base.order;
+    visibleColumns = new Set(base.visible);
     }
     
     // Limpar customizações do storage para este preset
     const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
-    await window.Storage.set({ [storageKey]: null });
+    await Storage.set({ [storageKey]: null });
     
     // Limpar larguras personalizadas
-    setTableState('columnWidths', {});
+    columnWidths = {};
     
     // Salvar configurações resetadas
-    window.Storage.set({
-        viewer_column_order: getTableState('columnOrder') || [],
-        viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set()),
-        viewer_column_widths: getTableState('columnWidths') || {}
+    Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
     });
     
     // Atualizar interface
@@ -2301,14 +1934,13 @@ async function resetColumns() {
 
 // Função para salvar automaticamente as customizações do preset atual
 async function autoSaveCurrentPreset() {
-    const currentSelection = getTableState('currentPresetSelection');
-    if (!currentSelection || !currentSelection.startsWith('__builtin__')) {
+    if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
         return; // Só salva presets builtin
     }
     
-    const key = currentSelection.replace('__builtin__','');
-    const headers = Object.keys(getAllData()[0] || {});
-    const normalizedOrder = (getTableState('columnOrder') || []).filter(h => headers.includes(h));
+    const key = currentPresetSelection.replace('__builtin__','');
+    const headers = Object.keys(allData[0] || {});
+    const normalizedOrder = columnOrder.filter(h => headers.includes(h));
     const rest = headers.filter(h => !normalizedOrder.includes(h));
     
     // Criar chave específica para o modo atual
@@ -2316,32 +1948,31 @@ async function autoSaveCurrentPreset() {
     
     const customization = {
         order: [...normalizedOrder, ...rest],
-        visible: Array.from(getTableState('visibleColumns') || new Set()).filter(h => headers.includes(h)),
+        visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
         widths: { ...columnWidths },
         viewMode: currentViewMode, // Garantir separação
         timestamp: Date.now()
     };
     
     // Salvar no storage com chave específica do modo
-    await window.Storage.set({ [storageKey]: customization });
+    await Storage.set({ [storageKey]: customization });
     
     console.log(`💾 Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
 }
 
 // DEPRECADO: Salvar preset: sobrescreve em memória o preset fixo selecionado
 function savePreset() {
-    const currentSelection = getTableState('currentPresetSelection');
-    if (!currentSelection || !currentSelection.startsWith('__builtin__')) {
+    if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
         alert('Selecione um dos 4 presets para salvar suas configurações.');
         return;
     }
-    const key = currentSelection.replace('__builtin__','');
-    const headers = Object.keys(getAllData()[0] || {});
-    const normalizedOrder = (getTableState('columnOrder') || []).filter(h => headers.includes(h));
+    const key = currentPresetSelection.replace('__builtin__','');
+    const headers = Object.keys(allData[0] || {});
+    const normalizedOrder = columnOrder.filter(h => headers.includes(h));
     const rest = headers.filter(h => !normalizedOrder.includes(h));
     const newCfg = {
         order: [...normalizedOrder, ...rest],
-        visible: Array.from(getTableState('visibleColumns') || new Set()).filter(h => headers.includes(h)),
+        visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
         widths: { ...columnWidths }
     };
     // Em memória (sessão)
@@ -2378,12 +2009,12 @@ async function loadSelectedPreset() {
     if (!selectedPreset) {
         return; // Nada selecionado, não faz nada
     }
-    setTableState('currentPresetSelection', selectedPreset);
+    currentPresetSelection = selectedPreset;
     // Persistir seleção para sincronizar na próxima carga (específico por modo)
     const storageKey = getPresetStorageKey();
     const storageData = {};
-    storageData[storageKey] = getTableState('currentPresetSelection');
-    window.Storage.set(storageData);
+    storageData[storageKey] = currentPresetSelection;
+    Storage.set(storageData);
     debouncedAutoSave(); // Salvar estados automaticamente
     if (selectedPreset.startsWith('__builtin__')) {
         const key = selectedPreset.replace('__builtin__','');
@@ -2394,7 +2025,7 @@ async function loadSelectedPreset() {
 }
 
 async function applyBuiltInPreset(presetKey) {
-    const headers = Object.keys(getAllData()[0] || {});
+    const headers = Object.keys(allData[0] || {});
     
     // Primeiro, obter configuração base do siaa-config
     const cfg = getPresetConfig(presetKey, headers);
@@ -2405,22 +2036,22 @@ async function applyBuiltInPreset(presetKey) {
     
     if (customizations) {
         // Usar customizações salvas
-        setTableState('columnOrder', customizations.order.filter(h => headers.includes(h)));
-        setTableState('visibleColumns', new Set(customizations.visible.filter(h => headers.includes(h))));
-        setTableState('columnWidths', customizations.widths || {});
+        columnOrder = customizations.order.filter(h => headers.includes(h));
+        visibleColumns = new Set(customizations.visible.filter(h => headers.includes(h)));
+        columnWidths = customizations.widths || {};
         console.log(`🎨 Aplicando customizações salvas para preset ${presetKey} (modo: ${currentViewMode})`);
     } else {
         // Usar configuração padrão do siaa-config
-    setTableState('columnOrder', cfg.order);
-    setTableState('visibleColumns', new Set(cfg.visible));
-        setTableState('columnWidths', {});
+    columnOrder = cfg.order;
+    visibleColumns = new Set(cfg.visible);
+        columnWidths = {};
         console.log(`📋 Aplicando configuração padrão para preset ${presetKey} (modo: ${currentViewMode})`);
     }
 
-    window.Storage.set({
-        viewer_column_order: getTableState('columnOrder') || [],
-        viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set()),
-        viewer_column_widths: getTableState('columnWidths') || {}
+    Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
     });
 
     setupTable();
@@ -2448,20 +2079,20 @@ async function loadPreset(presetName) {
     }
     
     // Aplicar configuração do preset
-    setTableState('columnOrder', [...preset.order]);
-    setTableState('visibleColumns', new Set(preset.visible));
-    setTableState('columnWidths', {...preset.widths});
+    columnOrder = [...preset.order];
+    visibleColumns = new Set(preset.visible);
+    columnWidths = {...preset.widths};
     
     // Atualizar modified timestamp
     preset.modified = new Date().toISOString();
     presets[presetName] = preset;
-    await window.Storage.set({ 'siaa_column_presets': presets });
+    await Storage.set({ 'siaa_column_presets': presets });
     
     // Salvar configurações atuais
-    await window.Storage.set({
-        viewer_column_order: getTableState('columnOrder') || [],
-        viewer_column_visibility: Array.from(getTableState('visibleColumns') || new Set()),
-        viewer_column_widths: getTableState('columnWidths') || {}
+    await Storage.set({
+        viewer_column_order: columnOrder,
+        viewer_column_visibility: Array.from(visibleColumns),
+        viewer_column_widths: columnWidths
     });
     
     // Atualizar interface
@@ -2473,7 +2104,7 @@ async function loadPreset(presetName) {
     console.log(`📥 Preset "${presetName}" carregado`);
 
     // Manter seleção no select
-    setTableState('currentPresetSelection', presetName);
+    currentPresetSelection = presetName;
     if (elements.presetSelect) {
         elements.presetSelect.value = presetName;
     }
@@ -2491,7 +2122,7 @@ async function deletePreset(presetName) {
     
     const presets = await getPresets();
     delete presets[presetName];
-    await window.Storage.set({ 'siaa_column_presets': presets });
+    await Storage.set({ 'siaa_column_presets': presets });
     
     // Atualizar listas
     await loadPresetsList();
@@ -2502,7 +2133,7 @@ async function deletePreset(presetName) {
 
 // Obter presets do storage
 async function getPresets() {
-    const data = await window.Storage.get(['siaa_column_presets']);
+    const data = await Storage.get(['siaa_column_presets']);
     return data.siaa_column_presets || {};
 }
 
@@ -2543,20 +2174,20 @@ window.deletePreset = deletePreset;
 
 // Exportar dados filtrados
 function exportFilteredData() {
-    if (getTableState('filteredData')?.length || 0 === 0) {
+    if (filteredData.length === 0) {
         alert('Nenhum dado para exportar');
         return;
     }
     
     // Usar ordem das colunas definida pelo usuário, filtrando apenas as visíveis
     // Fallback para ordem original se columnOrder estiver vazio
-    const orderedColumns = getTableState('columnOrder')?.length > 0 ? getTableState('columnOrder') : getDataHeaders();
-    const headers = orderedColumns.filter(header => getTableState('visibleColumns')?.has(header));
+    const orderedColumns = columnOrder.length > 0 ? columnOrder : Object.keys(allData[0]);
+    const headers = orderedColumns.filter(header => visibleColumns.has(header));
     
     // Criar CSV
     const csvContent = [
         headers.join(','),
-        ...getTableState('filteredData')?.map(row => 
+        ...filteredData.map(row => 
             headers.map(header => {
                 const value = row[header] || '';
                 const escaped = String(value).replace(/"/g, '""');
@@ -2581,14 +2212,14 @@ function exportFilteredData() {
     URL.revokeObjectURL(url);
     
     // Feedback
-    console.log(`📥 Exportados ${getTableState('filteredData')?.length || 0} registros com ${headers.length} colunas`);
+    console.log(`📥 Exportados ${filteredData.length} registros com ${headers.length} colunas`);
     console.log(`📋 Ordem das colunas no CSV:`, headers);
 }
 
 // Exportar CSV completo do storage (sem filtros, cabeçalho completo)
 async function exportAllCsvFromStorage() {
     try {
-        const data = await window.Storage.get(['siaa_data_csv']);
+        const data = await Storage.get(['siaa_data_csv']);
         const csv = data.siaa_data_csv;
         if (!csv) {
             alert('Não há CSV completo armazenado para exportar.');
@@ -2633,7 +2264,7 @@ async function importAllCsvWithHeaderValidation(csvText) {
     }
     // Tudo ok: armazenar CSV completo e recarregar viewer
     const csvWithBom = clean.startsWith('\uFEFF') ? clean : ('\uFEFF' + clean);
-    await window.Storage.set({
+    await Storage.set({
         siaa_data_csv: csvWithBom,
         siaa_data_timestamp: Date.now()
     });
@@ -2668,7 +2299,7 @@ async function mergeAllCsvWithHeaderValidation(csvText) {
     }
 
     // Obter CSV atual do storage
-    const data = await window.Storage.get(['siaa_data_csv']);
+    const data = await Storage.get(['siaa_data_csv']);
     const currentCsv = (data.siaa_data_csv || '').replace(/^\uFEFF/, '');
     if (!currentCsv) {
         // Se não há CSV atual, apenas importa
@@ -2712,7 +2343,7 @@ async function mergeAllCsvWithHeaderValidation(csvText) {
     const mergedCsv = lines.join('\n');
     const csvWithBom = '\uFEFF' + mergedCsv;
 
-    await window.Storage.set({
+    await Storage.set({
         siaa_data_csv: csvWithBom,
         siaa_data_timestamp: Date.now()
     });
@@ -2751,14 +2382,14 @@ async function clearAllData() {
         console.log('🗑️ Iniciando limpeza dos dados das ofertas...');
         
         // Limpar apenas os dados das ofertas, preservando presets e configurações
-        await window.Storage.set({
+        await Storage.set({
             'siaa_data_csv': null,
             'siaa_data_timestamp': null
         });
         
         // Limpar variáveis locais dos dados
-        setAllData([]);
-        setTableState('filteredData', []);
+        allData = [];
+        filteredData = [];
         
         // Limpar interface da tabela
         if (elements.tableBody) elements.tableBody.innerHTML = '';
@@ -3058,7 +2689,7 @@ function setupAddCourseModal() {
 // Adicionar curso ao storage
 async function addCourseToStorage(code, name) {
     // Buscar cursos manuais existentes
-    const storage = await window.Storage.get(['siaa_manual_courses']);
+    const storage = await Storage.get(['siaa_manual_courses']);
     const manualCourses = storage.siaa_manual_courses || [];
     
     // Verificar se já existe
@@ -3078,7 +2709,7 @@ async function addCourseToStorage(code, name) {
     manualCourses.push(newCourse);
     
     // Salvar no storage
-    await window.Storage.set({
+    await Storage.set({
         siaa_manual_courses: manualCourses
     });
     
@@ -3156,30 +2787,72 @@ function showNotification(message, type = 'info') {
 // ===== SISTEMA DE MODO DE VISUALIZAÇÃO =====
 
 // Estado global do modo
-// 🔄 MICRO-D.1: currentViewMode agora fornecida pela façade do AppController  
-// let currentViewMode = 'ofertas'; // ← Removido: substituído por window.currentViewMode via façade
+let currentViewMode = 'ofertas'; // 'ofertas' ou 'alunos'
 
-// 🔄 MICRO-D.2: filterStates agora gerenciado pelo DataStore via façade
-// let filterStates = { ... }; // ← Removido: substituído por window.filterStates via façade
+// Estados de filtros separados por modo
+let filterStates = {
+    ofertas: {
+        searchInput: '',
+        campusFilter: '',
+        periodoFilter: '',
+        disciplinaFilter: '',
+        professorFilter: '',
+        cursoFilter: '',
+        horarioFilter: '',
+        columnFilters: {}
+    },
+    alunos: {
+        searchInput: '',
+        campusFilter: '',
+        periodoFilter: '',
+        disciplinaFilter: '',
+        professorFilter: '',
+        cursoFilter: '',
+        horarioFilter: '',
+        columnFilters: {}
+    }
+};
 
 // ===== CONFIGURAÇÃO CENTRALIZADA =====
 
-// Função para obter presets do siaa-config via sistema moderno
-function getConfigPresets(viewMode = null) {
+// Cache da configuração do siaa-config.json
+let siaaConfig = null;
+
+// Função para carregar configuração do siaa-config.json
+async function loadSiaaConfig() {
+    if (siaaConfig) return siaaConfig; // Usar cache se já carregado
+    
     try {
-        const configLoader = window.getConfigLoader?.();
-        if (configLoader && configLoader.isConfigLoaded()) {
-            const config = configLoader.getConfig();
-            const mode = viewMode || currentViewMode;
-            return config.presets?.[mode] || {};
+        const response = await fetch('/siaa-config.json');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+        siaaConfig = await response.json();
+        console.log('✅ Configuração SIAA carregada:', siaaConfig.version);
+        return siaaConfig;
     } catch (error) {
-        console.warn('⚠️ ConfigLoader não disponível');
+        console.error('❌ Erro ao carregar siaa-config.json:', error);
+        // Fallback para configuração mínima
+        siaaConfig = {
+            version: 'fallback',
+            presets: {
+                ofertas: {},
+                alunos: {}
+            }
+        };
+        return siaaConfig;
+    }
+}
+
+// Função para obter presets do siaa-config
+function getConfigPresets(viewMode = null) {
+    if (!siaaConfig) {
+        console.warn('⚠️ Configuração SIAA não carregada');
+        return {};
     }
     
-    // Sem fallback legacy - sistema moderno apenas
-    console.warn('⚠️ Configuração SIAA não carregada via sistema moderno');
-    return {};
+    const mode = viewMode || currentViewMode;
+    return siaaConfig.presets?.[mode] || {};
 }
 
 // Função para obter preset específico do siaa-config
@@ -3190,15 +2863,43 @@ function getConfigPreset(presetKey, viewMode = null) {
 
 // ===== SISTEMA DE PERSISTÊNCIA AUTOMÁTICA =====
 
-// 🔄 MICRO-D.2: appSettings agora gerenciado pelo DataStore via façade
-// let appSettings = { ... }; // ← Removido: substituído por window.appSettings via façade
+// Configurações gerais da aplicação que devem ser persistidas
+let appSettings = {
+    currentViewMode: 'ofertas',
+    lastUpdate: null,
+    autoSave: true,
+    theme: 'default'
+};
 
-// 🔄 MICRO-D.2: columnStates agora gerenciado pelo DataStore via façade
-// let columnStates = { ... }; // ← Removido: substituído por window.columnStates via façade
+// Estados de colunas por modo
+let columnStates = {
+    ofertas: {
+        order: [],
+        visibility: [],
+        widths: {},
+        sort: { column: null, direction: 'asc' }
+    },
+    alunos: {
+        order: [],
+        visibility: [],
+        widths: {},
+        sort: { column: null, direction: 'asc' }
+    }
+};
 
 // Estados de presets por modo
-// 🔄 MICRO-D.2: presetStates agora gerenciado pelo DataStore via façade
-// let presetStates = { ... }; // ← Removido: substituído por window.presetStates via façade
+let presetStates = {
+    ofertas: {
+        currentSelection: '__builtin__PRESET_1_BASICO',
+        customPresets: {},
+        lastUsed: '__builtin__PRESET_1_BASICO'
+    },
+    alunos: {
+        currentSelection: '__builtin__PRESET_1_BASICO',
+        customPresets: {},
+        lastUsed: '__builtin__PRESET_1_BASICO'
+    }
+};
 
 // Função para salvar automaticamente todos os estados
 async function autoSaveStates() {
@@ -3225,7 +2926,7 @@ async function autoSaveStates() {
             siaa_states_timestamp: Date.now()
         };
         
-        await window.Storage.set(stateData);
+        await Storage.set(stateData);
         console.log('✅ Estados salvos automaticamente');
     } catch (error) {
         console.error('❌ Erro ao salvar estados:', error);
@@ -3244,7 +2945,7 @@ async function loadSavedStates() {
             'siaa_states_timestamp'
         ];
         
-        const saved = await window.Storage.get(keys);
+        const saved = await Storage.get(keys);
         
         // Carregar configurações da aplicação
         if (saved.siaa_app_settings) {
@@ -3287,24 +2988,24 @@ function syncLocalStates() {
     
     // Atualizar variáveis globais com estados salvos
     if (columnStates[currentMode].order.length > 0) {
-        setTableState('columnOrder', [...columnStates[currentMode].order]);
+        columnOrder = [...columnStates[currentMode].order];
     }
     
     if (columnStates[currentMode].visibility.length > 0) {
-        setTableState('visibleColumns', new Set(columnStates[currentMode].visibility));
+        visibleColumns = new Set(columnStates[currentMode].visibility);
     }
     
     if (Object.keys(columnStates[currentMode].widths).length > 0) {
-        setTableState('columnWidths', { ...columnStates[currentMode].widths });
+        columnWidths = { ...columnStates[currentMode].widths };
     }
     
     if (columnStates[currentMode].sort.column) {
-        setTableState('currentSort', { ...columnStates[currentMode].sort });
+        currentSort = { ...columnStates[currentMode].sort };
     }
     
     // Sincronizar preset atual
     if (presetStates[currentMode].currentSelection) {
-        setTableState('currentPresetSelection', presetStates[currentMode].currentSelection);
+        currentPresetSelection = presetStates[currentMode].currentSelection;
     }
 }
 
@@ -3313,10 +3014,10 @@ function updateStatesFromGlobals() {
     const currentMode = currentViewMode;
     
     // Atualizar estados de colunas
-    columnStates[currentMode].order = [...(getTableState('columnOrder') || [])];
-    columnStates[currentMode].visibility = Array.from(getTableState('visibleColumns') || new Set());
-    columnStates[currentMode].widths = { ...(getTableState('columnWidths') || {}) };
-    columnStates[currentMode].sort = { ...(getTableState('currentSort') || { column: null, direction: 'asc' }) };
+    columnStates[currentMode].order = [...columnOrder];
+    columnStates[currentMode].visibility = Array.from(visibleColumns);
+    columnStates[currentMode].widths = { ...columnWidths };
+    columnStates[currentMode].sort = { ...currentSort };
     
     // Atualizar preset atual
     presetStates[currentMode].currentSelection = currentPresetSelection;
@@ -3342,63 +3043,23 @@ async function forceSave() {
     await autoSaveStates();
 }
 
-// 🔧 CORREÇÃO D.2: Função para obter os filtros de coluna do modo atual via DataStore
+// Função para obter os filtros de coluna do modo atual
 function getCurrentColumnFilters() {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        const filters = dataStore.getFilterStates(currentViewMode);
-        return filters.columnFilters || {};
-    }
-    // Fallback legacy
     return filterStates[currentViewMode].columnFilters;
 }
 
-// 🔧 CORREÇÃO D.2: Função para definir um filtro de coluna no modo atual via DataStore
+// Função para definir um filtro de coluna no modo atual
 function setCurrentColumnFilter(header, value) {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        const currentFilters = dataStore.getFilterStates(currentViewMode);
-        const newColumnFilters = { ...currentFilters.columnFilters };
-        
-        if (value) {
-            newColumnFilters[header] = value;
-        } else {
-            delete newColumnFilters[header];
-        }
-        
-        dataStore.updateFilterStates({ columnFilters: newColumnFilters }, currentViewMode);
-        console.log(`🔧 [D.2-FIX] Filtro de coluna ${header} ${value ? 'definido' : 'removido'} via DataStore`);
-    } else {
-        // Fallback legacy
     if (value) {
         filterStates[currentViewMode].columnFilters[header] = value;
     } else {
         delete filterStates[currentViewMode].columnFilters[header];
     }
-    }
     debouncedAutoSave(); // Salvar estados automaticamente
 }
 
-// 🔧 CORREÇÃO D.2: Salvar estado atual dos filtros via DataStore
+// Salvar estado atual dos filtros
 function saveCurrentFilterState() {
-    const dataStore = window.getDataStore?.();
-    if (dataStore) {
-        // Coletar valores atuais dos elementos de filtro
-        const newState = {
-            searchInput: elements.searchInput?.value || '',
-            campusFilter: elements.campusFilter?.value || '',
-            periodoFilter: elements.periodoFilter?.value || '',
-            disciplinaFilter: elements.disciplinaFilter?.value || '',
-            professorFilter: elements.professorFilter?.value || '',
-            cursoFilter: elements.cursoFilter?.value || '',
-            horarioFilter: elements.horarioFilter?.value || '',
-            columnFilters: { ...getCurrentColumnFilters() }
-        };
-        
-        dataStore.updateFilterStates(newState, currentViewMode);
-        console.log(`🔧 [D.2-FIX] Estado de filtros salvo via DataStore para modo ${currentViewMode}:`, newState);
-    } else {
-        // Fallback legacy
     const currentState = filterStates[currentViewMode];
     
     // Salvar filtros da sidebar
@@ -3413,25 +3074,14 @@ function saveCurrentFilterState() {
     // Salvar filtros de colunas
     currentState.columnFilters = { ...getCurrentColumnFilters() };
     
+    debouncedAutoSave(); // Salvar estados automaticamente
+    
     console.log(`💾 Estado de filtros salvo para modo ${currentViewMode}:`, currentState);
 }
 
-    debouncedAutoSave(); // Salvar estados automaticamente
-}
-
-// 🔧 CORREÇÃO D.2: Restaurar estado dos filtros via DataStore
+// Restaurar estado dos filtros
 function restoreFilterState() {
-    const dataStore = window.getDataStore?.();
-    let currentState;
-    
-    if (dataStore) {
-        currentState = dataStore.getFilterStates(currentViewMode);
-        console.log(`🔧 [D.2-FIX] Restaurando filtros via DataStore para modo ${currentViewMode}:`, currentState);
-    } else {
-        // Fallback legacy
-        currentState = filterStates[currentViewMode];
-        console.log(`💾 Restaurando filtros via fallback para modo ${currentViewMode}:`, currentState);
-    }
+    const currentState = filterStates[currentViewMode];
     
     // Restaurar filtros da sidebar
     if (elements.searchInput) elements.searchInput.value = currentState.searchInput || '';
@@ -3442,11 +3092,8 @@ function restoreFilterState() {
     if (elements.cursoFilter) elements.cursoFilter.value = currentState.cursoFilter || '';
     if (elements.horarioFilter) elements.horarioFilter.value = currentState.horarioFilter || '';
     
-    // 🔧 CORREÇÃO D.2: Sincronizar filtros de colunas via DataStore se necessário
-    if (!dataStore) {
-        // Só sincronizar se estiver em modo fallback
+    // Garantir que os filtros de colunas estão sincronizados
     filterStates[currentViewMode].columnFilters = { ...currentState.columnFilters };
-    }
     
     // Limpar todos os filtros visuais de colunas primeiro
     document.querySelectorAll('.column-filter-input').forEach(inp => {
@@ -3532,12 +3179,12 @@ function getPresetStorageKey() {
 async function loadModeSpecificPreset() {
     try {
         const presetKey = getPresetStorageKey();
-        const sel = await window.Storage.get([presetKey]);
+        const sel = await Storage.get([presetKey]);
         const savedPreset = sel[presetKey] || '__builtin__PRESET_1_BASICO';
         
         console.log(`🎛️ Carregando preset para modo ${currentViewMode}:`, savedPreset);
         
-        setTableState('currentPresetSelection', savedPreset);
+        currentPresetSelection = savedPreset;
         
         // Atualizar o select
         if (elements.presetSelect) {
@@ -3563,7 +3210,7 @@ async function loadViewMode() {
     try {
         console.log('🔄 loadViewMode iniciado');
         
-        const storage = await window.Storage.get(['siaa_view_mode']);
+        const storage = await Storage.get(['siaa_view_mode']);
         const savedMode = storage.siaa_view_mode || 'ofertas';
         
         console.log('📦 Modo salvo encontrado:', savedMode);
@@ -3603,7 +3250,7 @@ async function switchToOffersMode(save = true) {
     
     // Salvar no storage
     if (save) {
-        await window.Storage.set({ siaa_view_mode: 'ofertas' });
+        await Storage.set({ siaa_view_mode: 'ofertas' });
         await forceSave(); // Forçar salvamento completo ao mudar modo
     }
     
@@ -3614,7 +3261,7 @@ async function switchToOffersMode(save = true) {
     await loadModeSpecificPreset();
     
     // Garantir que a tabela seja exibida (caso tenha dados)
-    if (getAllData() && getAllData().length > 0) {
+    if (allData && allData.length > 0) {
         showData();
     }
     
@@ -3641,13 +3288,13 @@ async function switchToStudentsMode(save = true) {
     
     // Salvar no storage
     if (save) {
-        await window.Storage.set({ siaa_view_mode: 'alunos' });
+        await Storage.set({ siaa_view_mode: 'alunos' });
         await forceSave(); // Forçar salvamento completo ao mudar modo
     }
     
     // Verificar se há dados de alunos
     console.log('🔍 Verificando dados de alunos no storage...');
-    const studentData = await window.Storage.get(['siaa_students_csv']);
+    const studentData = await Storage.get(['siaa_students_csv']);
     
     console.log('📦 Storage resultado:', {
         hasStudentsData: !!studentData.siaa_students_csv,
@@ -3703,7 +3350,7 @@ async function switchToOffersMode(save = true) {
     
     // Salvar no storage
     if (save) {
-        await window.Storage.set({ siaa_view_mode: 'ofertas' });
+        await Storage.set({ siaa_view_mode: 'ofertas' });
         console.log('✅ Modo ofertas salvo no storage');
     }
     
@@ -3712,7 +3359,7 @@ async function switchToOffersMode(save = true) {
     
     // Verificar se existem dados de ofertas
     console.log('🔍 Verificando dados de ofertas no storage...');
-    const storage = await window.Storage.get(['siaa_data_csv']);
+    const storage = await Storage.get(['siaa_data_csv']);
     
     console.log('📦 Storage resultado:', {
         hasOffersData: !!storage.siaa_data_csv,
@@ -3751,7 +3398,7 @@ function showStudentCaptureOption() {
 async function loadStudentData() {
     try {
         console.log('🔄 Carregando dados de alunos...');
-        const storage = await window.Storage.get(['siaa_students_csv', 'siaa_students_timestamp']);
+        const storage = await Storage.get(['siaa_students_csv', 'siaa_students_timestamp']);
         
         if (!storage.siaa_students_csv) {
             console.log('❌ Dados não encontrados');
@@ -3782,7 +3429,7 @@ async function loadStudentData() {
         window.currentColumns = studentData.length > 0 ? Object.keys(studentData[0]) : [];
         
         // IMPORTANTE: Atualizar allData para que renderTable funcione
-        setAllData(studentData);
+        allData = studentData;
         
         console.log('🗂️ Colunas detectadas:', window.currentColumns);
         console.log('🔄 Configurando dados para renderização...');
@@ -3850,7 +3497,7 @@ async function clearDuplicatesFromStorage() {
     try {
         showNotification('🔄 Analisando duplicatas...', 'info');
         
-        const storage = await window.Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
         const duplicatesInfo = [];
         
         // Analisar duplicatas de ofertas
@@ -4344,7 +3991,7 @@ async function removeSelectedDuplicates(selectedForRemoval) {
     try {
         showNotification('🔄 Removendo registros selecionados...', 'info');
         
-        const storage = await window.Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
         let totalRemoved = 0;
         
         // Agrupar seleções por tipo
@@ -4361,7 +4008,7 @@ async function removeSelectedDuplicates(selectedForRemoval) {
         // Remover linhas selecionadas de ofertas
         if (ofertasToRemove.length > 0 && storage.siaa_data_csv) {
             const cleanedCsv = removeSpecificLines(storage.siaa_data_csv, ofertasToRemove);
-            await window.Storage.set({ siaa_data_csv: cleanedCsv });
+            await Storage.set({ siaa_data_csv: cleanedCsv });
             totalRemoved += ofertasToRemove.length;
             console.log(`✅ ${ofertasToRemove.length} ofertas duplicadas removidas`);
         }
@@ -4369,7 +4016,7 @@ async function removeSelectedDuplicates(selectedForRemoval) {
         // Remover linhas selecionadas de alunos
         if (alunosToRemove.length > 0 && storage.siaa_students_csv) {
             const cleanedCsv = removeSpecificLines(storage.siaa_students_csv, alunosToRemove);
-            await window.Storage.set({ siaa_students_csv: cleanedCsv });
+            await Storage.set({ siaa_students_csv: cleanedCsv });
             totalRemoved += alunosToRemove.length;
             console.log(`✅ ${alunosToRemove.length} alunos duplicados removidos`);
         }
@@ -4412,7 +4059,7 @@ async function resetAllData() {
         showNotification('🗑️ Removendo todos os dados...', 'info');
         
         // Limpar todos os dados do storage
-        await window.Storage.remove([
+        await Storage.remove([
             'siaa_data_csv',
             'siaa_data_timestamp', 
             'siaa_students_csv',
@@ -4424,8 +4071,8 @@ async function resetAllData() {
         ]);
         
         // Limpar variáveis locais
-        setAllData([]);
-        setTableState('filteredData', []);
+        allData = [];
+        filteredData = [];
         window.currentData = [];
         window.currentColumns = [];
         
@@ -4447,7 +4094,292 @@ async function resetAllData() {
     }
 } 
 
-// FUNÇÕES DE INTEGRAÇÃO HÍBRIDA REMOVIDAS - USANDO SISTEMA MODERNO
+// ============================================
+// FUNÇÕES DE INTEGRAÇÃO COM MÓDULOS REFATORADOS
+// ============================================
 
-// Sistema híbrido removido - inicialização via AppController 
-// Sistema híbrido removido - inicialização via AppController 
+// ETAPA 5.2: Integração híbrida sem remover código existente
+function initializeHybridIntegration() {
+    debugLog('🔗 [ETAPA 5.2] Iniciando integração híbrida...');
+    
+    try {
+        const eventBus = window.getEventBus();
+        const appController = window.getAppController();
+        
+        if (eventBus && appController) {
+            debugLog('✅ [ETAPA 5.2] Módulos detectados, criando sistema híbrido...');
+            
+            // HÍBRIDO: Adicionar eventos PARALELOS às funções existentes
+            setupEventDrivenEnhancements(eventBus);
+            
+            // HÍBRIDO: Criar observadores para dados existentes
+            setupDataObservers(eventBus);
+            
+            // HÍBRIDO: Conectar UI existente com eventos
+            setupUIEventBridge(eventBus);
+            
+            // ETAPA 5.3: Integrar módulos utilitários
+            setupUtilityModuleIntegration(eventBus);
+            
+            // ETAPA 5.4: Integrar módulos de dados
+            setupDataModuleIntegration(eventBus);
+            
+            // ETAPA 5.4: Integrar módulos de UI
+            setupUIModuleIntegration(eventBus);
+            
+            debugLog('✅ [ETAPA 5.2] Sistema híbrido configurado - funcionalidade legacy mantida');
+        }
+    } catch (error) {
+        debugWarn('⚠️ [ETAPA 5.2] Erro na integração híbrida:', error);
+    }
+}
+
+// ETAPA 5.2: Configurar melhorias orientadas a eventos (PARALELAS ao código existente)
+function setupEventDrivenEnhancements(eventBus) {
+    console.log('📡 [ETAPA 5.2] Configurando melhorias baseadas em eventos...');
+    
+    // Listener para quando dados são carregados
+    eventBus.on('data.loaded', (data) => {
+        debugLog('📊 [Híbrido] Dados detectados:', data.count || data.length || 'N/A');
+        // Futuramente: analytics, cache, etc.
+    });
+    
+    // Listener para quando filtros são aplicados
+    eventBus.on('ui.filter.applied', (data) => {
+        debugLog('🔍 [Híbrido] Filtros detectados:', data.count || 'N/A');
+        // Futuramente: salvamento automático de filtros, etc.
+    });
+    
+    // Listener para mudanças de preset
+    eventBus.on('ui.preset.changed', (data) => {
+        debugLog('🎨 [Híbrido] Preset detectado:', data.preset || 'N/A');
+        // Futuramente: salvamento automático, etc.
+    });
+}
+
+// ETAPA 5.2: Observar dados existentes e emitir eventos
+function setupDataObservers(eventBus) {
+    console.log('👁️ [ETAPA 5.2] Configurando observadores de dados...');
+    
+    // Observar mudanças em allData (sem modificar código existente)
+    let lastDataLength = allData.length;
+    
+    setInterval(() => {
+        if (allData.length !== lastDataLength) {
+            lastDataLength = allData.length;
+            eventBus.emit('data.loaded', { 
+                mode: currentViewMode, 
+                count: allData.length,
+                source: 'legacy-observer'
+            });
+        }
+    }, 1000); // Verificar a cada 1 segundo
+}
+
+// ETAPA 5.2: Conectar UI existente com sistema de eventos
+function setupUIEventBridge(eventBus) {
+    debugLog('🌉 [ETAPA 5.2] Configurando ponte UI-Eventos...');
+    
+    // Emitir eventos quando filtros forem aplicados (sem modificar applyFilters)
+    let lastFilteredLength = filteredData.length;
+    
+    setInterval(() => {
+        if (filteredData.length !== lastFilteredLength) {
+            lastFilteredLength = filteredData.length;
+            eventBus.emit('ui.filter.applied', { 
+                count: filteredData.length,
+                total: allData.length,
+                source: 'legacy-observer'
+            });
+        }
+    }, 500); // Verificar a cada 0.5 segundos
+}
+
+// ETAPA 5.3: Integração com módulos utilitários
+function setupUtilityModuleIntegration(eventBus) {
+    debugLog('🔧 [ETAPA 5.3] Integrando módulos utilitários...');
+    
+    try {
+        const modules = [
+            {
+                name: 'Storage',
+                check: () => window.Storage && window.StorageHelper,
+                setup: () => {
+                    window.ModularStorage = window.Storage;
+                    window.ModularStorageHelper = window.StorageHelper;
+                    eventBus.on('storage.operation', (data) => {
+                        console.log('💾 [Híbrido] Operação de storage:', data.operation, data.key);
+                    });
+                }
+            },
+            {
+                name: 'CSV Parser',
+                check: () => window.parseCSV && window.parseCSVLine && window.CSVParser,
+                setup: () => {
+                    window.ModularParseCSV = window.parseCSV;
+                    window.ModularParseCSVLine = window.parseCSVLine;
+                    window.ModularCSVParser = window.CSVParser;
+                    eventBus.on('csv.parsed', (data) => {
+                        debugLog('📊 [Híbrido] CSV processado:', data.rows, 'linhas');
+                    });
+                }
+            },
+            {
+                name: 'Config Loader',
+                check: () => window.loadConfig && window.getConfig && window.ConfigLoader,
+                setup: () => {
+                    window.ModularLoadConfig = window.loadConfig;
+                    window.ModularGetConfig = window.getConfig;
+                    window.ModularConfigLoader = window.ConfigLoader;
+                    eventBus.on('config.loaded', (data) => {
+                        console.log('⚙️ [Híbrido] Configuração carregada:', Object.keys(data.config || {}).length, 'presets');
+                    });
+                }
+            }
+        ];
+        
+        modules.forEach(module => {
+            if (module.check()) {
+                console.log(`✅ [ETAPA 5.3] Módulo ${module.name} detectado`);
+                module.setup();
+            }
+        });
+        
+        debugLog('✅ [ETAPA 5.3] Módulos utilitários integrados');
+        
+    } catch (error) {
+        debugWarn('⚠️ [ETAPA 5.3] Erro na integração de utilitários:', error);
+    }
+}
+
+// ETAPA 5.4: Integração com módulos de dados
+function setupDataModuleIntegration(eventBus) {
+    debugLog('📊 [ETAPA 5.4] Integrando módulos de dados...');
+    
+    try {
+        const dataModules = [
+            {
+                name: 'DataStore',
+                check: () => window.DataStore && window.getDataStore,
+                setup: () => {
+                    const dataStore = window.getDataStore();
+                    window.ModularDataStore = dataStore;
+                    dataStore.on('data.loaded', (data) => {
+                        debugLog('📊 [Híbrido] DataStore - dados carregados:', data.count);
+                    });
+                }
+            },
+            {
+                name: 'OfertasService',
+                check: () => window.OfertasService && window.getOfertasService,
+                setup: () => {
+                    window.ModularOfertasService = window.getOfertasService();
+                    eventBus.on('ofertas.process', (data) => {
+                        console.log('🎓 [Híbrido] OfertasService - processando:', data.count, 'ofertas');
+                    });
+                }
+            },
+            {
+                name: 'AlunosService',
+                check: () => window.AlunosService && window.getAlunosService,
+                setup: () => {
+                    window.ModularAlunosService = window.getAlunosService();
+                    eventBus.on('alunos.process', (data) => {
+                        console.log('👥 [Híbrido] AlunosService - processando:', data.count, 'alunos');
+                    });
+                }
+            },
+            {
+                name: 'DuplicateManager',
+                check: () => window.DuplicateManager && window.getDuplicateManager,
+                setup: () => {
+                    window.ModularDuplicateManager = window.getDuplicateManager();
+                    eventBus.on('duplicates.found', (data) => {
+                        debugLog('🔍 [Híbrido] DuplicateManager - duplicatas encontradas:', data.count);
+                    });
+                }
+            }
+        ];
+        
+        dataModules.forEach(module => {
+            if (module.check()) {
+                console.log(`✅ [ETAPA 5.4] Módulo ${module.name} detectado`);
+                module.setup();
+            }
+        });
+        
+        debugLog('✅ [ETAPA 5.4] Módulos de dados integrados');
+        
+    } catch (error) {
+        debugWarn('⚠️ [ETAPA 5.4] Erro na integração de dados:', error);
+    }
+}
+
+// ETAPA 5.4: Integração com módulos de UI
+function setupUIModuleIntegration(eventBus) {
+    debugLog('🎨 [ETAPA 5.4] Integrando módulos de UI...');
+    
+    try {
+        const uiModules = [
+            {
+                name: 'TableManager',
+                check: () => window.TableManager && window.getTableManager,
+                setup: () => {
+                    window.ModularTableManager = window.getTableManager();
+                    eventBus.on('table.render', (data) => {
+                        console.log('📋 [Híbrido] TableManager - renderizando:', data.rows, 'linhas');
+                    });
+                }
+            },
+            {
+                name: 'FilterManager',
+                check: () => window.FilterManager && window.getFilterManager,
+                setup: () => {
+                    window.ModularFilterManager = window.getFilterManager();
+                    eventBus.on('filter.applied', (data) => {
+                        debugLog('🔍 [Híbrido] FilterManager - filtros aplicados:', data.type);
+                    });
+                }
+            },
+            {
+                name: 'ColumnManager',
+                check: () => window.ColumnManager && window.getColumnManager,
+                setup: () => {
+                    window.ModularColumnManager = window.getColumnManager();
+                    eventBus.on('columns.changed', (data) => {
+                        debugLog('📊 [Híbrido] ColumnManager - colunas alteradas:', data.visible?.length || 0);
+                    });
+                }
+            },
+            {
+                name: 'DropdownManager',
+                check: () => window.DropdownManager && window.getDropdownManager,
+                setup: () => {
+                    window.ModularDropdownManager = window.getDropdownManager();
+                    eventBus.on('dropdown.opened', (data) => {
+                        console.log('📝 [Híbrido] DropdownManager - dropdown aberto:', data.type);
+                    });
+                }
+            }
+        ];
+        
+        uiModules.forEach(module => {
+            if (module.check()) {
+                console.log(`✅ [ETAPA 5.4] Módulo ${module.name} detectado`);
+                module.setup();
+            }
+        });
+        
+        debugLog('✅ [ETAPA 5.4] Módulos de UI integrados');
+        
+    } catch (error) {
+        debugWarn('⚠️ [ETAPA 5.4] Erro na integração de UI:', error);
+    }
+}
+
+// ETAPA 5.2: Integração híbrida com módulos
+setTimeout(() => {
+    if (modulesLoaded) {
+        initializeHybridIntegration();
+    }
+}, 500); 

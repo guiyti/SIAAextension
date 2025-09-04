@@ -1711,6 +1711,29 @@
         </div>
     </div>
 
+    <!-- Módulos refatorados (habilitação gradual) -->
+    <!-- ETAPA 5.1: Habilitando sistema central primeiro -->
+    <script type="module" src="js/core/event-bus.js"></script>
+    <script type="module" src="js/core/app-controller.js"></script>
+    
+    <!-- ETAPA 5.3: Habilitando módulos utilitários -->
+    <script type="module" src="js/utils/storage.js"></script>
+    <script type="module" src="js/utils/csv-parser.js"></script>
+    <script type="module" src="js/config/config-loader.js"></script>
+    
+    <!-- ETAPA 5.4: Preparando módulos de dados -->
+    <script type="module" src="js/data/data-store.js"></script>
+    <script type="module" src="js/data/ofertas-service.js"></script>
+    <script type="module" src="js/data/alunos-service.js"></script>
+    <script type="module" src="js/data/duplicate-manager.js"></script>
+    
+    <!-- ETAPA 5.4: Habilitando módulos de UI -->
+    <script type="module" src="js/ui/table-manager.js"></script>
+    <script type="module" src="js/ui/filter-manager.js"></script>
+    <script type="module" src="js/ui/column-manager.js"></script>
+    <script type="module" src="js/ui/dropdown-manager.js"></script>
+    
+    <!-- Scripts principais -->
     <script src="config-manager.js"></script>
     <script src="viewer.js"></script>
 </body>
