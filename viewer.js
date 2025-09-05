@@ -580,16 +580,18 @@ async function finishDataLoading() {
     }
 
     setupTable();
+    
+    // Aplicar visibilidade das colunas ANTES de mostrar dados para evitar piscada
+    updateColumnVisibility();
+    
+    // Restaurar estado dos filtros imediatamente após setupTable para preservar valores visuais
+    restoreFilterState();
+    
     setupFilters();
     await setupColumnToggle();
     await loadPresetsList();
     await loadPresetsSelect();
     applyFilters();
-    
-    // CORREÇÃO: Aplicar visibilidade das colunas após renderizar a tabela
-    setTimeout(() => {
-        updateColumnVisibility();
-    }, 100);
     
     // Mostrar dados (esconder dialog)
     showData();
@@ -3083,13 +3085,13 @@ function restoreFilterState() {
     // Aplicar estilos visuais aos filtros de colunas ativos do modo atual
     const table = document.querySelector('#csvTable');
     if (table) {
-        const headers = table.querySelectorAll('thead th');
-        headers.forEach(th => {
-            const headerText = th.textContent.trim();
+        const filterHeaders = table.querySelectorAll('thead tr:last-child th');
+        filterHeaders.forEach(th => {
+            const headerText = th.dataset.column;
             const input = th.querySelector('input[type="text"]');
             const filterValue = getCurrentColumnFilters()[headerText];
             
-            if (input) {
+            if (input && headerText) {
                 if (filterValue) {
                     input.value = filterValue;
                     toggleFilterActiveStyles(headerText, th, input);
@@ -3127,9 +3129,16 @@ function setupViewModeToggle() {
     switchToOfertasBtn.addEventListener('click', async () => {
         console.log('🔄 Switch para ofertas clicado');
         if (currentViewMode !== 'ofertas') {
+            // Ocultar tabela temporariamente para evitar piscada
+            const table = document.getElementById('dataTable');
+            if (table) table.style.visibility = 'hidden';
+            
             // Salvar estado atual antes de trocar
             saveCurrentFilterState();
             await switchToOffersMode();
+            
+            // Mostrar tabela novamente
+            if (table) table.style.visibility = 'visible';
         }
     });
     
@@ -3137,9 +3146,16 @@ function setupViewModeToggle() {
     switchToAlunosBtn.addEventListener('click', async () => {
         console.log('🔄 Switch para alunos clicado');
         if (currentViewMode !== 'alunos') {
+            // Ocultar tabela temporariamente para evitar piscada
+            const table = document.getElementById('dataTable');
+            if (table) table.style.visibility = 'hidden';
+            
             // Salvar estado atual antes de trocar
             saveCurrentFilterState();
             await switchToStudentsMode();
+            
+            // Mostrar tabela novamente
+            if (table) table.style.visibility = 'visible';
         }
     });
     
@@ -3290,9 +3306,6 @@ async function switchToStudentsMode(save = true) {
     // Carregar preset específico do modo alunos
     await loadModeSpecificPreset();
     
-    // Restaurar estado dos filtros específicos para alunos
-    restoreFilterState();
-    
     console.log('👥 Modo alterado para: Alunos');
 }
 
@@ -3356,9 +3369,6 @@ async function switchToOffersMode(save = true) {
         
         // Garantir que a tabela seja exibida
         showData();
-        
-        // Restaurar estado dos filtros específicos para ofertas
-        restoreFilterState();
     }
     
     console.log('📊 Modo alterado para: Ofertas');
@@ -3410,20 +3420,12 @@ async function loadStudentData() {
         console.log('🗂️ Colunas detectadas:', window.currentColumns);
         console.log('🔄 Configurando dados para renderização...');
         
-        // Recarregar presets para modo alunos
-        await loadPresetsSelect();
-        
-        // Aplicar preset padrão para alunos (Preset 1)
-        await applyBuiltInPreset('PRESET_1_BASICO');
-        
-        // Atualizar selector de preset para mostrar o preset selecionado
-        elements.presetSelect.value = '__builtin__PRESET_1_BASICO';
-        
         // Atualizar contadores do header
         await updateHeaderCounters();
 
         // Configurar tabela e filtros para dados de alunos
-        finishDataLoading();
+        // finishDataLoading() já vai aplicar o preset correto e configurar tudo
+        await finishDataLoading();
         
         console.log('✅ Dados de alunos configurados e renderizados');
         
