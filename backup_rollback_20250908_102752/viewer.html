@@ -65,25 +65,24 @@
             flex: 0 0 auto;
         }
 
-        .sidebar-toggle {
-            background: #f8fafc;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .sidebar-toggle, .columns-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            color: #1e293b;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(59,130,246,0.15), 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid #3b82f6;
             font-size: 14px;
             cursor: pointer;
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 10px;
             transition: all 0.2s ease;
             font-weight: 500;
         }
 
-        .sidebar-toggle:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+        .sidebar-toggle:hover, .columns-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
             transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            color: #334155;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.2), 0 2px 6px rgba(0,0,0,0.15);
         }
 
         .app-title { font-weight: 700; font-size: 18px; color: #2b2b2b; }
@@ -236,53 +235,35 @@
         .columns-controls { display:flex; align-items:center; gap:8px; }
 
         .columns-btn {
-            background: #f8fafc;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
             color: #475569;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
             font-size: 11px;
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
             transition: all 0.2s ease;
             font-weight: 500;
             white-space: nowrap;
         }
 
+
+
         .columns-btn:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
             transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(100,116,139,0.15), 0 2px 6px rgba(0,0,0,0.12);
             color: #334155;
         }
 
-        /* Variação principal para botão de redefinir */
-        .columns-btn.primary {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1e40af;
-        }
-
-        .columns-btn.primary:hover {
-            background: #dbeafe;
-            border-color: #93c5fd;
-        }
-
-        .columns-btn.success-feedback {
-            background: #dcfce7 !important;
-            border-color: #86efac !important;
-            color: #166534 !important;
-            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2) !important;
-        }
-
         .preset-select {
-            background: #f8fafc;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
             color: #475569;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
             font-size: 11px;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 6px;
             transition: all 0.2s ease;
             font-weight: 500;
@@ -294,11 +275,6 @@
             background-position: right 8px center;
             background-repeat: no-repeat;
             background-size: 16px;
-        }
-
-        .preset-select:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
         }
 
         .preset-select:focus {
@@ -567,78 +543,30 @@
             position: fixed;
             z-index: 10001;
             background: #fff;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-radius: 12px;
+            border: 1px solid #adadad;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            padding: 12px;
+            min-width: 350px;
+            width: 350px;
             display: none;
-            width: 380px;
-            min-height: 200px;
-            cursor: default;
+            border-radius: 8px;
         }
-        
-        .window-header {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-bottom: 1px solid #cbd5e1;
-            border-radius: 12px 12px 0 0;
-            padding: 12px 16px;
-            cursor: move;
-            user-select: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .window-title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .window-close {
-            background: none;
-            border: none;
-            font-size: 18px;
-            color: #64748b;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            line-height: 1;
-            transition: all 0.2s ease;
-        }
-        
-        .window-close:hover {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-        
-        .window-content {
-            padding: 16px;
-            /* 🔧 REMOVIDO: max-height e overflow-y - scroll específico apenas onde necessário */
-        }
-        .config-section { 
-            margin-bottom: 16px; 
-        }
-        
+        .config-section { margin-bottom: 12px; }
         .config-title {
             font-size: 13px;
             font-weight: 600;
             color: #1e293b;
             margin: 0 0 10px 0;
             padding-bottom: 6px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            border-bottom: 2px solid #e2e8f0;
         }
-        
+
         .config-subtitle {
             margin: -5px 0 12px 0;
             color: #64748b;
             font-size: 11px;
         }
+
         /* Lista integrada de colunas (visibilidade + ordem) */
         .integrated-columns-list {
             display: flex;
@@ -649,90 +577,47 @@
             padding: 4px;
         }
 
-         .integrated-column-item {
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             padding: 10px 12px;
-             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-             border: 1px solid #e2e8f0;
-             border-radius: 8px;
-             cursor: pointer;
-             transition: all 0.2s ease;
-             font-size: 12px;
-             user-select: none;
-             position: relative;
-             min-height: 40px;
-         }
+        .integrated-column-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: grab;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            user-select: none;
+        }
 
-         /* Estado visível */
-         .integrated-column-item.column-visible {
-             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-             border-color: #93c5fd;
-             box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
-         }
+        .integrated-column-item:active {
+            cursor: grabbing;
+        }
 
-         /* Hover melhorado */
-         .integrated-column-item:hover {
-             background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-             border-color: #cbd5e1;
-             transform: translateY(-1px);
-             box-shadow: 0 3px 8px rgba(100,116,139,0.15);
-         }
+        .integrated-column-item:hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(100,116,139,0.1);
+        }
 
-         .integrated-column-item.column-visible:hover {
-             background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-             border-color: #60a5fa;
-             box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2);
-         }
-
-         /* Estado ativo (clique) */
-         .integrated-column-item:active {
-             transform: scale(0.98);
-             transition: transform 0.1s ease;
-         }
-
-         /* Estado de arraste */
-         .integrated-column-item.dragging {
-             opacity: 0.6;
-             transform: rotate(2deg) scale(1.02);
-             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-             cursor: grabbing;
-             z-index: 1000;
-         }
-
-         /* Feedback visual para área clicável */
-         .integrated-column-item::before {
-             content: '';
-             position: absolute;
-             top: -2px;
-             left: -2px;
-             right: -2px;
-             bottom: -2px;
-             background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
-             border-radius: 10px;
-             opacity: 0;
-             transition: opacity 0.3s ease;
-             pointer-events: none;
-         }
-
-         .integrated-column-item:hover::before {
-             opacity: 1;
-         }
+        .integrated-column-item.dragging {
+            opacity: 0.5;
+            transform: rotate(2deg);
+        }
 
         .integrated-column-checkbox {
             margin: 0;
             width: 14px;
             height: 14px;
             accent-color: #3b82f6;
-            cursor: pointer;
         }
 
         .integrated-column-name {
             flex: 1;
             font-weight: 500;
             color: #374151;
-            cursor: pointer;
         }
 
         .integrated-column-drag {
@@ -744,24 +629,96 @@
         .integrated-column-drag:hover {
             color: #6b7280;
         }
-
-        .integrated-column-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-left: auto;
+        .visibility-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 6px;
+            border: 1px solid rgba(203,213,225,0.4);
+        }
+        .visibility-list label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            cursor: pointer;
+            padding: 4px 6px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(203,213,225,0.4);
+            border-radius: 4px;
             transition: all 0.2s ease;
-            background: #e5e7eb;
-            border: 1px solid #d1d5db;
+            font-weight: 500;
+            min-height: 28px;
+            word-break: break-word;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+        .visibility-list label:hover {
+            background: rgba(248,250,252,0.9);
+            border-color: rgba(203,213,225,0.6);
+            transform: translateY(-1px);
+        }
+        .visibility-list label input[type="checkbox"] {
+            margin: 0;
+            accent-color: #3b82f6;
+        }
+        .order-list {
+            border: 1px solid rgba(203,213,225,0.4);
+            padding: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.8);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .order-item {
+            padding: 6px 8px;
+            border: 1px dashed rgba(203,213,225,0.6);
+            cursor: move;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 11px;
+            font-weight: 500;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .order-item:hover {
+            background: rgba(248,250,252,0.9);
+            border-color: rgba(203,213,225,0.8);
+            transform: translateY(-1px);
+        }
+        .order-item.dragging { 
+            opacity: 0.6; 
+            background: rgba(59,130,246,0.1);
+            border-color: #3b82f6;
+            transform: rotate(2deg) scale(1.05);
+        }
+        .order-item::before {
+            content: '⋮⋮';
+            color: #94a3b8;
+            font-size: 12px;
+            line-height: 1;
         }
 
-        .column-visible .integrated-column-indicator {
-            background: #3b82f6;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        /* Melhorias no feedback visual para checkboxes */
+        .visibility-list label.checked {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
         }
 
-
+        .visibility-list label.unchecked {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
 
         /* Estilo para preset ativo */
         .preset-select option:checked {
@@ -822,14 +779,16 @@
             position: fixed;
             z-index: 10001;
             background: #fff;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-radius: 12px;
+            border: 1px solid #adadad;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            padding: 16px;
+            min-width: 320px;
+            width: 320px;
             display: none;
-            width: 340px;
-            cursor: default;
+            border-radius: 8px;
+            max-height: 450px;
+            overflow-y: auto;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* 🔧 REMOVIDO: max-height e overflow-y - scroll apenas no container de colunas */
         }
 
         .copy-section { 
@@ -880,109 +839,6 @@
             color: #334155;
         }
 
-        /* Botão principal - Copiar Tabela (destaque) */
-        .copy-primary-btn {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
-            font-size: 14px;
-            cursor: pointer;
-            padding: 14px 18px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            font-weight: 600;
-            text-align: center;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .copy-primary-btn:hover {
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(30, 64, 175, 0.35);
-        }
-
-        /* Container para botões de coluna */
-        .copy-column-item {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .copy-column-item:last-child {
-            border-bottom: none;
-        }
-
-        .copy-column-name {
-            font-size: 11px;
-            font-weight: 500;
-            color: #64748b;
-            min-width: 80px;
-            text-align: left;
-        }
-
-        .copy-column-buttons {
-            display: flex;
-            gap: 6px;
-            flex: 1;
-        }
-
-        /* Botões secundários - Colunas individuais */
-        .copy-secondary-btn {
-            background: #f8fafc;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            font-size: 11px;
-            cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 5px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            text-align: center;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            flex: 1;
-        }
-
-        .copy-secondary-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        }
-
-        .copy-secondary-btn.with-header {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1e40af;
-        }
-
-        .copy-secondary-btn.with-header:hover {
-            background: #dbeafe;
-            border-color: #93c5fd;
-        }
-
-        .copy-secondary-btn.without-header {
-            background: #f0f9ff;
-            border-color: #bae6fd;
-            color: #0369a1;
-        }
-
-        .copy-secondary-btn.without-header:hover {
-            background: #e0f2fe;
-            border-color: #7dd3fc;
-        }
-
         .copy-section-divider {
             font-size: 11px;
             font-weight: 600;
@@ -1002,30 +858,9 @@
         .copy-columns-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             max-height: 200px;
             overflow-y: auto;
-            padding-right: 4px; /* Espaço para scrollbar */
-        }
-
-        /* 🎨 Scrollbar sóbria para container de colunas */
-        .copy-columns-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .copy-columns-list::-webkit-scrollbar-track {
-            background: rgba(148, 163, 184, 0.1);
-            border-radius: 3px;
-        }
-
-        .copy-columns-list::-webkit-scrollbar-thumb {
-            background: rgba(71, 85, 105, 0.3);
-            border-radius: 3px;
-            transition: background 0.2s ease;
-        }
-
-        .copy-columns-list::-webkit-scrollbar-thumb:hover {
-            background: rgba(71, 85, 105, 0.5);
         }
 
         .copy-column-item {
@@ -1623,59 +1458,29 @@
         .sidebar-export-btn {
             width: 100%;
             padding: 12px 15px;
-            background: #f8fafc;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
             color: #475569;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border-radius: 6px;
+            border: 1px solid rgba(203,213,225,0.6);
+            box-shadow: 0 2px 8px rgba(100,116,139,0.1), 0 1px 3px rgba(0,0,0,0.08);
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             transition: all 0.2s ease;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .sidebar-export-btn:hover:not(:disabled) {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+            background: linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(241,245,249,1) 100%);
+            box-shadow: 0 4px 12px rgba(100,116,139,0.15), 0 2px 6px rgba(0,0,0,0.12);
             transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            color: #334155;
         }
 
         .sidebar-export-btn:disabled {
-            background: #f8fafc;
+            background: rgba(248,250,252,0.5);
             color: #94a3b8;
             cursor: not-allowed;
-            border-color: #e2e8f0;
+            border-color: rgba(203,213,225,0.3);
             box-shadow: none;
-            opacity: 0.6;
-        }
-
-        /* Variações para diferentes tipos de ação */
-        .sidebar-export-btn.primary {
-            background: #eff6ff;
-            border-color: #bfdbfe;
-            color: #1e40af;
-        }
-
-        .sidebar-export-btn.primary:hover:not(:disabled) {
-            background: #dbeafe;
-            border-color: #93c5fd;
-        }
-
-        .sidebar-export-btn.danger {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #dc2626;
-        }
-
-        .sidebar-export-btn.danger:hover:not(:disabled) {
-            background: #fee2e2;
-            border-color: #fca5a5;
         }
 
         /* Estilo para títulos das seções do menu */
@@ -1834,18 +1639,11 @@
                     <button id="columnConfigBtn" class="header-btn" title="Configuração de Colunas">📊 Organizar Colunas</button>
                     <button id="copyDataBtn" class="header-btn" title="Opções de cópia de dados">📋 Copiar Dados</button>
                     <div id="columnConfigDropdown" class="config-dropdown">
-                        <div class="window-header">
-                            <div class="window-title">
-                                📊 Organizar Colunas
-                            </div>
-                            <button class="window-close" onclick="document.getElementById('columnConfigDropdown').style.display='none'">×</button>
-                        </div>
-                        <div class="window-content">
-                            <div class="config-section">
-                                <div class="config-title">Presets</div>
+                        <div class="config-section">
+                            <div class="config-title">Presets</div>
                             <div style="display:flex;gap:8px;align-items:center;width:100%;margin-bottom:6px;">
                                 <select id="presetSelect" class="preset-select" style="flex:1;"></select>
-                                <button id="resetColumnsBtn" class="columns-btn primary">🔄 Redefinir</button>
+                                <button id="resetColumnsBtn" class="columns-btn">🔄 Redefinir</button>
                             </div>
                         </div>
                         <div class="config-section">
@@ -1855,24 +1653,15 @@
                             </div>
                             <div id="integratedColumnsList" class="integrated-columns-list"></div>
                         </div>
-                        </div>
                     </div>
                     <div id="copyDataDropdown" class="copy-dropdown">
-                        <div class="window-header">
-                            <div class="window-title">
-                                📋 Copiar Dados
-                            </div>
-                            <button class="window-close" onclick="document.getElementById('copyDataDropdown').style.display='none'">×</button>
-                        </div>
-                        <div class="window-content">
-                            <div class="copy-section">
-                                <div class="copy-title">📋 Opções de Cópia</div>
-                             <div class="copy-options">
-                                 <button id="copyTableBtn" class="copy-primary-btn">📊 Copiar Tabela Visível</button>
+                        <div class="copy-section">
+                            <div class="copy-title">📋 Opções de Cópia</div>
+                            <div class="copy-options">
+                                <button id="copyTableBtn" class="copy-option-btn">📊 Copiar Tabela Visível</button>
                                 <div class="copy-section-divider">📂 Copiar Colunas Individuais</div>
                                 <div id="copyColumnsList" class="copy-columns-list"></div>
                             </div>
-                        </div>
                         </div>
                     </div>
                 </div>
@@ -1906,7 +1695,7 @@
             <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px; border-bottom: 1px solid #eee;">
                 <h4 class="menu-section-title">📊 Exportação Rápida</h4>
                 <div class="menu-buttons">
-                    <button id="exportBtn" class="sidebar-export-btn primary">📥 Exportar Visível</button>
+                    <button id="exportBtn" class="sidebar-export-btn">📥 Exportar Visível</button>
                 </div>
             </div>
 
@@ -1947,7 +1736,7 @@
                 <p style="font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.4;">
                     Remove todos os dados armazenados da extensão. Esta ação não pode ser desfeita.
                 </p>
-                <button id="clearDataBtn" class="sidebar-export-btn danger">
+                <button id="clearDataBtn" class="clear-data-btn">
                     🗑️ Limpar Todos os Dados
                 </button>
             </div>

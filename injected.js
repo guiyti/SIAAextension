@@ -1,52 +1,393 @@
 // Variável global para armazenar mapeamento de código -> nome do curso
 window.__SIAA_CURSO_MAPPING = new Map();
 
+// ===== V13 CourseMapper Class =====
+class CourseMapper {
+    constructor() {
+        this.version = 'V13-CourseMapper';
+        this.mapping = window.__SIAA_CURSO_MAPPING;
+    }
+
+    // V13: Extrair e armazenar nomes de cursos do XML grid_curso_ofe
+    async extractAndStoreCursoNames(idOfert, periodo) {
+        return this._extractAndStoreCursoNamesOriginal(idOfert, periodo);
+    }
+
+    async _extractAndStoreCursoNamesOriginal(idOfert, periodo) {
+        if (!idOfert || !periodo) return;
+        
+        try {
+            const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
+            const xml = await fetchXML(urlCurso);
+            const rows = xml.querySelectorAll('row');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('cell');
+                if (cells.length >= 2) {
+                    const cursoText = cells[1].textContent.trim();
+                    // Formato: "68 - CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS"
+                    const match = cursoText.match(/^(\d+)\s*-\s*(.+)$/);
+                    if (match) {
+                        const codigo = match[1].trim();
+                        const nome = match[2].trim();
+                        this.mapping.set(codigo, nome);
+                    }
+                }
+            });
+        } catch (error) {
+            console.warn(`⚠️ V13 - Erro ao extrair nomes de cursos da oferta ${idOfert}:`, error);
+        }
+    }
+
+    // V13: Obter nome do curso pelo código
+    getCursoNomeFromMapping(codigoCurso) {
+        return this._getCursoNomeFromMappingOriginal(codigoCurso);
+    }
+
+    _getCursoNomeFromMappingOriginal(codigoCurso) {
+        if (!codigoCurso) return '';
+        return this.mapping.get(codigoCurso.toString()) || '';
+    }
+
+    // V13: Debug do mapeamento de cursos
+    debugCursoMapping() {
+        this._debugCursoMappingOriginal();
+    }
+
+    _debugCursoMappingOriginal() {
+        if (this.mapping.size === 0) {
+            console.log('  📭 Nenhum curso mapeado ainda');
+        } else {
+            this.mapping.forEach((nome, codigo) => {
+                console.log(`  📚 ${codigo} -> ${nome}`);
+            });
+        }
+    }
+
+    // V13: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            totalCursos: this.mapping.size,
+            cursos: Array.from(this.mapping.entries()).slice(0, 5) // primeiros 5 para debug
+        };
+    }
+}
+
+// Instância global do CourseMapper V13
+const courseMapperV13 = new CourseMapper();
+
+// ===== V14 OverlayManager Class =====
+class OverlayManager {
+    constructor() {
+        this.version = 'V14-OverlayManager';
+    }
+
+    // V14: Criar overlay de seleção de curso
+    createCourseSelectionOverlay(cursos) {
+        return this._createCourseSelectionOverlayOriginal(cursos);
+    }
+
+    _createCourseSelectionOverlayOriginal(cursos) {
+        const overlay = document.createElement('div');
+        overlay.id = 'siaa-course-selection-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        `;
+        
+        const selectionBox = document.createElement('div');
+        selectionBox.style.cssText = `
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 500px;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 2px solid #ebb55e;
+        `;
+        
+        let cursosOptions = '';
+        cursos.forEach(curso => {
+            const selected = curso.selected ? 'selected' : '';
+            cursosOptions += `<option value="${curso.codigo}" ${selected}>${curso.nome}</option>`;
+        });
+        
+        selectionBox.innerHTML = `
+            <div style="margin-bottom: 30px;">
+                <h2 style="color: #333; margin: 0 0 15px 0;">📚 Seleção de Curso - SIAA</h2>
+                <p style="color: #666; margin: 0; font-size: 16px;">
+                    Escolha o curso para extrair os dados das ofertas de disciplinas
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 30px; text-align: left;">
+                <label for="curso-select" style="display: block; margin-bottom: 10px; color: #333; font-weight: bold;">
+                    Curso:
+                </label>
+                <select id="curso-select" style="
+                    width: 100%;
+                    padding: 12px;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    background: white;
+                    color: #333;
+                    outline: none;
+                    transition: border-color 0.3s;
+                " onchange="this.style.borderColor='#3498db'">
+                    ${cursosOptions}
+                </select>
+            </div>
+            
+            <div style="background: #e8f4f8; border-radius: 8px; padding: 15px; margin-bottom: 25px; text-align: left;">
+                <div style="color: #2c3e50; font-size: 14px; margin-bottom: 8px;">
+                    <strong>ℹ️ Informações:</strong>
+                </div>
+                <ul style="color: #666; font-size: 13px; margin: 0; padding-left: 20px;">
+                    <li>Os dados extraídos incluem disciplinas, professores e vagas</li>
+                    <li>A extração é feita em lotes para otimizar a performance</li>
+                    <li>Os dados serão salvos para download posterior</li>
+                    <li>Período: Dinâmico (obtido automaticamente do SIAA)</li>
+                </ul>
+            </div>
+            
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="start-extraction-button" style="
+                    background: linear-gradient(to bottom, #ebb55e 0%, #FFF 100%);
+                    color: #2c3e50;
+                    border: 1px solid #ebb55e;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: bold;
+                    transition: all 0.3s;
+                    flex: 1;
+                    max-width: 200px;
+                " onmouseover="this.style.background='#ebb55e'; this.style.color='white'" onmouseout="this.style.background='linear-gradient(to bottom, #ebb55e 0%, #FFF 100%)'; this.style.color='#2c3e50'">
+                    🚀 Iniciar Captura
+                </button>
+                <button id="cancel-selection-button" style="
+                    background: #95a5a6;
+                    color: white;
+                    border: none;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: bold;
+                    transition: background-color 0.3s;
+                    flex: 1;
+                    max-width: 200px;
+                " onmouseover="this.style.background='#7f8c8d'" onmouseout="this.style.background='#95a5a6'">
+                    ❌ Cancelar
+                </button>
+            </div>
+        `;
+        
+        overlay.appendChild(selectionBox);
+        document.body.appendChild(overlay);
+        
+        return new Promise((resolve, reject) => {
+            // Evento do botão iniciar
+            document.getElementById('start-extraction-button').addEventListener('click', () => {
+                const select = document.getElementById('curso-select');
+                const selectedCourse = {
+                    codigo: select.value,
+                    nome: select.options[select.selectedIndex].text
+                };
+                
+                document.body.removeChild(overlay);
+                resolve(selectedCourse);
+            });
+            
+            // Evento do botão cancelar
+            document.getElementById('cancel-selection-button').addEventListener('click', () => {
+                document.body.removeChild(overlay);
+                reject(new Error('Seleção cancelada pelo usuário'));
+            });
+        });
+    }
+
+    // V14: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            overlaySupported: typeof document !== 'undefined',
+            activeOverlays: document?.querySelectorAll('#siaa-course-selection-overlay')?.length || 0
+        };
+    }
+}
+
+// Instância global do OverlayManager V14
+const overlayManagerV14 = new OverlayManager();
+
+// ===== V15 SIAAConnector Class =====
+class SIAAConnector {
+    constructor() {
+        this.version = 'V15-SIAAConnector';
+        this.defaultTimeout = 15000;
+    }
+
+    // V15: Buscar XML do SIAA
+    async fetchXML(url, timeout = this.defaultTimeout) {
+        return this._fetchXMLOriginal(url, timeout);
+    }
+
+    async _fetchXMLOriginal(url, timeout = 15000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+            const response = await fetch(url, { 
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'text/xml, application/xml, */*',
+                    'Accept-Charset': 'ISO-8859-1',
+                    'User-Agent': 'Mozilla/5.0 (compatible; DataExtractor/1.0)'
+                }
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // Usar ISO-8859-1 para decodificar corretamente
+            const arrayBuffer = await response.arrayBuffer();
+            const decoder = new TextDecoder('iso-8859-1');
+            const xmlText = decoder.decode(arrayBuffer);
+            
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+            
+            return xmlDoc;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error(`Timeout de ${timeout}ms excedido para ${url}`);
+            }
+            console.error('❌ V15 - Erro ao buscar XML:', error);
+            throw error;
+        }
+    }
+
+    // V15: Obter período acadêmico atual
+    async getCurrentAcademicPeriod() {
+        return this._getCurrentAcademicPeriodOriginal();
+    }
+
+    async _getCurrentAcademicPeriodOriginal() {
+        try {
+            const url = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp';
+            const xmlDoc = await this.fetchXML(url);
+            
+            // Buscar opção selecionada
+            const selectedOption = xmlDoc.querySelector('option[selected="true"]') || 
+                                 xmlDoc.querySelector('option[selected="selected"]') ||
+                                 xmlDoc.querySelector('option');
+            
+            if (!selectedOption) {
+                throw new Error('Nenhuma opção de período encontrada');
+            }
+            
+            const periodoCompleto = selectedOption.getAttribute('value');
+            const [ano_leti, sem_leti] = periodoCompleto.split('/');
+            
+            
+            const periodo = {
+                ano_leti: ano_leti.trim(),
+                sem_leti: sem_leti.trim(),
+                periodoCompleto
+            };
+            
+            return periodo;
+        } catch (error) {
+            console.error('❌ V15 - Erro ao obter período acadêmico:', error);
+            // Fallback para valores que funcionem como padrão
+            return {
+                ano_leti: '2025',
+                sem_leti: '2',
+                periodoCompleto: '2025/2',
+                fallback: true
+            };
+        }
+    }
+
+    // V15: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            defaultTimeout: this.defaultTimeout,
+            fetchSupported: typeof fetch !== 'undefined',
+            domParserSupported: typeof DOMParser !== 'undefined'
+        };
+    }
+}
+
+// Instância global do SIAAConnector V15
+const siaaConnectorV15 = new SIAAConnector();
+
+// ===== V16 ExtractionEngine Class =====
+class ExtractionEngine {
+    constructor() {
+        this.version = 'V16-ExtractionEngine';
+    }
+
+    // V16: Função principal de extração
+    async exportarTabelaSIAA(cursoSelecionado = null) {
+        // Por enquanto, chamar a implementação original
+        return await exportarTabelaSIAAOriginalLegacy(cursoSelecionado);
+    }
+
+    // V16: Função completa de extração (wrapper)
+    async exportarTabelaSIAAOriginal(cursoSelecionado = null) {
+        // Por enquanto, chamar a implementação original
+        return await exportarTabelaSIAAOriginalLegacy(cursoSelecionado);
+    }
+
+    // V16: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            chromeRuntimeAvailable: typeof chrome?.runtime?.sendMessage === 'function'
+        };
+    }
+}
+
+// Instância global do ExtractionEngine V16
+const extractionEngineV16 = new ExtractionEngine();
+
 // Função para buscar cursos disponíveis - REMOVIDA (usar XMLProcessor)
 
-// Função para extrair e armazenar nomes de cursos do XML grid_curso_ofe
+// V13: Redirecionamento para CourseMapper
 async function extractAndStoreCursoNames(idOfert, periodo) {
-    if (!idOfert || !periodo) return;
-    
-    try {
-        const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
-        const xml = await fetchXML(urlCurso);
-        const rows = xml.querySelectorAll('row');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('cell');
-            if (cells.length >= 2) {
-                const cursoText = cells[1].textContent.trim();
-                // Formato: "68 - CST EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS"
-                const match = cursoText.match(/^(\d+)\s*-\s*(.+)$/);
-                if (match) {
-                    const codigo = match[1].trim();
-                    const nome = match[2].trim();
-                    window.__SIAA_CURSO_MAPPING.set(codigo, nome);
-                    console.log(`📚 Curso mapeado: ${codigo} -> ${nome}`);
-                }
-            }
-        });
-    } catch (error) {
-        console.warn(`⚠️ Erro ao extrair nomes de cursos da oferta ${idOfert}:`, error);
-    }
+    return courseMapperV13.extractAndStoreCursoNames(idOfert, periodo);
 }
 
-// Função para obter nome do curso pelo código
+// V13: Redirecionamento para CourseMapper
 function getCursoNomeFromMapping(codigoCurso) {
-    if (!codigoCurso) return '';
-    return window.__SIAA_CURSO_MAPPING.get(codigoCurso.toString()) || '';
+    return courseMapperV13.getCursoNomeFromMapping(codigoCurso);
 }
 
-// Função para debugar o mapeamento de cursos
+// V13: Redirecionamento para CourseMapper
 function debugCursoMapping() {
-    console.log('🔍 Mapeamento atual de cursos:');
-    if (window.__SIAA_CURSO_MAPPING.size === 0) {
-        console.log('  📭 Nenhum curso mapeado ainda');
-    } else {
-        window.__SIAA_CURSO_MAPPING.forEach((nome, codigo) => {
-            console.log(`  📚 ${codigo} -> ${nome}`);
-        });
-    }
+    return courseMapperV13.debugCursoMapping();
 }
 
 // Salvar mapeamento de cursos no storage
@@ -87,149 +428,23 @@ async function loadCursoMapping() {
 }
 
 // Função para criar interface de seleção de curso
+// V14: Redirecionamento para OverlayManager
 function createCourseSelectionOverlay(cursos) {
-        const overlay = document.createElement('div');
-    overlay.id = 'siaa-course-selection-overlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-        `;
-        
-    const selectionBox = document.createElement('div');
-    selectionBox.style.cssText = `
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            text-align: center;
-        min-width: 500px;
-        max-width: 700px;
-        max-height: 80vh;
-        overflow-y: auto;
-        border: 2px solid #ebb55e;
-    `;
-    
-    let cursosOptions = '';
-    cursos.forEach(curso => {
-        const selected = curso.selected ? 'selected' : '';
-        cursosOptions += `<option value="${curso.codigo}" ${selected}>${curso.nome}</option>`;
-    });
-    
-    selectionBox.innerHTML = `
-        <div style="margin-bottom: 30px;">
-            <h2 style="color: #333; margin: 0 0 15px 0;">📚 Seleção de Curso - SIAA</h2>
-            <p style="color: #666; margin: 0; font-size: 16px;">
-                Escolha o curso para extrair os dados das ofertas de disciplinas
-            </p>
-        </div>
-        
-        <div style="margin-bottom: 30px; text-align: left;">
-            <label for="curso-select" style="display: block; margin-bottom: 10px; color: #333; font-weight: bold;">
-                Curso:
-            </label>
-            <select id="curso-select" style="
-                width: 100%;
-                padding: 12px;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                font-size: 14px;
-                background: white;
-                color: #333;
-                outline: none;
-                transition: border-color 0.3s;
-            " onchange="this.style.borderColor='#3498db'">
-                ${cursosOptions}
-            </select>
-        </div>
-        
-        <div style="background: #e8f4f8; border-radius: 8px; padding: 15px; margin-bottom: 25px; text-align: left;">
-            <div style="color: #2c3e50; font-size: 14px; margin-bottom: 8px;">
-                <strong>ℹ️ Informações:</strong>
-            </div>
-            <ul style="color: #666; font-size: 13px; margin: 0; padding-left: 20px;">
-                <li>Os dados extraídos incluem disciplinas, professores e vagas</li>
-                <li>A extração é feita em lotes para otimizar a performance</li>
-                <li>Os dados serão salvos para download posterior</li>
-                <li>Período: Dinâmico (obtido automaticamente do SIAA)</li>
-            </ul>
-            </div>
-        
-        <div style="display: flex; gap: 15px; justify-content: center;">
-            <button id="start-extraction-button" style="
-                background: linear-gradient(to bottom, #ebb55e 0%, #FFF 100%);
-                color: #2c3e50;
-                border: 1px solid #ebb55e;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: bold;
-                transition: all 0.3s;
-                flex: 1;
-                max-width: 200px;
-            " onmouseover="this.style.background='#ebb55e'; this.style.color='white'" onmouseout="this.style.background='linear-gradient(to bottom, #ebb55e 0%, #FFF 100%)'; this.style.color='#2c3e50'">
-                🚀 Iniciar Captura
-            </button>
-            <button id="cancel-selection-button" style="
-                background: #95a5a6;
-                color: white;
-                border: none;
-                padding: 15px 30px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: bold;
-                transition: background-color 0.3s;
-                flex: 1;
-                max-width: 200px;
-            " onmouseover="this.style.background='#7f8c8d'" onmouseout="this.style.background='#95a5a6'">
-                ❌ Cancelar
-            </button>
-            </div>
-    `;
-    
-    overlay.appendChild(selectionBox);
-    document.body.appendChild(overlay);
-    
-    return new Promise((resolve, reject) => {
-        // Evento do botão iniciar
-        document.getElementById('start-extraction-button').addEventListener('click', () => {
-            const select = document.getElementById('curso-select');
-            const selectedCourse = {
-                codigo: select.value,
-                nome: select.options[select.selectedIndex].text
-            };
-            
-            console.log('📚 Curso selecionado:', selectedCourse);
-            document.body.removeChild(overlay);
-            resolve(selectedCourse);
-        });
-        
-        // Evento do botão cancelar
-        document.getElementById('cancel-selection-button').addEventListener('click', () => {
-            document.body.removeChild(overlay);
-            reject(new Error('Seleção cancelada pelo usuário'));
-        });
-    });
+    return overlayManagerV14.createCourseSelectionOverlay(cursos);
 }
 
+// V16: Redirecionamento para ExtractionEngine
 async function exportarTabelaSIAA(cursoSelecionado = null) {
-    console.log('🚀 Iniciando extração de dados');
-    return await exportarTabelaSIAAOriginal(cursoSelecionado);
+    return extractionEngineV16.exportarTabelaSIAA(cursoSelecionado);
 }
 
-// Sistema original mantido como fallback
+// V16: Redirecionamento para ExtractionEngine
 async function exportarTabelaSIAAOriginal(cursoSelecionado = null) {
+    return extractionEngineV16.exportarTabelaSIAAOriginal(cursoSelecionado);
+}
+
+// Sistema original mantido como fallback interno
+async function exportarTabelaSIAAOriginalLegacy(cursoSelecionado = null) {
     // Funções auxiliares visíveis para todo o escopo (incluindo catch)
     function updateStatus(message, progress = null) {
         const payload = { action: 'extractionProgress', message };
@@ -855,79 +1070,16 @@ async function exportarTabelaSIAAOriginal(cursoSelecionado = null) {
 
 // ===== FUNÇÃO AUXILIAR PARA PERÍODO ACADÊMICO =====
 
-// Função para obter período acadêmico atual dinamicamente
+// V15: Redirecionamento para SIAAConnector
 async function getCurrentAcademicPeriod() {
-    try {
-        const url = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp';
-        const xmlDoc = await fetchXML(url);
-        
-        // Buscar opção selecionada
-        const selectedOption = xmlDoc.querySelector('option[selected="true"]') || 
-                             xmlDoc.querySelector('option[selected="selected"]') ||
-                             xmlDoc.querySelector('option');
-        
-        if (!selectedOption) {
-            throw new Error('Nenhuma opção de período encontrada');
-        }
-        
-        const periodoCompleto = selectedOption.getAttribute('value');
-        const [ano_leti, sem_leti] = periodoCompleto.split('/');
-        
-        console.log(`📅 Período acadêmico obtido: ${ano_leti}/${sem_leti}`);
-        
-        return {
-            ano_leti: ano_leti.trim(),
-            sem_leti: sem_leti.trim(),
-            periodoCompleto
-        };
-        
-    } catch (error) {
-        console.error('❌ Erro ao obter período acadêmico:', error);
-        // Fallback para valores que funcionem como padrão
-        return {
-            ano_leti: '2025',
-            sem_leti: '2',
-            periodoCompleto: '2025/2',
-            fallback: true
-        };
-    }
+    return siaaConnectorV15.getCurrentAcademicPeriod();
 }
 
 // ===== FUNÇÃO AUXILIAR PARA FETCH XML =====
 
-// Função auxiliar para buscar XML (usada tanto para ofertas quanto para alunos)
+// V15: Redirecionamento para SIAAConnector
 async function fetchXML(url, timeout = 15000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    try {
-        const response = await fetch(url, { 
-            signal: controller.signal,
-            headers: {
-                'Accept': 'text/xml, application/xml, */*',
-                'Accept-Charset': 'ISO-8859-1',
-                'User-Agent': 'Mozilla/5.0 (compatible; DataExtractor/1.0)'
-            }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        // Usar ISO-8859-1 para decodificar corretamente
-        const arrayBuffer = await response.arrayBuffer();
-        const decoder = new TextDecoder('iso-8859-1');
-        const xmlText = decoder.decode(arrayBuffer);
-        
-        const parser = new DOMParser();
-        return parser.parseFromString(xmlText, 'text/xml');
-        
-    } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
-    }
+    return siaaConnectorV15.fetchXML(url, timeout);
 }
 
 // ===== CAPTURA DE DADOS DE ALUNOS =====

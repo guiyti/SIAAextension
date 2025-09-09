@@ -76,14 +76,11 @@ class PresetManager {
 
     async _loadPresetCustomizationsOriginal(presetKey) {
         try {
-            // 🔧 CORREÇÃO: Usar chave específica do modo atual
-            const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
-            const result = await Storage.get([storageKey]);
-            console.log(`🔍 Carregando customizações de: ${storageKey}`, result[storageKey] ? '✅ Encontrado' : '❌ Não encontrado');
-            return result[storageKey] || null;
+            const result = await chrome.storage.local.get([presetKey]);
+            return result[presetKey] || null;
         } catch (error) {
-            console.error('❌ Erro ao carregar personalização do preset:', error);
-    return null;
+            console.error('Erro ao carregar personalização do preset:', error);
+            return null;
         }
     }
 
@@ -234,22 +231,22 @@ class CopyManager {
     }
 
     async _copyVisibleTableOriginal() {
-    try {
-        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+        try {
+            const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
             
-        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-        if (!visibleHeaders.length) {
-            alert('Não há colunas visíveis para copiar.');
+            const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+            if (!visibleHeaders.length) {
+                alert('Não há colunas visíveis para copiar.');
                 return false;
-        }
+            }
             
-        const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
-            // Fallback Total/Total Matriculados
-            if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
-            if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
-            return row[h] ?? '';
-        }))];
-        
+            const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
+                // Fallback Total/Total Matriculados
+                if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+                if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+                return row[h] ?? '';
+            }))];
+            
             const csvContent = rows.map(row => row.map(cell => {
                 const cellStr = String(cell).replace(/"/g, '""');
                 return cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n') ? `"${cellStr}"` : cellStr;
@@ -277,12 +274,12 @@ class CopyManager {
     }
 
     async _copyColumnOriginal(columnName, withDuplicates = true) {
-    try {
-        const values = filteredData.map(row => {
-            // Fallback Total/Total Matriculados
-            if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
-            if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
-            return row[columnName] ?? '';
+        try {
+            const values = filteredData.map(row => {
+                // Fallback Total/Total Matriculados
+                if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+                if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+                return row[columnName] ?? '';
             });
             
             const finalValues = withDuplicates ? values : [...new Set(values)];
@@ -318,58 +315,26 @@ class CopyManager {
 
     _buildCopyColumnsListOriginal(copyColumnsList) {
         try {
-    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
-    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-    
-    copyColumnsList.innerHTML = '';
-    
-    visibleHeaders.forEach(columnName => {
-                // 🎯 Container para cada coluna
-                const columnItem = document.createElement('div');
-                columnItem.className = 'copy-column-item';
-                
-                // 📝 Nome da coluna
-                const columnNameSpan = document.createElement('span');
-                columnNameSpan.className = 'copy-column-name';
-                columnNameSpan.textContent = columnName;
-                
-                // 🔘 Container dos botões
-                const buttonsContainer = document.createElement('div');
-                buttonsContainer.className = 'copy-column-buttons';
-                
-                // 📄 Botão: Com repetição (dados completos)
-                const btnWithRepetition = document.createElement('button');
-                btnWithRepetition.className = 'copy-secondary-btn with-header';
-                btnWithRepetition.innerHTML = '📄 Com Repetição';
-                btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
-                btnWithRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, true); // com duplicatas/repetições
-                document.getElementById('copyDataDropdown').style.display = 'none';
-                    console.log(`📄 Copiado: ${columnName} (com repetição)`);
-                });
-                
-                // 📄 Botão: Sem repetição (dados únicos)
-                const btnWithoutRepetition = document.createElement('button');
-                btnWithoutRepetition.className = 'copy-secondary-btn without-header';
-                btnWithoutRepetition.innerHTML = '📄 Sem Repetição';
-                btnWithoutRepetition.title = `Copiar coluna "${columnName}" sem dados repetidos (valores únicos)`;
-                btnWithoutRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, false); // sem duplicatas/repetições
-                    document.getElementById('copyDataDropdown').style.display = 'none';
-                    console.log(`📄 Copiado: ${columnName} (sem repetição)`);
-                });
-                
-                // 🔗 Montar estrutura
-                buttonsContainer.appendChild(btnWithRepetition);
-                buttonsContainer.appendChild(btnWithoutRepetition);
-                
-                columnItem.appendChild(columnNameSpan);
-                columnItem.appendChild(buttonsContainer);
-                
-                copyColumnsList.appendChild(columnItem);
+            const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+            const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+            
+            copyColumnsList.innerHTML = '';
+            
+            visibleHeaders.forEach(columnName => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <button onclick="copyColumn('${columnName}', true)" 
+                            style="margin-right: 10px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                        📄 ${columnName}
+                    </button>
+                    <button onclick="copyColumn('${columnName}', false)" 
+                            style="padding: 5px 10px; background: #3498db; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                        📄 ${columnName} (sem duplicatas)
+                    </button>
+                `;
+                copyColumnsList.appendChild(listItem);
             });
             
-            console.log(`📋 Lista de cópias criada: ${visibleHeaders.length} colunas`);
             return true;
             
         } catch (error) {
@@ -901,10 +866,6 @@ async function finishDataLoading() {
         
         // Headers e configurações iniciais
         const headers = Object.keys(allData[0]);
-    
-    // 🔧 CORREÇÃO: Carregar preset específico do modo após ter dados
-    console.log('🎛️ Carregando preset específico do modo atual...');
-    await loadModeSpecificPreset();
 
     // Compatibilidade: alinhar aliases 'Total' ↔ 'Total Matriculados'
     (function reconcileTotalHeaders() {
@@ -965,8 +926,8 @@ async function finishDataLoading() {
 
     setupTable();
     
-    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
-    // updateColumnVisibility();
+    // Aplicar visibilidade das colunas ANTES de mostrar dados para evitar piscada
+    updateColumnVisibility();
     
     // Restaurar estado dos filtros imediatamente após setupTable para preservar valores visuais
     restoreFilterState();
@@ -1051,26 +1012,11 @@ function setupTable() {
     if (allData.length === 0) return;
     
     if (columnOrder.length === 0) columnOrder = Object.keys(allData[0]);
-    
-    // Usar apenas colunas visíveis na ordem correta
-    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0]);
-    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
-    
-    console.log('🔍 [DEBUG-HEADERS] setupTable() iniciado');
-    console.log('🔍 [DEBUG-HEADERS] columnOrder:', columnOrder);
-    console.log('🔍 [DEBUG-HEADERS] visibleColumns:', Array.from(visibleColumns));
-    console.log('🔍 [DEBUG-HEADERS] allHeaders:', allHeaders);
-    console.log('🔍 [DEBUG-HEADERS] visibleHeaders calculados:', visibleHeaders);
-    console.log('🔍 [DEBUG-HEADERS] Total headers visíveis:', visibleHeaders.length);
-    
+    const headers = columnOrder;
     elements.tableHead.innerHTML = '';
     
     const headerRow = document.createElement('tr');
-    let headerCount = 0;
-    
-    visibleHeaders.forEach((header, index) => {
-        console.log(`🔍 [DEBUG-HEADERS] Processando header ${index + 1}/${visibleHeaders.length}: "${header}"`);
-        headerCount++;
+    headers.forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
         th.dataset.column = header;
@@ -1113,7 +1059,7 @@ function setupTable() {
         // Drag-and-drop para cabeçalhos da tabela
         th.setAttribute('draggable', 'true');
         th.addEventListener('dragstart', (e) => {
-            dragSrcIndex = visibleHeaders.indexOf(header);
+            dragSrcIndex = headers.indexOf(header);
             th.style.opacity = '0.5';
             e.dataTransfer.effectAllowed = 'move';
         });
@@ -1126,7 +1072,7 @@ function setupTable() {
         });
         th.addEventListener('drop', async (e) => {
             e.preventDefault();
-            const dropIndex = visibleHeaders.indexOf(header);
+            const dropIndex = headers.indexOf(header);
             if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
             
             // Reorganizar columnOrder
@@ -1140,24 +1086,16 @@ function setupTable() {
             // Atualizar interface
             setupTable();
             await setupColumnToggle(); // Recriar a sidebar na nova ordem
-            // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+            updateColumnVisibility();
             renderTable();
         });
 
         headerRow.appendChild(th);
-        console.log(`🔍 [DEBUG-HEADERS] Header "${header}" criado e adicionado ao DOM`);
     });
-    
-    console.log(`🔍 [DEBUG-HEADERS] Total headers criados: ${headerCount}`);
-    console.log(`🔍 [DEBUG-HEADERS] headerRow.children.length: ${headerRow.children.length}`);
     
     // Segunda linha: inputs de filtro por coluna
     const filterRow = document.createElement('tr');
-    let filterCount = 0;
-    
-    visibleHeaders.forEach((header, index) => {
-        console.log(`🔍 [DEBUG-HEADERS] Criando filtro ${index + 1}/${visibleHeaders.length}: "${header}"`);
-        filterCount++;
+    headers.forEach(header => {
         const th = document.createElement('th');
         th.dataset.column = header;
         th.style.cursor = 'default';
@@ -1193,21 +1131,10 @@ function setupTable() {
         });
         th.appendChild(input);
         filterRow.appendChild(th);
-        console.log(`🔍 [DEBUG-HEADERS] Filtro "${header}" criado e adicionado`);
     });
     
-    console.log(`🔍 [DEBUG-HEADERS] Total filtros criados: ${filterCount}`);
-    console.log(`🔍 [DEBUG-HEADERS] filterRow.children.length: ${filterRow.children.length}`);
-    
-    console.log('🔍 [DEBUG-HEADERS] Adicionando headerRow ao tableHead...');
     elements.tableHead.appendChild(headerRow);
-    console.log(`🔍 [DEBUG-HEADERS] headerRow adicionado. tableHead.children: ${elements.tableHead.children.length}`);
-    
-    console.log('🔍 [DEBUG-HEADERS] Adicionando filterRow ao tableHead...');
     elements.tableHead.appendChild(filterRow);
-    console.log(`🔍 [DEBUG-HEADERS] filterRow adicionado. tableHead.children: ${elements.tableHead.children.length}`);
-    
-    console.log('🔍 [DEBUG-HEADERS] setupTable() concluído ✅');
 }
 
 // Aplicar estilos ativos ao cabeçalho/input conforme estado do filtro
@@ -1331,10 +1258,7 @@ async function setupColumnToggle() {
             Storage.set({ viewer_column_visibility: [...visibleColumns] });
             debouncedAutoSave(); // Salvar estados automaticamente
             await autoSaveCurrentPreset(); // Salvar customização do preset atual
-            
-            // 🔧 CORRIGIDO: Reconstruir tabela para refletir mudanças de visibilidade
-            setupTable();
-            renderTable();
+            updateColumnVisibility();
         });
         
         const span = document.createElement('span');
@@ -1401,7 +1325,7 @@ async function setupColumnToggle() {
             // Atualizar interface
             setupTable();
             await setupColumnToggle(); // Recriar a sidebar na nova ordem
-            // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+            updateColumnVisibility();
             renderTable();
         });
     });
@@ -1415,83 +1339,12 @@ function updateColumnVisibility() {
 
 // Função original mantida como legacy
 
-// 🪟 Configurar janelas flutuantes arrastáveis
-function setupDraggableWindows() {
-    const windows = [
-        { id: 'columnConfigDropdown', name: '📊 Organizar Colunas' },
-        { id: 'copyDataDropdown', name: '📋 Copiar Dados' }
-    ];
-
-    windows.forEach(windowConfig => {
-        const windowElement = document.getElementById(windowConfig.id);
-        const windowHeader = windowElement?.querySelector('.window-header');
-        
-        if (!windowElement || !windowHeader) return;
-
-        let isDragging = false;
-        let startX, startY, initialLeft, initialTop;
-
-        windowHeader.addEventListener('mousedown', (e) => {
-            // Não iniciar drag se clicou no botão fechar
-            if (e.target.classList.contains('window-close')) return;
-            
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            
-            const rect = windowElement.getBoundingClientRect();
-            initialLeft = rect.left;
-            initialTop = rect.top;
-            
-            windowElement.style.transition = 'none';
-            document.body.style.userSelect = 'none';
-            
-            console.log(`🪟 Iniciando drag da janela: ${windowConfig.name}`);
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            e.preventDefault();
-            
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            const newLeft = initialLeft + deltaX;
-            const newTop = initialTop + deltaY;
-            
-            // Limitar para não sair da tela
-            const maxLeft = window.innerWidth - windowElement.offsetWidth;
-            const maxTop = window.innerHeight - windowElement.offsetHeight;
-            
-            const constrainedLeft = Math.max(0, Math.min(newLeft, maxLeft));
-            const constrainedTop = Math.max(0, Math.min(newTop, maxTop));
-            
-            windowElement.style.left = constrainedLeft + 'px';
-            windowElement.style.top = constrainedTop + 'px';
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (!isDragging) return;
-            
-            isDragging = false;
-            windowElement.style.transition = '';
-            document.body.style.userSelect = '';
-            
-            console.log(`🪟 Drag finalizado da janela: ${windowConfig.name}`);
-        });
-    });
-}
-
 // Configurar event listeners
 function setupEventListeners() {
     // Botões
     elements.resetColumnsBtn.addEventListener('click', resetColumns);
     elements.presetSelect.addEventListener('change', loadSelectedPreset);
     elements.exportBtn.addEventListener('click', exportFilteredData);
-    
-    // 🪟 Tornar janelas flutuantes arrastáveis
-    setupDraggableWindows();
     
     // Dropdown de configuração no header
     const configBtn = document.getElementById('columnConfigBtn');
@@ -1500,22 +1353,19 @@ function setupEventListeners() {
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (configBtn && configDropdown) {
         const toggle = async () => {
-            const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
+            const rect = configBtn.getBoundingClientRect();
+            const dropdownWidth = 350; // Largura fixa aumentada
             
+            // Posicionar o dropdown para crescer para a esquerda
+            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
+            configDropdown.style.left = leftPosition + 'px';
+            configDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
+            configDropdown.style.width = dropdownWidth + 'px';
+            
+            const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
+            configDropdown.style.display = willOpen ? 'block' : 'none';
             if (willOpen) {
-                // 🪟 Posicionar janela flutuante no centro-direita da tela
-                const centerX = window.innerWidth - 420; // 420px da direita
-                const centerY = Math.max(100, (window.innerHeight - 400) / 2); // Centralizado verticalmente
-                
-                configDropdown.style.left = centerX + 'px';
-                configDropdown.style.top = centerY + 'px';
-                configDropdown.style.display = 'block';
-                
                 await buildIntegratedColumnsList();
-                console.log('🪟 Janela "Organizar Colunas" aberta em posição flutuante');
-            } else {
-                configDropdown.style.display = 'none';
-                console.log('🪟 Janela "Organizar Colunas" fechada');
             }
         };
         configBtn.addEventListener('click', (e) => {
@@ -1533,22 +1383,19 @@ function setupEventListeners() {
     const copyDropdown = document.getElementById('copyDataDropdown');
     if (copyDataBtn && copyDropdown) {
         const toggleCopyDropdown = () => {
-            const willOpen = copyDropdown.style.display === 'none' || !copyDropdown.style.display;
+            const rect = copyDataBtn.getBoundingClientRect();
+            const dropdownWidth = 280;
             
+            // Posicionar o dropdown para crescer para a esquerda
+            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
+            copyDropdown.style.left = leftPosition + 'px';
+            copyDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
+            copyDropdown.style.width = dropdownWidth + 'px';
+            
+            const willOpen = copyDropdown.style.display === 'none' || !copyDropdown.style.display;
+            copyDropdown.style.display = willOpen ? 'block' : 'none';
             if (willOpen) {
-                // 🪟 Posicionar janela flutuante no centro-esquerda da tela
-                const centerX = Math.max(50, (window.innerWidth - 380) / 2 - 200); // Centro-esquerda
-                const centerY = Math.max(100, (window.innerHeight - 300) / 2); // Centralizado verticalmente
-                
-                copyDropdown.style.left = centerX + 'px';
-                copyDropdown.style.top = centerY + 'px';
-                copyDropdown.style.display = 'block';
-                
                 buildCopyColumnsList();
-                console.log('🪟 Janela "Copiar Dados" aberta em posição flutuante');
-            } else {
-                copyDropdown.style.display = 'none';
-                console.log('🪟 Janela "Copiar Dados" fechada');
             }
         };
         
@@ -1663,164 +1510,66 @@ function updateDataActionButtonsUI() {
 // Construir lista integrada de colunas (visibilidade + ordem)
 async function buildIntegratedColumnsList() {
     const integratedList = document.getElementById('integratedColumnsList');
-    if (!integratedList) return;
+    if (!integratedList) {
+        // Fallback para o método antigo se não existe o novo elemento
+        return buildIntegratedColumnsListLegacy();
+    }
 
     integratedList.innerHTML = '';
 
-    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
 
-    // 🎯 AUTO-MOVIMENTO: Separar colunas visíveis (topo) das ocultas (baixo)
-    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
-    const hiddenHeaders = allHeaders.filter(header => !visibleColumns.has(header));
-    const orderedHeaders = [...visibleHeaders, ...hiddenHeaders];
-
-    console.log('🔄 [AUTO-MOVIMENTO] Colunas visíveis (topo):', visibleHeaders);
-    console.log('🔄 [AUTO-MOVIMENTO] Colunas ocultas (baixo):', hiddenHeaders);
-
-    // 📝 Adicionar título para seção de colunas visíveis (se existem)
-    if (visibleHeaders.length > 0) {
-        const visibleTitle = document.createElement('div');
-        visibleTitle.className = 'integrated-section-title';
-        visibleTitle.innerHTML = '✅ <strong>COLUNAS VISÍVEIS</strong>';
-        visibleTitle.style.cssText = 'padding: 8px 12px; background: rgba(34, 197, 94, 0.1); color: #16a34a; font-size: 12px; font-weight: bold; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #22c55e;';
-        integratedList.appendChild(visibleTitle);
-    }
-
-    // Exibir colunas visíveis primeiro
-    visibleHeaders.forEach(header => {
-        const item = createColumnItem(header, true);
-        integratedList.appendChild(item);
-    });
-
-    // 📝 Adicionar título para seção de colunas ocultas (se existem)
-    if (hiddenHeaders.length > 0) {
-        const hiddenTitle = document.createElement('div');
-        hiddenTitle.className = 'integrated-section-title';
-        hiddenTitle.innerHTML = '❌ <strong>COLUNAS OCULTAS</strong>';
-        hiddenTitle.style.cssText = 'padding: 8px 12px; background: rgba(148, 163, 184, 0.1); color: #64748b; font-size: 12px; font-weight: bold; border-radius: 6px; margin: 16px 0 8px 0; border-left: 3px solid #94a3b8;';
-        integratedList.appendChild(hiddenTitle);
-    }
-
-    // Exibir colunas ocultas depois
-    hiddenHeaders.forEach(header => {
-        const item = createColumnItem(header, false);
-        integratedList.appendChild(item);
-    });
-
-    // 🎯 Função auxiliar para criar item de coluna
-    function createColumnItem(header, isVisible) {
+    headers.forEach(header => {
         const item = document.createElement('div');
         item.className = 'integrated-column-item';
         item.setAttribute('draggable', 'true');
         item.dataset.column = header;
 
-        // 🎯 Estado da interação híbrida
-        let isDragging = false;
-        let dragStartTime = 0;
-        const DRAG_THRESHOLD = 150; // ms para distinguir clique de drag
-
-        // Checkbox visual (sem event listener próprio)
+        // Checkbox de visibilidade
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'integrated-column-checkbox';
         checkbox.checked = visibleColumns.has(header);
-        
-        // 🎯 Função para toggle de visibilidade
-        const toggleVisibility = async () => {
-            const wasChecked = checkbox.checked;
-            checkbox.checked = !wasChecked;
-            
-            console.log('🖱️ [HYBRID] Toggle:', header, '→', checkbox.checked);
-            
+        checkbox.addEventListener('change', async () => {
             if (checkbox.checked) {
                 visibleColumns.add(header);
             } else {
                 visibleColumns.delete(header);
             }
-            
-            // Atualizar visual do item e indicador
-            item.classList.toggle('column-visible', checkbox.checked);
-            statusIndicator.setAttribute('aria-label', checkbox.checked ? 'Visível' : 'Oculta');
-            
             Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
             debouncedAutoSave();
             await autoSaveCurrentPreset();
-            
-            // Reconstruir tabela
-            setupTable();
-            renderTable();
-            
-            // 🎯 AUTO-MOVIMENTO: Reconstruir lista para mostrar nova ordenação
-            await buildIntegratedColumnsList();
-        };
+            updateColumnVisibility();
+        });
 
         // Nome da coluna
         const nameSpan = document.createElement('span');
         nameSpan.className = 'integrated-column-name';
         nameSpan.textContent = header;
 
-        // Indicador visual sutil (sem emoji)
-        const statusIndicator = document.createElement('span');
-        statusIndicator.className = 'integrated-column-indicator';
-        statusIndicator.setAttribute('aria-label', checkbox.checked ? 'Visível' : 'Oculta');
+        // Ícone de arrastar
+        const dragIcon = document.createElement('span');
+        dragIcon.className = 'integrated-column-drag';
+        dragIcon.textContent = '⋮⋮';
+        dragIcon.title = 'Arrastar para reordenar';
 
-        // 🎯 INTERAÇÃO HÍBRIDA: mousedown + timer para distinguir clique de drag
-        item.addEventListener('mousedown', (e) => {
-            dragStartTime = Date.now();
-            isDragging = false;
-            console.log('🖱️ [HYBRID] Mouse down iniciado');
-        });
-
+        // Eventos de drag
         item.addEventListener('dragstart', (e) => {
-            const timeDiff = Date.now() - dragStartTime;
-            if (timeDiff < DRAG_THRESHOLD) {
-                // Muito rápido = clique, não drag
-        e.preventDefault();
-                console.log('🖱️ [HYBRID] Drag cancelado - muito rápido, interpretando como clique');
-                return;
-            }
-            
-            isDragging = true;
             item.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', item.dataset.column);
-            console.log('🖱️ [HYBRID] Drag iniciado:', header);
         });
 
-        item.addEventListener('dragend', () => { 
-            item.classList.remove('dragging'); 
-            if (isDragging) {
-                saveOrderFromIntegratedList();
-                console.log('🖱️ [HYBRID] Drag finalizado:', header);
-            }
-            isDragging = false;
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            saveOrderFromIntegratedList();
         });
-
-        // 🎯 CLIQUE: detectar clique vs drag pelo tempo e movimento
-        item.addEventListener('click', (e) => {
-            const timeDiff = Date.now() - dragStartTime;
-            
-            // Se foi um drag ou clique muito longo, ignorar
-            if (isDragging || timeDiff > DRAG_THRESHOLD * 2) {
-                console.log('🖱️ [HYBRID] Clique ignorado - foi drag ou muito longo');
-                return;
-            }
-            
-            e.preventDefault();
-            e.stopPropagation();
-            toggleVisibility();
-            console.log('🖱️ [HYBRID] Clique detectado:', header);
-        });
-
-        // Aplicar estado visual inicial
-        item.classList.toggle('column-visible', checkbox.checked);
 
         item.appendChild(checkbox);
         item.appendChild(nameSpan);
-        item.appendChild(statusIndicator);
-        
-        return item; // Retornar item ao invés de adicionar diretamente
-    }
+        item.appendChild(dragIcon);
+        integratedList.appendChild(item);
+    });
 
     // Eventos de drop na lista
     integratedList.addEventListener('dragover', (e) => {
@@ -1859,29 +1608,132 @@ async function saveOrderFromIntegratedList() {
         .map(el => el.dataset.column);
     
     if (newOrder.length) {
-        // Atualizar ordem global (incluindo colunas não visíveis)
-        const oldOrder = [...columnOrder];
         columnOrder = newOrder;
-        
-        // Verificar se houve mudança nas colunas visíveis
-        const oldVisibleOrder = oldOrder.filter(h => visibleColumns.has(h));
-        const newVisibleOrder = newOrder.filter(h => visibleColumns.has(h));
-        
-        const visibleOrderChanged = JSON.stringify(oldVisibleOrder) !== JSON.stringify(newVisibleOrder);
-        
         Storage.set({ viewer_column_order: columnOrder });
         debouncedAutoSave();
         await autoSaveCurrentPreset();
-        
-        // Só reconstruir tabela se ordem de colunas VISÍVEIS mudou
-        if (visibleOrderChanged) {
         setupTable();
-            // updateColumnVisibility(); // DESABILITADO: setupTable() já cria apenas colunas visíveis
-        renderTable();
-        }
     }
 }
 
+// Construir listas de Visibilidade e Ordem no menu header (legacy)
+async function buildIntegratedColumnsListLegacy() {
+    const visibilityList = document.getElementById('visibilityList');
+    const orderList = document.getElementById('orderList');
+    if (!visibilityList || !orderList) return;
+
+    visibilityList.innerHTML = '';
+    orderList.innerHTML = '';
+
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+
+    // Visibilidade
+    headers.forEach(header => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = visibleColumns.has(header);
+        checkbox.addEventListener('change', async () => {
+            if (checkbox.checked) {
+                visibleColumns.add(header);
+                // Feedback visual positivo
+                label.classList.add('checked');
+                setTimeout(() => { label.classList.remove('checked'); }, 500);
+            } else {
+                visibleColumns.delete(header);
+                // Feedback visual negativo
+                label.classList.add('unchecked');
+                setTimeout(() => { label.classList.remove('unchecked'); }, 500);
+            }
+            Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
+            debouncedAutoSave(); // Salvar estados automaticamente
+            await autoSaveCurrentPreset(); // Salvar customização do preset atual
+            updateColumnVisibility();
+            rebuildOrderList(orderList, headers);
+        });
+        const span = document.createElement('span');
+        span.textContent = header;
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        visibilityList.appendChild(label);
+    });
+
+    // Ordem (somente visíveis)
+    rebuildOrderList(orderList, headers);
+
+    const onDragOver = (e) => {
+        e.preventDefault();
+        const dragging = orderList.querySelector('.dragging');
+        const afterElement = getDragAfterElement(orderList, e.clientY);
+        if (!dragging) return;
+        if (afterElement == null) {
+            orderList.appendChild(dragging);
+        } else {
+            orderList.insertBefore(dragging, afterElement);
+        }
+    };
+    orderList.addEventListener('dragover', onDragOver);
+}
+
+function rebuildOrderList(orderList, headers) {
+    orderList.innerHTML = '';
+    const visibleOnly = headers.filter(h => visibleColumns.has(h));
+    visibleOnly.forEach((header, idx) => {
+        const item = document.createElement('div');
+        item.textContent = `${idx + 1}. ${header}`;
+        item.setAttribute('draggable', 'true');
+        item.className = 'order-item';
+        item.addEventListener('dragstart', () => { 
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => { 
+            item.classList.remove('dragging'); 
+            saveOrderFromOrderList();
+            // Feedback visual de sucesso
+            item.style.background = 'rgba(34, 197, 94, 0.1)';
+            item.style.borderColor = '#22c55e';
+            setTimeout(() => {
+                item.style.background = '';
+                item.style.borderColor = '';
+            }, 800);
+        });
+        orderList.appendChild(item);
+    });
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.order-item:not(.dragging)')];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+}
+
+async function saveOrderFromOrderList() {
+    const orderList = document.getElementById('orderList');
+    if (!orderList) return;
+    const newOrderVisible = [...orderList.querySelectorAll('.order-item')]
+        .map(el => el.textContent.replace(/^\d+\.\s*/, ''));
+    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+    const hidden = headers.filter(h => !newOrderVisible.includes(h));
+    const newOrder = [...newOrderVisible, ...hidden];
+    if (newOrder.length) {
+        columnOrder = newOrder;
+        Storage.set({ viewer_column_order: columnOrder });
+        debouncedAutoSave(); // Salvar estados automaticamente
+        await autoSaveCurrentPreset(); // Salvar customização do preset atual
+        setupTable();
+        updateColumnVisibility();
+        renderTable();
+        // Reconstroi para refletir ordem após salvar
+        await buildIntegratedColumnsList();
+    }
+}
 
 // Função auxiliar para verificar se um valor corresponde a múltiplos termos separados por ponto e vírgula
 function matchesMultipleValues(valueToCheck, filterTerm) {
@@ -1990,14 +1842,7 @@ function renderTable() {
     
     console.log('✅ Renderizando', filteredData.length, 'registros');
     
-    // Usar apenas colunas visíveis na ordem correta
-    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
-    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
-    
-    console.log('🔍 [DEBUG-HEADERS] renderTable() iniciado');
-    console.log('🔍 [DEBUG-HEADERS] renderTable() - visibleHeaders:', visibleHeaders);
-    console.log('🔍 [DEBUG-HEADERS] renderTable() - Total colunas visíveis:', visibleHeaders.length);
-    
+    const headers = columnOrder;
     elements.tableBody.innerHTML = '';
     
     filteredData.forEach(row => {
@@ -2006,7 +1851,7 @@ function renderTable() {
         const isInactive = (row['Descrição'] || '').toUpperCase().startsWith('INATIV');
         if (isInactive) tr.classList.add('inactive-row');
 
-        visibleHeaders.forEach(header => {
+        headers.forEach(header => {
             const td = document.createElement('td');
 
             // Fallback entre 'Total Matriculados' e 'Total'
@@ -2396,7 +2241,7 @@ async function resetColumns() {
     // Atualizar interface
     setupTable();
     await setupColumnToggle();
-    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+    updateColumnVisibility();
     renderTable();
     // Sincronizar menu se aberto
     const configDropdown = document.getElementById('columnConfigDropdown');
@@ -2429,22 +2274,12 @@ async function resetColumns() {
 
 // Função para salvar automaticamente as customizações do preset atual
 async function autoSaveCurrentPreset() {
-    console.log(`🔍 [AUTOSAVE] Iniciando salvamento automático...`);
-    console.log(`🔍 [AUTOSAVE] currentPresetSelection: "${currentPresetSelection}"`);
-    console.log(`🔍 [AUTOSAVE] currentViewMode: "${currentViewMode}"`);
-    
     if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
-        console.log(`⚠️ [AUTOSAVE] Ignorando salvamento - preset não é builtin`);
         return; // Só salva presets builtin
     }
     
-    if (!allData || allData.length === 0) {
-        console.log(`⚠️ [AUTOSAVE] Ignorando salvamento - sem dados`);
-        return;
-    }
-    
     const key = currentPresetSelection.replace('__builtin__','');
-    const headers = Object.keys(allData[0]);
+    const headers = Object.keys(allData[0] || {});
     const normalizedOrder = columnOrder.filter(h => headers.includes(h));
     const rest = headers.filter(h => !normalizedOrder.includes(h));
     
@@ -2455,21 +2290,14 @@ async function autoSaveCurrentPreset() {
         order: [...normalizedOrder, ...rest],
         visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
         widths: { ...columnWidths },
-        viewMode: currentViewMode,
+        viewMode: currentViewMode, // Garantir separação
         timestamp: Date.now()
     };
-    
-    console.log(`💾 [AUTOSAVE] Salvando em: ${storageKey}`);
-    console.log(`💾 [AUTOSAVE] Dados:`, {
-        orderCount: customization.order.length,
-        visibleCount: customization.visible.length,
-        viewMode: customization.viewMode
-    });
     
     // Salvar no storage com chave específica do modo
     await Storage.set({ [storageKey]: customization });
     
-    console.log(`✅ [AUTOSAVE] Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
+    console.log(`💾 Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
 }
 
 // DEPRECADO: Salvar preset: sobrescreve em memória o preset fixo selecionado
@@ -2568,7 +2396,7 @@ async function applyBuiltInPreset(presetKey) {
 
     setupTable();
     await setupColumnToggle();
-    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+    updateColumnVisibility();
     renderTable();
 
     const configDropdown = document.getElementById('columnConfigDropdown');
@@ -2610,7 +2438,7 @@ async function loadPreset(presetName) {
     // Atualizar interface
     setupTable();
     await setupColumnToggle();
-    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+    updateColumnVisibility();
     renderTable();
     
     console.log(`📥 Preset "${presetName}" carregado`);

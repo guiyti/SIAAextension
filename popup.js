@@ -77,6 +77,14 @@ class CommunicationManager {
         
         try {
             // Usar XMLProcessor para obter cursos com nomes processados
+            
+            // Verificar se XMLProcessor está disponível
+            if (typeof XMLProcessor === 'undefined') {
+                console.warn('📡 V9 - XMLProcessor não disponível, usando método original');
+                return await this._fetchCursosDisponiveisOriginal();
+            }
+            
+            const xmlProcessor = new XMLProcessor();
             const results = await xmlProcessor.processStep('ofertas', 'cursos_disponiveis');
             
             if (results.success && results.data) {
@@ -98,16 +106,30 @@ class CommunicationManager {
         
         try {
             const codesUrl = await configManager.buildEndpointUrl('ofertas.cursos');
+            
             const codesResp = await fetch(codesUrl, {
                 credentials: 'include',
-                headers: {'Accept': 'application/xml, text/xml, */*'}
+                headers: {
+                    'Accept': 'application/xml, text/xml, */*',
+                    'Accept-Charset': 'ISO-8859-1, UTF-8'
+                }
             });
             
             if (!codesResp.ok) {
                 throw new Error(`Erro HTTP ${codesResp.status}: ${codesResp.statusText}`);
             }
             
-            const codesXml = await codesResp.text();
+            // 🔧 CORREÇÃO DE ENCODING: Usar ArrayBuffer + TextDecoder para decodificar corretamente
+            const arrayBuffer = await codesResp.arrayBuffer();
+            
+            // Decodificar como ISO-8859-1 (charset do SIAA) com fallback UTF-8
+            let codesXml;
+            try {
+                codesXml = new TextDecoder('iso-8859-1').decode(arrayBuffer);
+            } catch (error) {
+                codesXml = new TextDecoder('utf-8').decode(arrayBuffer);
+            }
+            
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(codesXml, 'text/xml');
             
@@ -115,7 +137,7 @@ class CommunicationManager {
             const cursos = [];
             const opcoes = xmlDoc.querySelectorAll('option');
             
-            opcoes.forEach(opcao => {
+            opcoes.forEach((opcao, index) => {
                 const codigo = opcao.getAttribute('value');
                 const nome = opcao.textContent.trim();
                 
@@ -125,6 +147,7 @@ class CommunicationManager {
             });
             
             console.log('📡 V9 - Cursos obtidos via método original:', cursos.length);
+            
             return cursos; // MESMO FORMATO DA FUNÇÃO ORIGINAL
             
         } catch (error) {
@@ -143,6 +166,419 @@ class CommunicationManager {
 
 // Criar instância do CommunicationManager V9 (incremental)
 const communicationManagerV9 = new CommunicationManager();
+
+// ========================================
+// UI MANAGER V10 (nova classe)
+// ========================================
+class UIManager {
+    constructor() {
+        this.version = 'V10-UIManager';
+        
+        // Elementos DOM
+        this.statusText = document.getElementById('statusText');
+        this.statusDot = document.getElementById('statusDot');
+        this.progressContainer = document.getElementById('progressContainer');
+        this.progressBar = document.getElementById('progressBar');
+        
+        console.log('🎨 UIManager V10 inicializado');
+    }
+
+    updateStatus(text, isActive = false) {
+        console.log('🎨 V10 UIManager - updateStatus:', text, isActive);
+        
+        if (this.statusText) {
+            this.statusText.textContent = text;
+        }
+        
+        if (isActive) {
+            if (this.statusDot) {
+                this.statusDot.style.backgroundColor = '#4CAF50';
+                this.statusDot.style.animation = 'pulse 2s infinite';
+            }
+        } else {
+            if (this.statusDot) {
+                this.statusDot.style.backgroundColor = '#666';
+                this.statusDot.style.animation = 'none';
+            }
+        }
+    }
+
+    showError(msg) {
+        console.error('🎨 V10 UIManager - showError:', msg);
+        console.error('[SIAA-ERRO V10] ' + msg);
+        
+        // Atualizar status visual com erro
+        this.updateStatus('❌ ' + msg, false);
+        
+        // Opcional: adicionar estilo de erro ao statusText
+        if (this.statusText) {
+            this.statusText.style.color = '#f44336';
+            setTimeout(() => {
+                if (this.statusText) {
+                    this.statusText.style.color = '';
+                }
+            }, 3000);
+        }
+    }
+
+    showSuccess(msg) {
+        console.log('🎨 V10 UIManager - showSuccess:', msg);
+        console.log('[SIAA-OK V10] ' + msg);
+        
+        // Atualizar status visual com sucesso
+        this.updateStatus('✅ ' + msg, true);
+        
+        // Opcional: adicionar estilo de sucesso ao statusText
+        if (this.statusText) {
+            this.statusText.style.color = '#4CAF50';
+            setTimeout(() => {
+                if (this.statusText) {
+                    this.statusText.style.color = '';
+                }
+            }, 3000);
+        }
+    }
+
+    updateProgress(percent, message = null) {
+        console.log('🎨 V10 UIManager - updateProgress:', percent, message);
+        
+        if (typeof percent === 'number') {
+            // Atualizar barra de progresso
+            if (this.progressBar) {
+                this.progressBar.style.width = percent + '%';
+            }
+            
+            // Mostrar container de progresso
+            if (this.progressContainer) {
+                this.progressContainer.style.display = 'block';
+            }
+            
+            // Atualizar texto com percentual
+            if (this.statusText) {
+                this.statusText.textContent = percent + '%';
+            }
+        }
+        
+        // Se há mensagem, usar ela no status
+        if (message) {
+            this.updateStatus(message, true);
+        }
+    }
+
+    hideProgress() {
+        console.log('🎨 V10 UIManager - hideProgress');
+        
+        if (this.progressContainer) {
+            this.progressContainer.style.display = 'none';
+        }
+        
+        if (this.progressBar) {
+            this.progressBar.style.width = '0%';
+        }
+    }
+
+    handleExtractionProgress(message, percent) {
+        console.log('🎨 V10 UIManager - handleExtractionProgress:', message, percent);
+        
+        if (typeof percent === 'number') {
+            this.updateProgress(percent);
+        } else if (message) {
+            // Verificar se é mensagem de erro especial
+            if (message.includes('erro') || message.includes('falha') || message.includes('Erro')) {
+                this.showError(message);
+            } else {
+                this.updateStatus(message, true);
+            }
+        }
+    }
+
+    handleStudentProgress(message, progress) {
+        console.log('🎨 V10 UIManager - handleStudentProgress:', message, progress);
+        
+        this.updateStatus(`🎓 ${message}`, false);
+        
+        if (typeof progress === 'number') {
+            this.updateProgress(progress);
+        }
+    }
+
+    getStats() {
+        return {
+            version: this.version,
+            elements: {
+                statusText: !!this.statusText,
+                statusDot: !!this.statusDot,
+                progressContainer: !!this.progressContainer,
+                progressBar: !!this.progressBar
+            },
+            message: 'UIManager V10 Step C - updateStatus() + showError() + showSuccess() + updateProgress() + handleProgress()'
+        };
+    }
+}
+
+// Criar instância do UIManager V10
+const uiManagerV10 = new UIManager();
+
+// ========================================
+// STORAGE MANAGER V11 (nova classe)
+// ========================================
+class StorageManager {
+    constructor() {
+        this.version = 'V11-StorageManager';
+        
+        console.log('📦 StorageManager V11 inicializado');
+    }
+
+    async loadCursoMapping() {
+        console.log('📦 V11 StorageManager - loadCursoMapping');
+        
+        try {
+            const storage = await chrome.storage.local.get(['siaa_curso_mapping']);
+            const mappingObj = storage.siaa_curso_mapping || {};
+            
+            // Limpar mapeamento atual (usando variável global)
+            cursoMapping.clear();
+            
+            // Converter objeto para Map
+            for (const [codigo, nome] of Object.entries(mappingObj)) {
+                cursoMapping.set(codigo, nome);
+            }
+            
+            console.log('📦 V11 - Mapeamento de cursos carregado:', cursoMapping.size);
+            console.log('[SIAA-OK V11] Mapeamento carregado do storage');
+            
+            return cursoMapping;
+            
+        } catch (error) {
+            console.error('📦 V11 StorageManager - Erro ao carregar mapeamento:', error);
+            console.error('[SIAA-ERRO V11] Erro ao carregar mapeamento:', error.message);
+            throw error;
+        }
+    }
+
+    async updateStoredDataStatus() {
+        console.log('📦 V11 StorageManager - updateStoredDataStatus');
+        
+        try {
+            const data = await chrome.storage.local.get(['siaa_data_csv', 'siaa_data_timestamp']);
+            
+            if (data.siaa_data_csv) {
+                hasStoredData = true;
+                console.log('📦 V11 - Dados encontrados no storage. Timestamp:', data.siaa_data_timestamp);
+                return {
+                    hasData: true,
+                    timestamp: data.siaa_data_timestamp,
+                    dataSize: data.siaa_data_csv.length
+                };
+            } else {
+                hasStoredData = false;
+                console.log('📦 V11 - Nenhum dado encontrado no storage');
+                return {
+                    hasData: false,
+                    timestamp: null,
+                    dataSize: 0
+                };
+            }
+            
+        } catch (error) {
+            console.error('📦 V11 StorageManager - Erro ao verificar dados:', error);
+            hasStoredData = false;
+            throw error;
+        }
+    }
+
+    async getCursosFromStorage() {
+        console.log('📦 V11 StorageManager - getCursosFromStorage');
+        
+        try {
+            const storage = await chrome.storage.local.get(['siaa_manual_courses']);
+            const cursosManager = storage.siaa_manual_courses || [];
+            
+            console.log('📦 V11 - Cursos manuais do storage:', cursosManager.length);
+            return cursosManager;
+            
+        } catch (error) {
+            console.error('📦 V11 StorageManager - Erro ao buscar cursos do storage:', error);
+            return [];
+        }
+    }
+
+    async getDataFromStorage() {
+        console.log('📦 V11 StorageManager - getDataFromStorage');
+        
+        try {
+            const data = await chrome.storage.local.get(['siaa_data_csv', 'siaa_data_timestamp']);
+            
+            if (data.siaa_data_csv) {
+                console.log('📦 V11 - Dados CSV encontrados no storage');
+                return {
+                    csv: data.siaa_data_csv,
+                    timestamp: data.siaa_data_timestamp,
+                    found: true
+                };
+            } else {
+                console.log('📦 V11 - Nenhum dado CSV no storage');
+                return {
+                    csv: null,
+                    timestamp: null,
+                    found: false
+                };
+            }
+            
+        } catch (error) {
+            console.error('📦 V11 StorageManager - Erro ao buscar dados CSV:', error);
+            return {
+                csv: null,
+                timestamp: null,
+                found: false,
+                error: error.message
+            };
+        }
+    }
+
+    getStats() {
+        return {
+            version: this.version,
+            message: 'StorageManager V11 funcionando - loadCursoMapping() + updateStoredDataStatus() + getCursosFromStorage() + getDataFromStorage()'
+        };
+    }
+}
+
+// Criar instância do StorageManager V11
+const storageManagerV11 = new StorageManager();
+
+// ========================================
+// VALIDATION MANAGER V12 (nova classe)
+// ========================================
+class ValidationManager {
+    constructor(stateManager) {
+        this.stateManager = stateManager;
+        this.version = 'V12-ValidationManager';
+        
+        console.log('📋 ValidationManager V12 inicializado');
+    }
+
+    validateCourseSelection() {
+        console.log('📋 V12 ValidationManager - validateCourseSelection');
+        
+        const courseSelect = document.getElementById('courseSelect');
+        if (!courseSelect) {
+            console.error('📋 V12 - courseSelect element não encontrado');
+            return {
+                isValid: false,
+                error: 'Elemento de seleção de curso não encontrado',
+                course: null
+            };
+        }
+        
+        const selectedCode = courseSelect.value;
+        if (!selectedCode || selectedCode === '' || selectedCode === '0') {
+            console.log('📋 V12 - Nenhum curso selecionado');
+            return {
+                isValid: false,
+                error: 'Selecione um curso antes de continuar',
+                course: null
+            };
+        }
+        
+        const selectedName = courseSelect.options[courseSelect.selectedIndex]?.text || 'Nome não disponível';
+        const cursoSelecionado = { codigo: selectedCode, nome: selectedName };
+        
+        console.log('📋 V12 - Curso válido selecionado:', cursoSelecionado);
+        return {
+            isValid: true,
+            error: null,
+            course: cursoSelecionado
+        };
+    }
+
+    validateExtractionState() {
+        console.log('📋 V12 ValidationManager - validateExtractionState');
+        
+        const isExtracting = this.stateManager.getIsExtracting();
+        
+        if (isExtracting) {
+            console.log('📋 V12 - Extração já em andamento');
+            return {
+                isValid: false,
+                error: 'Extração já em andamento',
+                state: 'extracting'
+            };
+        }
+        
+        console.log('📋 V12 - Estado válido para iniciar extração');
+        return {
+            isValid: true,
+            error: null,
+            state: 'ready'
+        };
+    }
+
+    validateStorageData() {
+        console.log('📋 V12 ValidationManager - validateStorageData');
+        
+        const hasStoredData = this.stateManager.getHasStoredData();
+        
+        return {
+            hasData: hasStoredData,
+            message: hasStoredData ? 'Dados encontrados no storage' : 'Nenhum dado no storage',
+            canProceed: true // Sempre pode prosseguir, mas com informação
+        };
+    }
+
+    validateBeforeExtraction() {
+        console.log('📋 V12 ValidationManager - validateBeforeExtraction (validação completa)');
+        
+        // Validar estado de extração
+        const stateValidation = this.validateExtractionState();
+        if (!stateValidation.isValid) {
+            return stateValidation;
+        }
+        
+        // Validar seleção de curso
+        const courseValidation = this.validateCourseSelection();
+        if (!courseValidation.isValid) {
+            return courseValidation;
+        }
+        
+        console.log('📋 V12 - Todas validações aprovadas para extração');
+        return {
+            isValid: true,
+            error: null,
+            course: courseValidation.course,
+            state: stateValidation.state
+        };
+    }
+
+    validatePageAccess() {
+        console.log('📋 V12 ValidationManager - validatePageAccess');
+        
+        // Verificar se não está extraindo para não interferir
+        const isExtracting = this.stateManager.getIsExtracting();
+        if (isExtracting) {
+            return {
+                shouldCheck: false,
+                reason: 'Extração em andamento - pular verificação'
+            };
+        }
+        
+        return {
+            shouldCheck: true,
+            reason: 'Estado válido para verificar página'
+        };
+    }
+
+    getStats() {
+        return {
+            version: this.version,
+            stateManager: this.stateManager.version,
+            message: 'ValidationManager V12 funcionando - validateCourseSelection() + validateExtractionState() + validateBeforeExtraction()'
+        };
+    }
+}
+
+// Criar instância do ValidationManager V12
+const validationManagerV12 = new ValidationManager(stateManagerV8);
 
 // ========================================
 // ELEMENTOS DA INTERFACE (preservados)
@@ -186,24 +622,9 @@ let cursoMapping = new Map();
 
 // Carregar mapeamento de cursos do storage
 async function loadCursoMapping() {
-    try {
-        const storage = await chrome.storage.local.get(['siaa_curso_mapping']);
-        const mappingObj = storage.siaa_curso_mapping || {};
-        
-        // Limpar mapeamento atual
-        cursoMapping.clear();
-        
-        // Carregar do storage
-        Object.entries(mappingObj).forEach(([codigo, nome]) => {
-            cursoMapping.set(codigo, nome);
-        });
-        
-        console.log('🔄 [POPUP V8] Mapeamento de cursos carregado:', Object.keys(mappingObj).length, 'cursos');
-        return Object.keys(mappingObj).length;
-    } catch (error) {
-        console.error('❌ [POPUP] Erro ao carregar mapeamento de cursos:', error);
-        return 0;
-    }
+    // STEP A V11: Função redirecionada para StorageManager
+    return storageManagerV11.loadCursoMapping();
+    
 }
 
 // Obter nome do curso pelo código usando o mapeamento
@@ -214,11 +635,15 @@ function getCursoNomeFromMapping(codigoCurso) {
 
 // Funções auxiliares para logs V8
 function showError(msg) {
-    console.error('[SIAA-ERRO V8] ' + msg);
+    // STEP B V10: Função redirecionada para UIManager
+    return uiManagerV10.showError(msg);
+    
 }
 
 function showSuccess(msg) {
-    console.log('[SIAA-OK V8] ' + msg);
+    // STEP B V10: Função redirecionada para UIManager
+    return uiManagerV10.showSuccess(msg);
+    
 }
 
 // Funções para controlar o aviso estático de falha de storage
@@ -272,7 +697,7 @@ async function checkEndpointAccess() {
                         method: 'GET',
                         headers: {
                             'Accept': 'text/xml, application/xml, */*',
-                            'Accept-Charset': 'ISO-8859-1'
+                            'Accept-Charset': 'UTF-8'
                         },
                         credentials: 'include',
                         signal: controller.signal
@@ -303,7 +728,7 @@ async function checkEndpointAccess() {
                         method: 'GET',
                         headers: {
                             'Accept': 'text/xml, application/xml, */*',
-                            'Accept-Charset': 'ISO-8859-1'
+                            'Accept-Charset': 'UTF-8'
                         },
                         credentials: 'include',
                         signal: controller.signal
@@ -347,8 +772,13 @@ async function checkEndpointAccess() {
 }
 
 async function checkPageStatus() {
-    // Não atualizar status durante extração para evitar sobrescrever percentual
-    if (isExtracting) return;
+    // STEP A V12: Validação via ValidationManager
+    const pageValidation = validationManagerV12.validatePageAccess();
+    if (!pageValidation.shouldCheck) {
+        console.log('📋 V12 - Pular verificação:', pageValidation.reason);
+        return;
+    }
+    
     try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
@@ -406,13 +836,9 @@ async function checkPageStatus() {
 
 // Função para atualizar status visual
 function updateStatus(text, isActive = false) {
-    statusText.textContent = text;
+    // STEP A V10: Função redirecionada para UIManager
+    return uiManagerV10.updateStatus(text, isActive);
     
-    if (isActive) {
-        statusDot.classList.add('active');
-    } else {
-        statusDot.classList.remove('active');
-    }
 }
 
 // Função para controlar estado de ofuscação
@@ -503,51 +929,6 @@ async function fetchCursosDisponiveis() {
     // STEP 1 V9: Função redirecionada para CommunicationManager (somente esta função)
     return communicationManagerV9.fetchCursosDisponiveis();
     
-    // Código original comentado - preservado para referência
-    /*
-    console.log('🌐 Buscando cursos disponíveis com nomes completos...');
-    
-    try {
-        // Usar XMLProcessor para obter cursos com nomes processados
-        const results = await xmlProcessor.processStep('ofertas', 'cursos_disponiveis');
-        
-        if (!results || results.length === 0) {
-            console.warn('⚠️ Nenhum curso retornado pelo XMLProcessor, usando método fallback');
-            return await fetchCursosDisponiveisOriginal();
-        }
-        
-        console.log('📚 Cursos processados pelo XMLProcessor:', results.length);
-        
-        // Converter resultado do XMLProcessor para formato esperado
-        const cursos = results.map(item => {
-            // O XMLProcessor já processou o nomeCompleto com parseCursoNome
-            if (item.nomeCompleto && typeof item.nomeCompleto === 'object') {
-                // Se parseCursoNome foi aplicado, nomeCompleto é um objeto {nome, codigo}
-                return {
-                    codigo: item.codigo || item.nomeCompleto.codigo,
-                    nome: item.nomeCompleto.nome || `Curso ${item.codigo}`,
-                    selected: item.selected || false
-                };
-            } else {
-                // Se não foi processado, nomeCompleto é string
-                const nomeCompleto = item.nomeCompleto || '';
-                return {
-                    codigo: item.codigo,
-                    nome: nomeCompleto || `Curso ${item.codigo}`,
-                    selected: item.selected || false
-                };
-            }
-        }).filter(curso => curso.codigo); // Filtrar cursos sem código
-        
-        console.log('✅ Cursos formatados:', cursos.length);
-        return cursos;
-        
-    } catch (error) {
-        console.error('❌ Erro ao buscar cursos via XMLProcessor:', error);
-        console.log('🔄 Usando método fallback...');
-        return await fetchCursosDisponiveisOriginal();
-    }
-    */
 }
 
 // Método fallback para compatibilidade
@@ -559,12 +940,12 @@ async function fetchCursosDisponiveisOriginal() {
         const codesResp = await fetch(codesUrl, {
             headers: {
                 'Accept': 'text/xml, application/xml, */*',
-                'Accept-Charset': 'ISO-8859-1'
+                'Accept-Charset': 'UTF-8'
             }
         });
         if (!codesResp.ok) throw new Error(`HTTP ${codesResp.status}`);
         const codesAb = await codesResp.arrayBuffer();
-        const codesText = new TextDecoder('iso-8859-1').decode(codesAb);
+        const codesText = new TextDecoder('utf-8').decode(codesAb);
         const codesXml = new DOMParser().parseFromString(codesText, 'text/xml');
         const codeOptions = Array.from(codesXml.querySelectorAll('option'));
         
@@ -685,6 +1066,7 @@ async function popularSelectCursos() {
         // Ordenar alfabeticamente pelo nome
         const cursosOrdenados = Array.from(cursoMap.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
+
         // Construir opções
         const optionsHtml = ['<option value="">Selecione...</option>'];
         cursosOrdenados.forEach(curso => {
@@ -715,16 +1097,16 @@ async function startExtraction() {
 
     console.log('[SIAA] startExtraction acionado');
 
-    // NOVA VALIDAÇÃO DE CURSO SELECIONADO
-    const selectedCode = courseSelect.value;
-    if (!selectedCode) {
-        showError('Selecione um curso antes de continuar');
+    // STEP A V12: Validação completa via ValidationManager
+    const validation = validationManagerV12.validateBeforeExtraction();
+    if (!validation.isValid) {
+        showError(validation.error);
         return;
     }
-    const selectedName = courseSelect.options[courseSelect.selectedIndex].text;
-    const cursoSelecionado = { codigo: selectedCode, nome: selectedName };
 
-    console.log('[SIAA] Curso selecionado no popup:', cursoSelecionado);
+    const cursoSelecionado = validation.course;
+    console.log('📋 V12 - Curso validado no popup:', cursoSelecionado);
+    
 
     try {
         isExtracting = true;
@@ -763,7 +1145,7 @@ async function startExtraction() {
             tabId: tab.id,
             cursoSelecionado
         });
-        
+
         let response;
         try {
             response = await chrome.runtime.sendMessage({
@@ -773,7 +1155,7 @@ async function startExtraction() {
             });
 
             console.log('🔍 [DEBUG] Resposta completa do background:', JSON.stringify(response, null, 2));
-            console.log('[SIAA] Resposta do background:', response);
+        console.log('[SIAA] Resposta do background:', response);
         } catch (error) {
             console.error('❌ [DEBUG] Erro ao enviar mensagem para background:', error);
             throw error;
@@ -839,17 +1221,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Atualizar status dos botões com base nos dados armazenados
 async function updateStoredDataStatus() {
-    const data = await chrome.storage.local.get(['siaa_data_csv', 'siaa_data_timestamp']);
-    if (data.siaa_data_csv) {
-        hasStoredData = true;
-        console.log('📦 Dados encontrados no storage. Timestamp:', data.siaa_data_timestamp);
-    } else {
-        hasStoredData = false;
-    }
+    // STEP A V11: Função redirecionada para StorageManager
+    const result = await storageManagerV11.updateStoredDataStatus();
     
     // O botão visualizar sempre deve estar disponível, mesmo sem dados
     // Se não há dados, o viewer mostrará uma mensagem apropriada
     viewButton.disabled = false;
+    
+    return result;
+    
 }
 
 // Função removida - download será feito via viewer
@@ -877,52 +1257,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Receber progresso
 let lastPercent = 0;
 function handleExtractionProgress(message, percent) {
-    if (typeof percent === 'number') {
-        lastPercent = percent;
-        progressBar.style.width = percent + '%';
-        statusText.textContent = percent + '%';
-    } else if (message) {
-        // Verificar se é uma mensagem de erro de storage/comunicação
-        if (message.includes('Recarregue a página do SIAA') || 
-            message.includes('não salvos') || 
-            message.includes('Falha no salvamento') ||
-            message.includes('Erro na comunicação') ||
-            message.includes('NÃO foram salvos') ||
-            message.includes('NÃO salvas')) {
-            
-            // Mostrar aviso estático persistente
-            showStorageFailureWarning();
-            
-            // Destacar visualmente erros de storage
-            statusText.textContent = 'Falha no salvamento';
-            statusText.style.color = '#dc2626';
-            statusText.style.fontWeight = 'bold';
-            
-            // Parar captura
-            isExtracting = false;
-            captureButton.disabled = false;
-            captureButton.textContent = '🔄 Capturar Dados';
-            
-            // Mostrar erro no console
-            showError(message);
-            
-        } else {
-            // Mensagem normal de progresso
-            statusText.textContent = message;
-            statusText.style.color = ''; // Resetar cor
-            statusText.style.fontWeight = '';
-        }
-    }
+    // STEP C V10: Função redirecionada para UIManager
+    return uiManagerV10.handleExtractionProgress(message, percent);
+    
 }
 
 // Função para lidar com progresso de captura de alunos
 function handleStudentProgress(message, progress) {
-    updateStatus(`🎓 ${message}`, false);
+    // STEP C V10: Função redirecionada para UIManager
+    return uiManagerV10.handleStudentProgress(message, progress);
     
-    if (typeof progress === 'number') {
-        progressBar.style.width = progress + '%';
-        progressContainer.style.display = 'block';
-    }
 }
 
 // Botão Atualizar Extensão: handler já acima
