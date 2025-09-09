@@ -1503,9 +1503,9 @@ function setupEventListeners() {
             const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
             
             if (willOpen) {
-                // 🪟 Posicionar janela flutuante no centro-direita da tela
-                const centerX = window.innerWidth - 420; // 420px da direita
-                const centerY = Math.max(100, (window.innerHeight - 400) / 2); // Centralizado verticalmente
+                // 🪟 Posicionar janela flutuante no centro da tela (layout horizontal)
+                const centerX = Math.max(50, (window.innerWidth - 600) / 2); // Centralizado para 600px de largura
+                const centerY = Math.max(100, (window.innerHeight - 250) / 2); // Centralizado para altura menor
                 
                 configDropdown.style.left = centerX + 'px';
                 configDropdown.style.top = centerY + 'px';
@@ -1677,35 +1677,39 @@ async function buildIntegratedColumnsList() {
     console.log('🔄 [AUTO-MOVIMENTO] Colunas visíveis (topo):', visibleHeaders);
     console.log('🔄 [AUTO-MOVIMENTO] Colunas ocultas (baixo):', hiddenHeaders);
 
-    // 📝 Adicionar título para seção de colunas visíveis (se existem)
+    // 🎯 LAYOUT HORIZONTAL: Criar seção de colunas visíveis (MINIMALISTA)
     if (visibleHeaders.length > 0) {
-        const visibleTitle = document.createElement('div');
-        visibleTitle.className = 'integrated-section-title';
-        visibleTitle.innerHTML = '✅ <strong>COLUNAS VISÍVEIS</strong>';
-        visibleTitle.style.cssText = 'padding: 8px 12px; background: rgba(34, 197, 94, 0.1); color: #16a34a; font-size: 12px; font-weight: bold; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #22c55e;';
-        integratedList.appendChild(visibleTitle);
+        const visibleSection = document.createElement('div');
+        visibleSection.className = 'integrated-section visible-section';
+        
+        const visibleRow = document.createElement('div');
+        visibleRow.className = 'integrated-section-row visible-row';
+        
+        visibleHeaders.forEach(header => {
+            const item = createColumnItem(header, true);
+            visibleRow.appendChild(item);
+        });
+        
+        visibleSection.appendChild(visibleRow);
+        integratedList.appendChild(visibleSection);
     }
 
-    // Exibir colunas visíveis primeiro
-    visibleHeaders.forEach(header => {
-        const item = createColumnItem(header, true);
-        integratedList.appendChild(item);
-    });
-
-    // 📝 Adicionar título para seção de colunas ocultas (se existem)
+    // 🎯 LAYOUT HORIZONTAL: Criar seção de colunas ocultas (MINIMALISTA)
     if (hiddenHeaders.length > 0) {
-        const hiddenTitle = document.createElement('div');
-        hiddenTitle.className = 'integrated-section-title';
-        hiddenTitle.innerHTML = '❌ <strong>COLUNAS OCULTAS</strong>';
-        hiddenTitle.style.cssText = 'padding: 8px 12px; background: rgba(148, 163, 184, 0.1); color: #64748b; font-size: 12px; font-weight: bold; border-radius: 6px; margin: 16px 0 8px 0; border-left: 3px solid #94a3b8;';
-        integratedList.appendChild(hiddenTitle);
+        const hiddenSection = document.createElement('div');
+        hiddenSection.className = 'integrated-section hidden-section';
+        
+        const hiddenRow = document.createElement('div');
+        hiddenRow.className = 'integrated-section-row hidden-row';
+        
+        hiddenHeaders.forEach(header => {
+            const item = createColumnItem(header, false);
+            hiddenRow.appendChild(item);
+        });
+        
+        hiddenSection.appendChild(hiddenRow);
+        integratedList.appendChild(hiddenSection);
     }
-
-    // Exibir colunas ocultas depois
-    hiddenHeaders.forEach(header => {
-        const item = createColumnItem(header, false);
-        integratedList.appendChild(item);
-    });
 
     // 🎯 Função auxiliar para criar item de coluna
     function createColumnItem(header, isVisible) {
@@ -1806,7 +1810,7 @@ async function buildIntegratedColumnsList() {
                 return;
             }
             
-            e.preventDefault();
+        e.preventDefault();
             e.stopPropagation();
             toggleVisibility();
             console.log('🖱️ [HYBRID] Clique detectado:', header);
@@ -1822,32 +1826,216 @@ async function buildIntegratedColumnsList() {
         return item; // Retornar item ao invés de adicionar diretamente
     }
 
-    // Eventos de drop na lista
+    // 🎯 EVENTOS DE DROP PARA LAYOUT HORIZONTAL + CROSS-SECTION
     integratedList.addEventListener('dragover', (e) => {
         e.preventDefault();
         const dragging = integratedList.querySelector('.dragging');
-        const afterElement = getDragAfterElementIntegrated(integratedList, e.clientY);
         if (!dragging) return;
+        
+        // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
+        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        if (!targetSectionRow) return;
+        
+        // 🎯 FEEDBACK VISUAL: Destacar seção de destino
+        document.querySelectorAll('.integrated-section-row').forEach(row => {
+            row.classList.remove('drag-target');
+        });
+        targetSectionRow.classList.add('drag-target');
+        
+        // 🎯 INDICADOR VISUAL PRECISO: Mostrar onde será inserido (linha específica)
+        updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
+        
+        // Encontrar elemento mais próximo na seção de destino (simplificado)
+        const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
+        
         if (afterElement == null) {
-            integratedList.appendChild(dragging);
+            targetSectionRow.appendChild(dragging);
         } else {
-            integratedList.insertBefore(dragging, afterElement);
+            targetSectionRow.insertBefore(dragging, afterElement);
         }
+    });
+    
+    // 🎯 EVENTO DE DROP PARA ATUALIZAR VISIBILIDADE ENTRE SEÇÕES
+    integratedList.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const dragging = integratedList.querySelector('.dragging');
+        if (!dragging) return;
+        
+        const columnName = dragging.dataset.column;
+        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        
+        if (!targetSectionRow || !columnName) return;
+        
+        // 🎯 DETECTAR SE MUDOU DE SEÇÃO (visível ↔ oculta) - SEM TÍTULOS
+        const targetSection = targetSectionRow.closest('.integrated-section');
+        const isTargetVisible = targetSection?.classList.contains('visible-section');
+        const wasVisible = visibleColumns.has(columnName);
+        
+        console.log('🔄 [CROSS-SECTION] Drop:', columnName, 'wasVisible:', wasVisible, 'isTargetVisible:', isTargetVisible);
+        
+        // Se mudou de seção, atualizar visibilidade
+        if (isTargetVisible !== wasVisible) {
+            if (isTargetVisible) {
+                visibleColumns.add(columnName);
+                console.log('✅ [CROSS-SECTION] Coluna tornou-se visível:', columnName);
+            } else {
+                visibleColumns.delete(columnName);
+                console.log('❌ [CROSS-SECTION] Coluna tornou-se oculta:', columnName);
+            }
+            
+            // Salvar mudanças
+            Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
+            debouncedAutoSave();
+            await autoSaveCurrentPreset();
+            
+            // Reconstruir interface
+            setupTable();
+            renderTable();
+            await buildIntegratedColumnsList();
+        } else {
+            // Mesma seção: apenas salvar ordem
+            await saveOrderFromIntegratedList();
+        }
+        
+        // 🎯 LIMPAR FEEDBACK VISUAL
+        document.querySelectorAll('.integrated-section-row').forEach(row => {
+            row.classList.remove('drag-target');
+        });
+        document.querySelectorAll('.drop-indicator').forEach(indicator => {
+            indicator.remove();
+        });
     });
 }
 
-// Função auxiliar para drag and drop na lista integrada
-function getDragAfterElementIntegrated(container, y) {
-    const draggableElements = [...container.querySelectorAll('.integrated-column-item:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+// 🎯 FUNÇÃO PARA DETECTAR SEÇÃO DE DESTINO BASEADA NAS COORDENADAS
+function getTargetSectionFromCoordinates(clientX, clientY) {
+    const allSectionRows = document.querySelectorAll('.integrated-section-row');
+    
+    for (const sectionRow of allSectionRows) {
+        const rect = sectionRow.getBoundingClientRect();
+        
+        // Verificar se mouse está dentro da área da seção (com margem de tolerância)
+        if (clientY >= rect.top - 10 && clientY <= rect.bottom + 10 &&
+            clientX >= rect.left - 10 && clientX <= rect.right + 10) {
+            return sectionRow;
         }
-    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+    
+    // Se não encontrou seção específica, retornar a mais próxima baseada em Y
+    let closestSection = null;
+    let closestDistance = Infinity;
+    
+    for (const sectionRow of allSectionRows) {
+        const rect = sectionRow.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const distance = Math.abs(clientY - centerY);
+        
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestSection = sectionRow;
+        }
+    }
+    
+    return closestSection;
+}
+
+// 🎯 FUNÇÃO SIMPLIFICADA PARA DRAG-AND-DROP 
+function getDragAfterElementHorizontal(sectionRow, mouseX, mouseY) {
+    const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
+    if (draggableElements.length === 0) return null;
+    
+    // 🎯 SIMPLES: Encontrar elemento mais próximo e decidir posição
+    let closestElement = null;
+    let closestDistance = Infinity;
+    
+    draggableElements.forEach(element => {
+        const box = element.getBoundingClientRect();
+        const centerX = box.left + (box.width / 2);
+        const centerY = box.top + (box.height / 2);
+        
+        const distance = Math.sqrt(
+            Math.pow(mouseX - centerX, 2) + 
+            Math.pow(mouseY - centerY, 2)
+        );
+        
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestElement = element;
+        }
+    });
+    
+    if (!closestElement) return null;
+    
+    // Se mouse está à esquerda do centro do elemento mais próximo, inserir antes dele
+    const box = closestElement.getBoundingClientRect();
+    const centerX = box.left + (box.width / 2);
+    
+    if (mouseX < centerX) {
+        console.log(`🎯 [DROP-SIMPLE] Inserir ANTES de "${closestElement.dataset.column}"`);
+        return closestElement;
+        } else {
+        console.log(`🎯 [DROP-SIMPLE] Inserir DEPOIS de "${closestElement.dataset.column}"`);
+        return closestElement.nextElementSibling;
+    }
+}
+
+// 🎯 FUNÇÃO SIMPLES PARA INDICADOR VISUAL DE DROP
+function updateDropIndicator(sectionRow, mouseX, mouseY) {
+    // Remover indicadores existentes
+    document.querySelectorAll('.drop-indicator').forEach(indicator => {
+        indicator.remove();
+    });
+    
+    const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
+    if (draggableElements.length === 0) return;
+    
+    // 🎯 ABORDAGEM SIMPLES: Encontrar elemento mais próximo do mouse
+    let closestElement = null;
+    let closestDistance = Infinity;
+    let insertBefore = false;
+    
+    draggableElements.forEach(element => {
+        const box = element.getBoundingClientRect();
+        const elementCenterX = box.left + (box.width / 2);
+        const elementCenterY = box.top + (box.height / 2);
+        
+        // Distância do mouse ao centro do elemento
+        const distance = Math.sqrt(
+            Math.pow(mouseX - elementCenterX, 2) + 
+            Math.pow(mouseY - elementCenterY, 2)
+        );
+        
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestElement = element;
+            // Se mouse está à esquerda do centro, inserir antes; senão, depois
+            insertBefore = mouseX < elementCenterX;
+        }
+    });
+    
+    if (!closestElement) return;
+    
+    // Determinar posição do indicador
+    const box = closestElement.getBoundingClientRect();
+    const sectionRect = sectionRow.getBoundingClientRect();
+    
+    let indicatorX;
+    if (insertBefore) {
+        indicatorX = box.left - 4; // 4px antes do elemento
+    } else {
+        indicatorX = box.right + 4; // 4px depois do elemento
+    }
+    
+    // Criar indicador
+    const indicator = document.createElement('div');
+    indicator.className = 'drop-indicator show';
+    indicator.style.left = (indicatorX - sectionRect.left) + 'px';
+    indicator.style.top = (box.top - sectionRect.top) + 'px';
+    indicator.style.height = box.height + 'px';
+    
+    sectionRow.appendChild(indicator);
+    
+    console.log(`🎯 [DROP-SIMPLE] Próximo a "${closestElement.dataset.column}", ${insertBefore ? 'antes' : 'depois'}`);
 }
 
 // Salvar nova ordem da lista integrada
@@ -1890,17 +2078,25 @@ function matchesMultipleValues(valueToCheck, filterTerm) {
     const value = String(valueToCheck || '').toLowerCase();
     const filterStr = String(filterTerm).toLowerCase();
     
+    // 🎯 NORMALIZAÇÃO PARA RGM: Remover hífens para comparação
+    const normalizeRgm = (str) => str.replace(/-/g, '');
+    const valueNormalized = normalizeRgm(value);
+    const filterNormalized = normalizeRgm(filterStr);
+    
     // Se contém ponto e vírgula, trata como múltiplos valores (OR)
     if (filterStr.includes(';')) {
         const terms = filterStr.split(';')
             .map(term => term.trim())
             .filter(term => term.length > 0);
         
-        // Retorna true se qualquer um dos termos for encontrado
-        return terms.some(term => value.includes(term));
+        // Retorna true se qualquer um dos termos for encontrado (original + normalizado)
+        return terms.some(term => {
+            const termNormalized = normalizeRgm(term);
+            return value.includes(term) || valueNormalized.includes(termNormalized);
+        });
     } else {
-        // Comportamento original: busca simples por inclusão
-        return value.includes(filterStr);
+        // Busca simples: original + normalizada (para RGMs sem hífen)
+        return value.includes(filterStr) || valueNormalized.includes(filterNormalized);
     }
 }
 

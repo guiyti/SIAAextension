@@ -562,7 +562,7 @@
             color: #777;
         }
 
-        /* Dropdown de configuração de colunas (header) */
+        /* Dropdown de configuração de colunas (header) - LAYOUT HORIZONTAL */
         .config-dropdown {
             position: fixed;
             z-index: 10001;
@@ -571,9 +571,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             border-radius: 12px;
             display: none;
-            width: 380px;
-            min-height: 200px;
+            width: 600px; /* 🎯 MAIS LARGO para layout horizontal */
             cursor: default;
+            /* 🔧 REMOVIDO: min-height - altura automática baseada no conteúdo */
         }
         
         .window-header {
@@ -590,7 +590,7 @@
         
         .window-title {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 16px;
             color: #1e293b;
             display: flex;
             align-items: center;
@@ -623,15 +623,44 @@
         }
         
         .config-title {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 600;
             color: #1e293b;
-            margin: 0 0 10px 0;
-            padding-bottom: 6px;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+        }
+
+        /* 🎯 LAYOUT COMPACTO DO PRESET */
+        .preset-compact-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .preset-label {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 16px;
+            white-space: nowrap;
+        }
+
+        .preset-select.compact {
+            flex: 1;
+            font-size: 15px;
+            padding: 10px 12px;
+            min-width: 200px;
+        }
+
+        .columns-btn.compact {
+            font-size: 15px;
+            padding: 10px 16px;
+            white-space: nowrap;
         }
         
         .config-subtitle {
@@ -639,30 +668,107 @@
             color: #64748b;
             font-size: 11px;
         }
-        /* Lista integrada de colunas (visibilidade + ordem) */
+        /* Lista integrada de colunas (visibilidade + ordem) - LAYOUT HORIZONTAL */
         .integrated-columns-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            max-height: 300px;
-            overflow-y: auto;
+            gap: 12px;
+            padding: 8px;
+            /* 🔧 REMOVIDO: max-height e overflow - layout horizontal compacto */
+        }
+
+        /* 🎯 SEÇÕES HORIZONTAIS MINIMALISTAS */
+        .integrated-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        /* 🎨 CORES DIFERENCIADAS */
+        .integrated-section.visible-section {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.04) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .integrated-section.hidden-section {
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, rgba(148, 163, 184, 0.04) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .integrated-section-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        /* 🏷️ TÍTULOS DAS SEÇÕES HORIZONTAIS */
+        .integrated-section-title {
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            display: inline-block;
+        }
+
+        /* 🎯 FEEDBACK VISUAL PARA DRAG ENTRE SEÇÕES */
+        .integrated-section-row {
+            transition: all 0.2s ease;
+            border-radius: 6px;
             padding: 4px;
+            margin: 2px 0;
+            position: relative;
+        }
+
+        .integrated-section-row.drag-target {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px dashed #3b82f6;
+            transform: scale(1.02);
+        }
+
+        /* 🎯 INDICADOR DE POSIÇÃO DE DROP SIMPLES E PRECISO */
+        .drop-indicator {
+            position: absolute;
+            width: 3px;
+            background: #3b82f6;
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            z-index: 1000;
+            box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);
+        }
+
+        .drop-indicator.show {
+            opacity: 1;
+            animation: pulse 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 6px rgba(59, 130, 246, 0.8); }
+            100% { box-shadow: 0 0 12px rgba(59, 130, 246, 1); }
         }
 
          .integrated-column-item {
-             display: flex;
+             display: inline-flex;
              align-items: center;
              gap: 8px;
-             padding: 10px 12px;
+             padding: 8px 12px;
              background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
              border: 1px solid #e2e8f0;
-             border-radius: 8px;
+             border-radius: 6px;
              cursor: pointer;
              transition: all 0.2s ease;
-             font-size: 12px;
+             font-size: 13px;
+             font-weight: 500;
              user-select: none;
              position: relative;
-             min-height: 40px;
+             white-space: nowrap;
+             /* 🎯 FONTE MAIOR: Melhor legibilidade */
          }
 
          /* Estado visível */
@@ -837,15 +943,15 @@
         }
 
         .copy-title {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 600;
             color: #1e293b;
-            margin: 0 0 10px 0;
-            padding-bottom: 6px;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .copy-options {
@@ -886,9 +992,9 @@
             color: white;
             border: none;
             box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
-            padding: 14px 18px;
+            padding: 16px 20px;
             border-radius: 8px;
             transition: all 0.2s ease;
             font-weight: 600;
@@ -1841,18 +1947,14 @@
                             <button class="window-close" onclick="document.getElementById('columnConfigDropdown').style.display='none'">×</button>
                         </div>
                         <div class="window-content">
-                            <div class="config-section">
-                                <div class="config-title">Presets</div>
-                            <div style="display:flex;gap:8px;align-items:center;width:100%;margin-bottom:6px;">
-                                <select id="presetSelect" class="preset-select" style="flex:1;"></select>
-                                <button id="resetColumnsBtn" class="columns-btn primary">🔄 Redefinir</button>
+                        <div class="config-section">
+                            <div class="preset-compact-row">
+                                <span class="preset-label">Preset:</span>
+                                <select id="presetSelect" class="preset-select compact"></select>
+                                <button id="resetColumnsBtn" class="columns-btn primary compact">🔄 Redefinir</button>
                             </div>
                         </div>
                         <div class="config-section">
-                            <div class="config-title">📊 Colunas - Visibilidade e Ordem</div>
-                            <div class="config-subtitle">
-                                <small>✅ = visível | 📌 Arraste para reordenar</small>
-                            </div>
                             <div id="integratedColumnsList" class="integrated-columns-list"></div>
                         </div>
                         </div>
