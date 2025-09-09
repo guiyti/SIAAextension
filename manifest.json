@@ -47,12 +47,7 @@
                 "viewer.js", 
                 "siaa-config.json", 
                 "xml-processor.js", 
-                "config-manager.js",
-                "src/utils/CSVParser.js",
-                "src/utils/CSVDataHandler.js",
-                "src/background/ExtractionManager.js",
-                "src/background/MessageHandler.js",
-                "src/background/TabManager.js"
+                "config-manager.js"
             ],
             "matches": ["https://siaa.cruzeirodosul.edu.br/*", "<all_urls>"]
         }

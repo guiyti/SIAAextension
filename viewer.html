@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIAA Data Viewer</title>
     <style>
+        /* 🎨 Variáveis CSS centralizadas para consistência */
+        :root {
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --color-primary: #1e293b;
+            --color-secondary: #374151;
+            --color-text: #2b2b2b;
+            --color-muted: #9ca3af;
+            --color-border: rgba(203,213,225,0.4);
+            --color-accent: #ebb55e;
+            --gradient-header: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            --gradient-bg: linear-gradient(180deg, #f6f7fb 0%, #eef1f5 100%);
+            --shadow-light: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-medium: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-strong: 0 10px 30px rgba(0,0,0,0.2);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --transition: all 0.2s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,9 +31,9 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(180deg, #f6f7fb 0%, #eef1f5 100%);
-            color: #2b2b2b;
+            font-family: var(--font-family);
+            background: var(--gradient-bg);
+            color: var(--color-text);
             margin: 0;
             padding: 0;
         }
@@ -26,16 +45,16 @@
 
         /* Header da página - sempre fixo no topo */
         .header {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
-            border: 1px solid rgba(203,213,225,0.4);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            background: var(--gradient-header);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-medium);
             backdrop-filter: blur(8px);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            color: #1e293b;
+            color: var(--color-primary);
         }
 
         .header-top {
@@ -567,9 +586,9 @@
             position: fixed;
             z-index: 10001;
             background: #fff;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-strong);
+            border-radius: var(--border-radius-lg);
             display: none;
             width: 600px; /* 🎯 MAIS LARGO para layout horizontal */
             cursor: default;
@@ -578,26 +597,127 @@
         
         /* 🎯 Largura específica para diálogo Copiar Dados */
         .config-dropdown.copy-dialog {
-            width: 380px; /* Largura mais adequada para o conteúdo de cópia */
+            width: 480px; /* Largura aumentada para acomodar botões */
+            max-width: 95vw; /* Máximo 95% da viewport */
+        }
+        
+        /* Ajuste responsivo para botões da seção principal */
+        .copy-dialog .preset-compact-row {
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center; /* Centraliza verticalmente todos os elementos */
+        }
+        
+        .copy-dialog .preset-label {
+            min-width: 50px;
+            flex-shrink: 0;
+            font-size: 13px;
+            line-height: 1.2; /* Ajusta altura da linha para melhor alinhamento */
+        }
+        
+        /* Botões de ação principais menores */
+        .copy-dialog .columns-btn {
+            font-size: 11px !important;
+            padding: 6px 10px !important;
+            min-width: auto;
+            white-space: nowrap;
+        }
+        
+        /* 📊 Grade responsiva para conteúdo da janela Copiar Dados */
+        .copy-dialog .integrated-columns-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Colunas responsivas */
+            gap: 8px;
+            justify-items: stretch;
+            align-items: start;
+            padding: 12px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Garantir que itens da grade não transbordem */
+        .copy-dialog .integrated-columns-list > * {
+            min-width: 0; /* Permite quebra de texto */
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .copy-dialog .config-section:first-child {
+            text-align: center;
+        }
+        
+        /* 📦 Estilo dos contêineres de cópia */
+        .copy-container {
+            background: rgba(248,250,252,0.6);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            margin: 12px 0;
+            overflow: hidden;
+        }
+        
+        .copy-container-header {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .copy-container-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-secondary);
+        }
+        
+        .copy-columns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .copy-column-btn {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 12px 14px;
+            color: var(--color-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Fonte e peso são aplicados via JavaScript inline para maior precedência */
+        }
+        
+        .copy-column-btn:hover {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
+            color: #1e40af;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
         }
         
         .window-header {
             background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
             border-bottom: 1px solid #e2e8f0;
-            border-radius: 12px 12px 0 0;
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
             padding: 14px 18px;
             cursor: move;
             user-select: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-light);
         }
         
         .window-title {
             font-weight: 500;
             font-size: 15px;
-            color: #374151;
+            color: var(--color-secondary);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -608,12 +728,12 @@
             background: none;
             border: none;
             font-size: 16px;
-            color: #9ca3af;
+            color: var(--color-muted);
             cursor: pointer;
             padding: 6px;
             border-radius: 6px;
             line-height: 1;
-            transition: all 0.2s ease;
+            transition: var(--transition);
             width: 28px;
             height: 28px;
             display: flex;
@@ -1966,14 +2086,36 @@
                             <button class="window-close" onclick="document.getElementById('copyDataDropdown').style.display='none'">×</button>
                         </div>
                         <div class="window-content">
+                        <!-- Seção: Ações Principais -->
                         <div class="config-section">
                             <div class="preset-compact-row">
-                                <span class="preset-label">Ação:</span>
+                                <span class="preset-label">Ações:</span>
                                 <button id="copyTableBtn" class="columns-btn primary compact">📊 Copiar Tabela Visível</button>
+                                <button id="downloadTableBtn" class="columns-btn compact">💾 Baixar Tabela Visível (CSV)</button>
                             </div>
                         </div>
+                        
+                        <!-- Seção: Copiar Colunas Separadas -->
                         <div class="config-section">
-                            <div id="copyColumnsList" class="integrated-columns-list"></div>
+                            <div class="preset-compact-row">
+                                <span class="preset-label" style="color: var(--color-secondary); font-weight: 600;">📋 Copiar Colunas Separadas</span>
+                            </div>
+                            
+                            <!-- Contêiner 1: Copiar com Repetições -->
+                            <div class="copy-container">
+                                <div class="copy-container-header">
+                                    <span class="copy-container-title">📄 Copiar Coluna Visível (Com Repetições)</span>
+                                </div>
+                                <div id="copyColumnsWithRepetition" class="copy-columns-grid"></div>
+                            </div>
+                            
+                            <!-- Contêiner 2: Copiar sem Repetições -->
+                            <div class="copy-container">
+                                <div class="copy-container-header">
+                                    <span class="copy-container-title">📄 Copiar sem Repetições (Dados Únicos)</span>
+                                </div>
+                                <div id="copyColumnsWithoutRepetition" class="copy-columns-grid"></div>
+                            </div>
                         </div>
                         </div>
                     </div>
@@ -2037,21 +2179,21 @@
                 <h4 class="menu-section-title">🧹 Manutenção</h4>
                 <div class="menu-buttons">
                     <button id="clearDuplicatesBtn" class="sidebar-export-btn">🔄 Limpar Duplicatas</button>
-                    <button id="resetDataBtn" class="sidebar-export-btn" style="background: #dc3545;">🗑️ Limpar Todos os Dados</button>
                 </div>
+                <p style="font-size: 11px; color: #666; margin: 8px 0; line-height: 1.4;">
+                    Remove dados duplicados mantendo apenas um registro por grupo.
+                </p>
             </div>
 
-            <!-- Seção de Presets (removida: não há presets salvos) -->
-
-            <!-- Seção de Limpeza de Dados -->
-            <div class="clear-data-section">
-                <h4 style="color: #d32f2f; margin-bottom: 10px;">🗑️ Gerenciar Dados</h4>
-                <p style="font-size: 11px; color: #666; margin-bottom: 15px; line-height: 1.4;">
-                    Remove todos os dados armazenados da extensão. Esta ação não pode ser desfeita.
+            <!-- Seção: Limpeza de Dados -->
+            <div class="menu-section" style="margin: 12px 12px 0 12px; padding-bottom: 12px;">
+                <h4 class="menu-section-title" style="color: #d32f2f;">🗑️ Limpar Dados</h4>
+                <div class="menu-buttons">
+                    <button id="clearAllDataBtn" class="sidebar-export-btn" style="background: #dc3545; color: white;">🗑️ Limpar Todos os Dados</button>
+                </div>
+                <p style="font-size: 11px; color: #666; margin: 8px 0; line-height: 1.4;">
+                    <strong>Remove APENAS:</strong> dados de ofertas, alunos e presets. Configurações de colunas são mantidas.
                 </p>
-                <button id="clearDataBtn" class="sidebar-export-btn danger">
-                    🗑️ Limpar Todos os Dados
-                </button>
             </div>
         </div>
     </div>

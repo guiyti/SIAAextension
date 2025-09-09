@@ -250,12 +250,33 @@ class CopyManager {
             return row[h] ?? '';
         }))];
         
-            const csvContent = rows.map(row => row.map(cell => {
-                const cellStr = String(cell).replace(/"/g, '""');
-                return cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n') ? `"${cellStr}"` : cellStr;
-            }).join(',')).join('\n');
+            // Formato de TABELA HTML para cópia
+            const tableHeaders = visibleHeaders.map(header => `<th>${header}</th>`).join('');
+            const tableRows = filteredData.map(row => {
+                const cells = visibleHeaders.map(header => {
+                    const cellValue = row[header] || '';
+                    return `<td>${String(cellValue).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                }).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
             
-            await navigator.clipboard.writeText(csvContent);
+            const htmlTable = `<table border="1" style="border-collapse: collapse;">
+                <thead><tr>${tableHeaders}</tr></thead>
+                <tbody>${tableRows}</tbody>
+            </table>`;
+            
+            // Tentar copiar como HTML primeiro, depois como texto
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([htmlTable], { type: 'text/html' }),
+                        'text/plain': new Blob([rows.map(row => row.join('\t')).join('\n')], { type: 'text/plain' })
+                    })
+                ]);
+            } catch (error) {
+                // Fallback para texto simples se HTML não funcionar
+                await navigator.clipboard.writeText(rows.map(row => row.join('\t')).join('\n'));
+            }
             return true;
             
         } catch (error) {
@@ -299,11 +320,12 @@ class CopyManager {
 
     // V19: Construir lista de colunas para cópia (DIRETRIZ 8: implementação defensiva)
     buildCopyColumnsList() {
-        
         // DIRETRIZ 8: Validação defensiva do DOM e dependências
-        const copyColumnsList = document?.getElementById('copyColumnsList');
-        if (!copyColumnsList) {
-            console.warn('⚠️ V19 - Elemento copyColumnsList não encontrado');
+        const withRepetitionContainer = document?.getElementById('copyColumnsWithRepetition');
+        const withoutRepetitionContainer = document?.getElementById('copyColumnsWithoutRepetition');
+        
+        if (!withRepetitionContainer || !withoutRepetitionContainer) {
+            console.warn('⚠️ V19 - Contêineres de cópia não encontrados');
             return false;
         }
         
@@ -313,90 +335,87 @@ class CopyManager {
             return false;
         }
         
-        return this._buildCopyColumnsListOriginal(copyColumnsList);
+        return this._buildNewCopyColumnsStructure();
     }
 
     _buildCopyColumnsListOriginal(copyColumnsList) {
         try {
+            // Nova estrutura com contêineres separados
+            return this._buildNewCopyColumnsStructure();
+        } catch (error) {
+            console.error('❌ V19 - Erro em _buildCopyColumnsListOriginal:', error);
+            return false;
+        }
+    }
+
+    _buildNewCopyColumnsStructure() {
     const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
     const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
     
-    copyColumnsList.innerHTML = '';
-    
-    visibleHeaders.forEach(columnName => {
-                // 🎯 Container para cada coluna - usando estilo minimalista
-                const columnItem = document.createElement('div');
-                columnItem.className = 'config-section';
-                columnItem.style.cssText = `
-                    margin-bottom: 8px;
-                    padding-bottom: 8px;
-                    border-bottom: 1px solid #f1f5f9;
-                `;
-                
-                // 📝 Linha com nome da coluna e botões
-                const columnRow = document.createElement('div');
-                columnRow.className = 'preset-compact-row';
-                columnRow.style.cssText = `
-                    margin-bottom: 0;
-                    font-size: 14px;
-                `;
-                
-                // 📝 Nome da coluna
-                const columnNameSpan = document.createElement('span');
-                columnNameSpan.className = 'preset-label';
-                columnNameSpan.textContent = columnName;
-                columnNameSpan.style.cssText = `
-                    font-size: 14px;
-                    font-weight: 500;
-                `;
-                
-                // 📄 Botão: Com repetição
+        // Obter contêineres
+        const withRepetitionContainer = document.getElementById('copyColumnsWithRepetition');
+        const withoutRepetitionContainer = document.getElementById('copyColumnsWithoutRepetition');
+        
+        if (!withRepetitionContainer || !withoutRepetitionContainer) {
+            console.warn('⚠️ Contêineres de cópia não encontrados');
+            return false;
+        }
+        
+        // Limpar contêineres
+        withRepetitionContainer.innerHTML = '';
+        withoutRepetitionContainer.innerHTML = '';
+        
+        // Gerar botões para cada coluna visível
+        visibleHeaders.forEach(columnName => {
+            // Botão para "Com Repetições"
                 const btnWithRepetition = document.createElement('button');
-                btnWithRepetition.className = 'columns-btn compact';
-                btnWithRepetition.innerHTML = '📄 Com Repetição';
-                btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
-                btnWithRepetition.style.cssText = `
-                    font-size: 12px;
-                    padding: 6px 10px;
-                    margin-right: 6px;
-                `;
+            btnWithRepetition.className = 'copy-column-btn';
+            btnWithRepetition.textContent = columnName;
+            btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
+            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
+            btnWithRepetition.style.cssText = `
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                line-height: 1.3;
+            `;
                 btnWithRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, true);
-                    document.getElementById('copyDataDropdown').style.display = 'none';
+                await copyColumn(columnName, true);
+                document.getElementById('copyDataDropdown').style.display = 'none';
                     console.log(`📄 Copiado: ${columnName} (com repetição)`);
                 });
                 
-                // 📄 Botão: Sem repetição
+            // Botão para "Sem Repetições"  
                 const btnWithoutRepetition = document.createElement('button');
-                btnWithoutRepetition.className = 'columns-btn compact';
-                btnWithoutRepetition.innerHTML = '📄 Sem Repetição';
-                btnWithoutRepetition.title = `Copiar coluna "${columnName}" sem dados repetidos (valores únicos)`;
-                btnWithoutRepetition.style.cssText = `
-                    font-size: 12px;
-                    padding: 6px 10px;
-                `;
+            btnWithoutRepetition.className = 'copy-column-btn';
+            btnWithoutRepetition.textContent = columnName;
+            btnWithoutRepetition.title = `Copiar coluna "${columnName}" apenas com valores únicos (sem repetições)`;
+            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
+            btnWithoutRepetition.style.cssText = `
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                line-height: 1.3;
+            `;
                 btnWithoutRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, false);
+                await copyColumn(columnName, false);
                     document.getElementById('copyDataDropdown').style.display = 'none';
                     console.log(`📄 Copiado: ${columnName} (sem repetição)`);
                 });
                 
-                // 🔗 Montar estrutura
-                columnRow.appendChild(columnNameSpan);
-                columnRow.appendChild(btnWithRepetition);
-                columnRow.appendChild(btnWithoutRepetition);
-                
-                columnItem.appendChild(columnRow);
-                copyColumnsList.appendChild(columnItem);
-            });
+            // Adicionar aos contêineres
+            withRepetitionContainer.appendChild(btnWithRepetition);
+            withoutRepetitionContainer.appendChild(btnWithoutRepetition);
             
-            console.log(`📋 Lista de cópias criada: ${visibleHeaders.length} colunas`);
+            // 🎯 Força aplicação dos estilos após inserção no DOM
+            setTimeout(() => {
+                btnWithRepetition.style.fontSize = '15px';
+                btnWithRepetition.style.fontWeight = '700';
+                btnWithoutRepetition.style.fontSize = '15px';
+                btnWithoutRepetition.style.fontWeight = '700';
+            }, 10);
+        });
+        
+        console.log(`📋 Contêineres de cópia criados: ${visibleHeaders.length} colunas cada`);
             return true;
-            
-        } catch (error) {
-            console.error('❌ V19 - Erro ao construir lista:', error);
-            return false;
-        }
     }
 
     // V19: Estatísticas para debug
@@ -1195,18 +1214,17 @@ function setupTable() {
         }
         input.addEventListener('click', (e) => {
             e.stopPropagation();
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado
         });
         input.addEventListener('input', debounce(() => {
             const val = input.value || '';
             setCurrentColumnFilter(header, val);
             toggleFilterActiveStyles(header, th, input);
             applyFilters();
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado
         }, 250));
         input.addEventListener('focus', () => {
-            // Apenas abre o dropdown; não aplica destaque se não houver valor
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado - apenas foco
         });
         input.addEventListener('blur', () => {
             // Garante que estilos reflitam se há valor ou não
@@ -1594,6 +1612,15 @@ function setupEventListeners() {
                 copyDropdown.style.display = 'none';
             });
         }
+        
+        // Event listener para baixar tabela em CSV
+        const downloadTableBtn = document.getElementById('downloadTableBtn');
+        if (downloadTableBtn) {
+            downloadTableBtn.addEventListener('click', async () => {
+                await downloadVisibleTableAsCSV();
+                copyDropdown.style.display = 'none';
+            });
+        }
     }
 
     // Limpar filtros (globais de coluna, selects e ordenação)
@@ -1839,7 +1866,7 @@ async function buildIntegratedColumnsList() {
 
         item.addEventListener('dragend', () => { 
             isDragging = false;
-            item.classList.remove('dragging');
+            item.classList.remove('dragging'); 
             
             // 🎯 RESTAURAR VISUAL do item original
             item.style.display = '';
@@ -1848,7 +1875,7 @@ async function buildIntegratedColumnsList() {
             item.style.transform = '';
             
             // Salvar nova ordem
-            saveOrderFromIntegratedList();
+                saveOrderFromIntegratedList();
             console.log('🖱️ [DRAG] Drag finalizado:', header);
         });
 
@@ -1860,7 +1887,7 @@ async function buildIntegratedColumnsList() {
                 return;
             }
             
-            e.preventDefault();
+        e.preventDefault();
             e.stopPropagation();
             toggleVisibility();
             console.log('🖱️ [CLICK] Toggle visibilidade:', header);
@@ -1891,10 +1918,10 @@ async function buildIntegratedColumnsList() {
         }
         
         dragOverDebounce = setTimeout(() => {
-            // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
-            const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
-            if (!targetSectionRow) return;
-            
+        // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
+        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        if (!targetSectionRow) return;
+        
             // 🎯 SÓ ATUALIZAR SE MUDOU DE SEÇÃO (elimina piscar)
             if (targetSectionRow !== lastTargetSection) {
                 lastTargetSection = targetSectionRow;
@@ -1902,23 +1929,23 @@ async function buildIntegratedColumnsList() {
             }
             
             // 🎯 LINHA AZUL DE DESTINO: Sempre atualizar posição
-            updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
-            
+        updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
+        
             // 🎯 MOVER FISICAMENTE O ELEMENTO NO DOM
-            const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
-            
-            if (afterElement == null) {
+        const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
+        
+        if (afterElement == null) {
                 // Inserir no final da seção
                 if (dragging.parentNode !== targetSectionRow) {
-                    targetSectionRow.appendChild(dragging);
+            targetSectionRow.appendChild(dragging);
                     console.log('🎯 [DRAGOVER] Movido para final da seção');
                 }
-            } else {
+        } else {
                 // Inserir antes do elemento específico
                 if (dragging.nextElementSibling !== afterElement) {
-                    targetSectionRow.insertBefore(dragging, afterElement);
+            targetSectionRow.insertBefore(dragging, afterElement);
                     console.log('🎯 [DRAGOVER] Movido antes de:', afterElement.dataset.column);
-                }
+        }
             }
         }, 10); // 10ms debounce para evitar piscar
     });
@@ -2094,18 +2121,18 @@ function getDragAfterElementHorizontal(sectionRow, mouseX, mouseY) {
     });
     
     if (closestElement) {
-        const box = closestElement.getBoundingClientRect();
-        const centerX = box.left + (box.width / 2);
-        
-        if (mouseX < centerX) {
+    const box = closestElement.getBoundingClientRect();
+    const centerX = box.left + (box.width / 2);
+    
+    if (mouseX < centerX) {
             console.log(`🎯 [FALLBACK] Inserir ANTES de "${closestElement.dataset.column}"`);
-            return closestElement;
+        return closestElement;
         } else {
             console.log(`🎯 [FALLBACK] Inserir DEPOIS de "${closestElement.dataset.column}"`);
-            return closestElement.nextElementSibling;
-        }
+        return closestElement.nextElementSibling;
     }
-    
+}
+
     return null;
 }
 
@@ -2319,16 +2346,24 @@ async function saveOrderFromIntegratedList() {
 
 
 // Função auxiliar para verificar se um valor corresponde a múltiplos termos separados por ponto e vírgula
+// 🔍 Função para normalizar acentos e caracteres especiais
+function normalizeAccents(str) {
+    return str
+        .normalize('NFD') // Decompor caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, '') // Remover marcas diacríticas
+        .toLowerCase();
+}
+
 function matchesMultipleValues(valueToCheck, filterTerm) {
     if (!filterTerm || !filterTerm.trim()) return true;
     
     const value = String(valueToCheck || '').toLowerCase();
     const filterStr = String(filterTerm).toLowerCase();
     
-    // 🎯 NORMALIZAÇÃO PARA RGM: Remover hífens para comparação
-    const normalizeRgm = (str) => str.replace(/-/g, '');
-    const valueNormalized = normalizeRgm(value);
-    const filterNormalized = normalizeRgm(filterStr);
+    // 🎯 NORMALIZAÇÃO COMPLETA: Remover acentos + hífens para comparação
+    const normalizeForSearch = (str) => normalizeAccents(str.replace(/-/g, ''));
+    const valueNormalized = normalizeForSearch(value);
+    const filterNormalized = normalizeForSearch(filterStr);
     
     // Se contém ponto e vírgula, trata como múltiplos valores (OR)
     if (filterStr.includes(';')) {
@@ -2338,11 +2373,11 @@ function matchesMultipleValues(valueToCheck, filterTerm) {
         
         // Retorna true se qualquer um dos termos for encontrado (original + normalizado)
         return terms.some(term => {
-            const termNormalized = normalizeRgm(term);
+            const termNormalized = normalizeForSearch(term);
             return value.includes(term) || valueNormalized.includes(termNormalized);
         });
     } else {
-        // Busca simples: original + normalizada (para RGMs sem hífen)
+        // Busca simples: original + normalizada (sem acentos + sem hífens)
         return value.includes(filterStr) || valueNormalized.includes(filterNormalized);
     }
 }
@@ -2774,15 +2809,15 @@ function closeActiveDropdown() {
     activeDropdown = null;
 }
 
-// Fechar dropdown ao clicar fora
-document.addEventListener('mousedown', (e) => {
-    if (!activeDropdown) return;
-    const isInside = activeDropdown.contains(e.target);
-    const isInput = e.target.classList && e.target.classList.contains('column-filter-input');
-    if (!isInside && !isInput) {
-        closeActiveDropdown();
-    }
-});
+// 🚫 Event listener do dropdown removido conforme solicitado
+// document.addEventListener('mousedown', (e) => {
+//     if (!activeDropdown) return;
+//     const isInside = activeDropdown.contains(e.target);
+//     const isInput = e.target.classList && e.target.classList.contains('column-filter-input');
+//     if (!isInside && !isInput) {
+//         closeActiveDropdown();
+//     }
+// });
 
 // Redefinir colunas para o padrão
 async function resetColumns() {
@@ -4420,12 +4455,73 @@ async function loadStudentData() {
     }
 }
 
+// 💾 Função para baixar tabela visível como arquivo CSV
+async function downloadVisibleTableAsCSV() {
+    try {
+        if (!allData || allData.length === 0) {
+            showNotification('⚠️ Nenhum dado disponível para download', 'error');
+            return;
+        }
+
+        if (!filteredData || filteredData.length === 0) {
+            showNotification('⚠️ Nenhum dado filtrado disponível para download', 'error');
+            return;
+        }
+
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : Object.keys(allData[0]);
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+        
+        // Criar CSV com cabeçalhos e dados filtrados
+        const csvContent = [
+            visibleHeaders.join(','), // Cabeçalhos
+            ...filteredData.map(row => 
+                visibleHeaders.map(header => {
+                    const value = row[header] || '';
+                    // Escapar aspas e adicionar aspas se necessário
+                    return value.toString().includes(',') || value.toString().includes('"') 
+                        ? `"${value.toString().replace(/"/g, '""')}"` 
+                        : value;
+                }).join(',')
+            )
+        ].join('\n');
+
+        // Criar e baixar arquivo
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            
+            // Nome do arquivo com timestamp
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+            const fileName = `siaa_dados_${currentViewMode}_${timestamp}.csv`;
+            link.setAttribute('download', fileName);
+            
+            // Simular clique para download
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`💾 Arquivo "${fileName}" baixado com sucesso!`, 'success');
+            console.log(`💾 Download CSV concluído: ${filteredData.length} registros, ${visibleHeaders.length} colunas`);
+        } else {
+            throw new Error('Download não suportado neste navegador');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao baixar CSV:', error);
+        showNotification('❌ Erro ao baixar arquivo CSV: ' + error.message, 'error');
+    }
+}
+
 // ===== FUNCIONALIDADE DE MANUTENÇÃO DE DADOS =====
 
 // Configurar botões de manutenção de dados
 function setupDataMaintenanceButtons() {
     const clearDuplicatesBtn = document.getElementById('clearDuplicatesBtn');
-    const resetDataBtn = document.getElementById('resetDataBtn');
+    const clearAllDataBtn = document.getElementById('clearAllDataBtn');
     
     if (clearDuplicatesBtn) {
         clearDuplicatesBtn.addEventListener('click', async () => {
@@ -4433,12 +4529,56 @@ function setupDataMaintenanceButtons() {
         });
     }
     
-    if (resetDataBtn) {
-        resetDataBtn.addEventListener('click', async () => {
-            if (confirm('🗑️ ATENÇÃO: Esta ação irá REMOVER TODOS OS DADOS armazenados!\n\nSerão deletados:\n• Todos os dados de ofertas\n• Todos os dados de alunos\n• Todos os cursos manuais\n• Todas as configurações\n\nEsta ação NÃO PODE ser desfeita!\n\nTem certeza que deseja continuar?')) {
-                await resetAllData();
+    if (clearAllDataBtn) {
+        clearAllDataBtn.addEventListener('click', async () => {
+            const confirmed = confirm(`🗑️ ATENÇÃO: Esta ação irá REMOVER dados específicos!
+
+Serão deletados PERMANENTEMENTE:
+• 📊 Todos os dados de ofertas disciplinares
+• 👥 Todos os dados de alunos
+• ⚙️ Todos os presets personalizados
+
+MANTIDOS (não serão afetados):
+• 🎛️ Configurações de colunas (ordem, visibilidade, largura)
+• 📋 Cursos manuais adicionados
+• 🎨 Configurações de tema e interface
+
+⚠️ Esta ação NÃO PODE ser desfeita!
+
+Tem certeza que deseja continuar?`);
+            
+            if (confirmed) {
+                await clearSpecificData();
             }
         });
+    }
+}
+
+// Função para limpar apenas dados específicos (ofertas, alunos e presets)
+async function clearSpecificData() {
+    try {
+        showNotification('🔄 Limpando dados específicos...', 'info');
+        
+        // Chaves específicas a serem removidas
+        const keysToRemove = [
+            'siaa_data_csv',        // Dados de ofertas
+            'siaa_students_csv',    // Dados de alunos
+            'siaa_preset_override'  // Presets personalizados
+        ];
+        
+        // Remover apenas as chaves especificadas
+        await Storage.remove(keysToRemove);
+        
+        showNotification('✅ Dados específicos removidos com sucesso!', 'success');
+        
+        // Recarregar a página para refletir as mudanças
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Erro ao limpar dados específicos:', error);
+        showNotification('❌ Erro ao limpar dados: ' + error.message, 'error');
     }
 }
 
@@ -4696,33 +4836,109 @@ async function removeDuplicatesFromCSV(csvData, type) {
 
 // Função para mostrar diálogo de duplicatas com seleção manual
 async function showDuplicatesDialog(duplicatesInfo) {
+    // 🔒 Prevenir múltiplas instâncias
+    const existingModal = document.getElementById('duplicatesModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     return new Promise((resolve) => {
-        // Criar modal de duplicatas
+        // Criar modal usando estilo config-dropdown minimalista
         const modal = document.createElement('div');
         modal.id = 'duplicatesModal';
-        modal.className = 'course-modal';
-        modal.style.display = 'flex';
-        
-        const content = document.createElement('div');
-        content.className = 'course-modal-content';
-        content.style.maxWidth = '95vw';
-        content.style.maxHeight = '90vh';
-        content.style.width = '900px';
-        
-        // Header
-        const header = document.createElement('div');
-        header.className = 'course-modal-header';
-        header.innerHTML = `
-            <h3>🔍 Selecionar Duplicatas para Remoção</h3>
-            <button id="closeDuplicatesModal" class="course-modal-close">&times;</button>
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10002;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-family);
         `;
         
-        // Body
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: #fff;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-strong);
+            border-radius: var(--border-radius-lg);
+            max-width: 95vw;
+            max-height: 90vh;
+            width: 900px;
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        // Header usando estilo window-header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-light);
+        `;
+        
+        const title = document.createElement('div');
+        title.style.cssText = `
+            font-weight: 500;
+            font-size: 15px;
+            color: var(--color-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.01em;
+        `;
+        title.textContent = '🔍 Selecionar Duplicatas para Remoção';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'closeDuplicatesModal';
+        closeBtn.style.cssText = `
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: var(--color-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            line-height: 1;
+            transition: var(--transition);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+            closeBtn.style.color = '#dc2626';
+            closeBtn.style.transform = 'scale(1.05)';
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.background = 'none';
+            closeBtn.style.color = 'var(--color-muted)';
+            closeBtn.style.transform = 'scale(1)';
+        });
+        
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        
+        // Body usando estilo window-content
         const body = document.createElement('div');
-        body.className = 'course-modal-body';
-        body.style.maxHeight = '60vh';
-        body.style.overflowY = 'auto';
-        body.style.padding = '15px';
+        body.style.cssText = `
+            padding: 16px;
+            max-height: 60vh;
+            overflow-y: auto;
+        `;
         
         let bodyContent = `
             <div style="background: rgba(248,250,252,0.6); border: 1px solid rgba(203,213,225,0.4); border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
@@ -4817,16 +5033,50 @@ async function showDuplicatesDialog(duplicatesInfo) {
         
         body.innerHTML = bodyContent;
         
-        // Footer
+        // Footer usando estilo window-content minimalista
         const footer = document.createElement('div');
-        footer.className = 'course-modal-footer';
-        footer.innerHTML = `
-            <div style="flex: 1; text-align: left; color: #6c757d; font-size: 14px;">
-                <span id="selectionCount">0 registros selecionados para remoção</span>
-            </div>
-            <button id="cancelDuplicatesBtn" class="course-btn course-btn-secondary">❌ Cancelar</button>
-            <button id="removeDuplicatesBtn" class="course-btn course-btn-primary" style="background: rgba(248,250,252,0.9); color: #475569; border: 1px solid rgba(203,213,225,0.6); box-shadow: 0 2px 8px rgba(239,68,68,0.15), 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid #ef4444;" disabled>🗑️ Remover Selecionados</button>
+        footer.style.cssText = `
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(248,250,252,0.5);
+            border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
         `;
+        
+        const selectionCount = document.createElement('div');
+        selectionCount.id = 'selectionCount';
+        selectionCount.style.cssText = `
+            flex: 1;
+            font-size: 14px;
+            color: var(--color-secondary);
+        `;
+        selectionCount.textContent = '0 registros selecionados para remoção';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelDuplicatesBtn';
+        cancelBtn.className = 'columns-btn compact';
+        cancelBtn.innerHTML = '❌ Cancelar';
+        cancelBtn.style.cssText = `
+            font-size: 14px;
+            padding: 8px 16px;
+        `;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.id = 'removeDuplicatesBtn';
+        removeBtn.className = 'columns-btn primary compact';
+        removeBtn.innerHTML = '🗑️ Remover Selecionados';
+        removeBtn.disabled = true;
+        removeBtn.style.cssText = `
+            font-size: 14px;
+            padding: 8px 16px;
+        `;
+        
+        footer.appendChild(selectionCount);
+        footer.appendChild(cancelBtn);
+        footer.appendChild(removeBtn);
         
         content.appendChild(header);
         content.appendChild(body);
@@ -4896,9 +5146,7 @@ async function showDuplicatesDialog(duplicatesInfo) {
         });
         
         // Event listeners principais
-        const closeBtn = document.getElementById('closeDuplicatesModal');
-        const cancelBtn = document.getElementById('cancelDuplicatesBtn');
-        const removeBtn = document.getElementById('removeDuplicatesBtn');
+        // Elementos já foram criados acima: closeBtn, cancelBtn, removeBtn
         
         const closeModal = () => {
             document.body.removeChild(modal);
