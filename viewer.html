@@ -576,42 +576,55 @@
             /* 🔧 REMOVIDO: min-height - altura automática baseada no conteúdo */
         }
         
+        /* 🎯 Largura específica para diálogo Copiar Dados */
+        .config-dropdown.copy-dialog {
+            width: 380px; /* Largura mais adequada para o conteúdo de cópia */
+        }
+        
         .window-header {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-bottom: 1px solid #cbd5e1;
+            background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
             border-radius: 12px 12px 0 0;
-            padding: 12px 16px;
+            padding: 14px 18px;
             cursor: move;
             user-select: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .window-title {
-            font-weight: 600;
-            font-size: 16px;
-            color: #1e293b;
+            font-weight: 500;
+            font-size: 15px;
+            color: #374151;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            letter-spacing: -0.01em;
         }
         
         .window-close {
             background: none;
             border: none;
-            font-size: 18px;
-            color: #64748b;
+            font-size: 16px;
+            color: #9ca3af;
             cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
+            padding: 6px;
+            border-radius: 6px;
             line-height: 1;
             transition: all 0.2s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .window-close:hover {
             background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
+            color: #dc2626;
+            transform: scale(1.05);
         }
         
         .window-content {
@@ -725,11 +738,6 @@
             position: relative;
         }
 
-        .integrated-section-row.drag-target {
-            background: rgba(59, 130, 246, 0.1);
-            border: 2px dashed #3b82f6;
-            transform: scale(1.02);
-        }
 
         /* 🎯 INDICADOR DE POSIÇÃO DE DROP SIMPLES E PRECISO */
         .drop-indicator {
@@ -761,7 +769,7 @@
              background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
              border: 1px solid #e2e8f0;
              border-radius: 6px;
-             cursor: pointer;
+             cursor: grab;
              transition: all 0.2s ease;
              font-size: 13px;
              font-weight: 500;
@@ -798,14 +806,15 @@
              transition: transform 0.1s ease;
          }
 
-         /* Estado de arraste */
+         /* 🎯 Estado de arraste - Item semitransparente */
          .integrated-column-item.dragging {
-             opacity: 0.6;
-             transform: rotate(2deg) scale(1.02);
-             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+             opacity: 0.3;
+             transform: scale(0.95);
+             transition: all 0.2s ease;
              cursor: grabbing;
              z-index: 1000;
          }
+         
 
          /* Feedback visual para área clicável */
          .integrated-column-item::before {
@@ -839,6 +848,16 @@
             font-weight: 500;
             color: #374151;
             cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .integrated-column-item:hover .integrated-column-name {
+            color: #1f2937;
+        }
+        
+        .column-visible .integrated-column-name {
+            color: #065f46;
+            font-weight: 600;
         }
 
         .integrated-column-drag {
@@ -851,21 +870,35 @@
             color: #6b7280;
         }
 
+        /* 🎯 Indicador visual aprimorado */
         .integrated-column-indicator {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             margin-left: auto;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             background: #e5e7eb;
-            border: 1px solid #d1d5db;
+            border: 2px solid #d1d5db;
+            position: relative;
         }
 
         .column-visible .integrated-column-indicator {
-            background: #3b82f6;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background: #22c55e;
+            border-color: #16a34a;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+            animation: visiblePulse 2s ease-in-out infinite;
         }
+        
+        /* 🎯 Animação sutil para indicador visível */
+        @keyframes visiblePulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
 
 
 
@@ -923,42 +956,8 @@
             }
         }
 
-        /* Dropdown de cópia de dados */
-        .copy-dropdown {
-            position: fixed;
-            z-index: 10001;
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            border-radius: 12px;
-            display: none;
-            width: 340px;
-            cursor: default;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* 🔧 REMOVIDO: max-height e overflow-y - scroll apenas no container de colunas */
-        }
 
-        .copy-section { 
-            margin-bottom: 12px; 
-        }
 
-        .copy-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #1e293b;
-            margin: 0 0 12px 0;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .copy-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
 
         .copy-option-btn {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
@@ -1959,7 +1958,7 @@
                         </div>
                         </div>
                     </div>
-                    <div id="copyDataDropdown" class="copy-dropdown">
+                    <div id="copyDataDropdown" class="config-dropdown copy-dialog">
                         <div class="window-header">
                             <div class="window-title">
                                 📋 Copiar Dados
@@ -1967,13 +1966,14 @@
                             <button class="window-close" onclick="document.getElementById('copyDataDropdown').style.display='none'">×</button>
                         </div>
                         <div class="window-content">
-                            <div class="copy-section">
-                                <div class="copy-title">📋 Opções de Cópia</div>
-                             <div class="copy-options">
-                                 <button id="copyTableBtn" class="copy-primary-btn">📊 Copiar Tabela Visível</button>
-                                <div class="copy-section-divider">📂 Copiar Colunas Individuais</div>
-                                <div id="copyColumnsList" class="copy-columns-list"></div>
+                        <div class="config-section">
+                            <div class="preset-compact-row">
+                                <span class="preset-label">Ação:</span>
+                                <button id="copyTableBtn" class="columns-btn primary compact">📊 Copiar Tabela Visível</button>
                             </div>
+                        </div>
+                        <div class="config-section">
+                            <div id="copyColumnsList" class="integrated-columns-list"></div>
                         </div>
                         </div>
                     </div>

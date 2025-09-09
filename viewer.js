@@ -324,48 +324,69 @@ class CopyManager {
     copyColumnsList.innerHTML = '';
     
     visibleHeaders.forEach(columnName => {
-                // 🎯 Container para cada coluna
+                // 🎯 Container para cada coluna - usando estilo minimalista
                 const columnItem = document.createElement('div');
-                columnItem.className = 'copy-column-item';
+                columnItem.className = 'config-section';
+                columnItem.style.cssText = `
+                    margin-bottom: 8px;
+                    padding-bottom: 8px;
+                    border-bottom: 1px solid #f1f5f9;
+                `;
+                
+                // 📝 Linha com nome da coluna e botões
+                const columnRow = document.createElement('div');
+                columnRow.className = 'preset-compact-row';
+                columnRow.style.cssText = `
+                    margin-bottom: 0;
+                    font-size: 14px;
+                `;
                 
                 // 📝 Nome da coluna
                 const columnNameSpan = document.createElement('span');
-                columnNameSpan.className = 'copy-column-name';
+                columnNameSpan.className = 'preset-label';
                 columnNameSpan.textContent = columnName;
+                columnNameSpan.style.cssText = `
+                    font-size: 14px;
+                    font-weight: 500;
+                `;
                 
-                // 🔘 Container dos botões
-                const buttonsContainer = document.createElement('div');
-                buttonsContainer.className = 'copy-column-buttons';
-                
-                // 📄 Botão: Com repetição (dados completos)
+                // 📄 Botão: Com repetição
                 const btnWithRepetition = document.createElement('button');
-                btnWithRepetition.className = 'copy-secondary-btn with-header';
+                btnWithRepetition.className = 'columns-btn compact';
                 btnWithRepetition.innerHTML = '📄 Com Repetição';
                 btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
+                btnWithRepetition.style.cssText = `
+                    font-size: 12px;
+                    padding: 6px 10px;
+                    margin-right: 6px;
+                `;
                 btnWithRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, true); // com duplicatas/repetições
-                document.getElementById('copyDataDropdown').style.display = 'none';
+                    await copyColumn(columnName, true);
+                    document.getElementById('copyDataDropdown').style.display = 'none';
                     console.log(`📄 Copiado: ${columnName} (com repetição)`);
                 });
                 
-                // 📄 Botão: Sem repetição (dados únicos)
+                // 📄 Botão: Sem repetição
                 const btnWithoutRepetition = document.createElement('button');
-                btnWithoutRepetition.className = 'copy-secondary-btn without-header';
+                btnWithoutRepetition.className = 'columns-btn compact';
                 btnWithoutRepetition.innerHTML = '📄 Sem Repetição';
                 btnWithoutRepetition.title = `Copiar coluna "${columnName}" sem dados repetidos (valores únicos)`;
+                btnWithoutRepetition.style.cssText = `
+                    font-size: 12px;
+                    padding: 6px 10px;
+                `;
                 btnWithoutRepetition.addEventListener('click', async () => {
-                    await copyColumn(columnName, false); // sem duplicatas/repetições
+                    await copyColumn(columnName, false);
                     document.getElementById('copyDataDropdown').style.display = 'none';
                     console.log(`📄 Copiado: ${columnName} (sem repetição)`);
                 });
                 
                 // 🔗 Montar estrutura
-                buttonsContainer.appendChild(btnWithRepetition);
-                buttonsContainer.appendChild(btnWithoutRepetition);
+                columnRow.appendChild(columnNameSpan);
+                columnRow.appendChild(btnWithRepetition);
+                columnRow.appendChild(btnWithoutRepetition);
                 
-                columnItem.appendChild(columnNameSpan);
-                columnItem.appendChild(buttonsContainer);
-                
+                columnItem.appendChild(columnRow);
                 copyColumnsList.appendChild(columnItem);
             });
             
@@ -1718,10 +1739,8 @@ async function buildIntegratedColumnsList() {
         item.setAttribute('draggable', 'true');
         item.dataset.column = header;
 
-        // 🎯 Estado da interação híbrida
+        // 🎯 Estado da interação simplificada
         let isDragging = false;
-        let dragStartTime = 0;
-        const DRAG_THRESHOLD = 150; // ms para distinguir clique de drag
 
         // Checkbox visual (sem event listener próprio)
         const checkbox = document.createElement('input');
@@ -1768,52 +1787,83 @@ async function buildIntegratedColumnsList() {
         statusIndicator.className = 'integrated-column-indicator';
         statusIndicator.setAttribute('aria-label', checkbox.checked ? 'Visível' : 'Oculta');
 
-        // 🎯 INTERAÇÃO HÍBRIDA: mousedown + timer para distinguir clique de drag
-        item.addEventListener('mousedown', (e) => {
-            dragStartTime = Date.now();
-            isDragging = false;
-            console.log('🖱️ [HYBRID] Mouse down iniciado');
-        });
-
+        // 🎯 DRAG & DROP: Configurar eventos de arrastar
         item.addEventListener('dragstart', (e) => {
-            const timeDiff = Date.now() - dragStartTime;
-            if (timeDiff < DRAG_THRESHOLD) {
-                // Muito rápido = clique, não drag
-        e.preventDefault();
-                console.log('🖱️ [HYBRID] Drag cancelado - muito rápido, interpretando como clique');
-                return;
-            }
-            
             isDragging = true;
             item.classList.add('dragging');
+            
+            // 🎯 FANTASMA: Criar elemento fantasma que será usado pelo browser
+            const ghost = document.createElement('div');
+            ghost.style.cssText = `
+                position: absolute;
+                top: -1000px;
+                left: -1000px;
+                width: ${item.offsetWidth + 20}px;
+                height: ${item.offsetHeight}px;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                border: 2px solid #3b82f6;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                color: #1e40af;
+                z-index: 10000;
+                pointer-events: none;
+                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+                transform: rotate(3deg);
+                font-size: 13px;
+            `;
+            ghost.innerHTML = `📦 ${header}`;
+            document.body.appendChild(ghost);
+            
+            // 🎯 Configurar o fantasma para seguir o mouse
+            e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', item.dataset.column);
-            console.log('🖱️ [HYBRID] Drag iniciado:', header);
+            
+            // 🎯 OCULTAR COMPLETAMENTE O ITEM ORIGINAL (sem espaçador)
+            setTimeout(() => {
+                item.style.display = 'none';
+            }, 0);
+            
+            // 🎯 Limpar fantasma temporário após o drag iniciar
+            setTimeout(() => {
+                if (document.body.contains(ghost)) {
+                    document.body.removeChild(ghost);
+                }
+            }, 100);
+            
+            console.log('🖱️ [DRAG] Drag iniciado:', header);
         });
 
         item.addEventListener('dragend', () => { 
-            item.classList.remove('dragging'); 
-            if (isDragging) {
-                saveOrderFromIntegratedList();
-                console.log('🖱️ [HYBRID] Drag finalizado:', header);
-            }
             isDragging = false;
+            item.classList.remove('dragging');
+            
+            // 🎯 RESTAURAR VISUAL do item original
+            item.style.display = '';
+            item.style.visibility = '';
+            item.style.opacity = '';
+            item.style.transform = '';
+            
+            // Salvar nova ordem
+            saveOrderFromIntegratedList();
+            console.log('🖱️ [DRAG] Drag finalizado:', header);
         });
 
-        // 🎯 CLIQUE: detectar clique vs drag pelo tempo e movimento
+        // 🎯 CLIQUE: Toggle de visibilidade ao clicar no item
         item.addEventListener('click', (e) => {
-            const timeDiff = Date.now() - dragStartTime;
-            
-            // Se foi um drag ou clique muito longo, ignorar
-            if (isDragging || timeDiff > DRAG_THRESHOLD * 2) {
-                console.log('🖱️ [HYBRID] Clique ignorado - foi drag ou muito longo');
+            // Só processar clique se não foi um drag
+            if (isDragging) {
+                console.log('🖱️ [CLICK] Clique ignorado - foi drag');
                 return;
             }
             
-        e.preventDefault();
+            e.preventDefault();
             e.stopPropagation();
             toggleVisibility();
-            console.log('🖱️ [HYBRID] Clique detectado:', header);
+            console.log('🖱️ [CLICK] Toggle visibilidade:', header);
         });
 
         // Aplicar estado visual inicial
@@ -1827,83 +1877,105 @@ async function buildIntegratedColumnsList() {
     }
 
     // 🎯 EVENTOS DE DROP PARA LAYOUT HORIZONTAL + CROSS-SECTION
+    let lastTargetSection = null;
+    let dragOverDebounce = null;
+    
     integratedList.addEventListener('dragover', (e) => {
         e.preventDefault();
         const dragging = integratedList.querySelector('.dragging');
         if (!dragging) return;
         
-        // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
-        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
-        if (!targetSectionRow) return;
-        
-        // 🎯 FEEDBACK VISUAL: Destacar seção de destino
-        document.querySelectorAll('.integrated-section-row').forEach(row => {
-            row.classList.remove('drag-target');
-        });
-        targetSectionRow.classList.add('drag-target');
-        
-        // 🎯 INDICADOR VISUAL PRECISO: Mostrar onde será inserido (linha específica)
-        updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
-        
-        // Encontrar elemento mais próximo na seção de destino (simplificado)
-        const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
-        
-        if (afterElement == null) {
-            targetSectionRow.appendChild(dragging);
-        } else {
-            targetSectionRow.insertBefore(dragging, afterElement);
+        // 🎯 DEBOUNCE: Evitar piscar com throttling
+        if (dragOverDebounce) {
+            clearTimeout(dragOverDebounce);
         }
+        
+        dragOverDebounce = setTimeout(() => {
+            // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
+            const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+            if (!targetSectionRow) return;
+            
+            // 🎯 SÓ ATUALIZAR SE MUDOU DE SEÇÃO (elimina piscar)
+            if (targetSectionRow !== lastTargetSection) {
+                lastTargetSection = targetSectionRow;
+                console.log('🎯 [DRAGOVER] Mudou para seção:', targetSectionRow.className);
+            }
+            
+            // 🎯 LINHA AZUL DE DESTINO: Sempre atualizar posição
+            updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
+            
+            // 🎯 MOVER FISICAMENTE O ELEMENTO NO DOM
+            const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
+            
+            if (afterElement == null) {
+                // Inserir no final da seção
+                if (dragging.parentNode !== targetSectionRow) {
+                    targetSectionRow.appendChild(dragging);
+                    console.log('🎯 [DRAGOVER] Movido para final da seção');
+                }
+            } else {
+                // Inserir antes do elemento específico
+                if (dragging.nextElementSibling !== afterElement) {
+                    targetSectionRow.insertBefore(dragging, afterElement);
+                    console.log('🎯 [DRAGOVER] Movido antes de:', afterElement.dataset.column);
+                }
+            }
+        }, 10); // 10ms debounce para evitar piscar
     });
     
     // 🎯 EVENTO DE DROP PARA ATUALIZAR VISIBILIDADE ENTRE SEÇÕES
     integratedList.addEventListener('drop', async (e) => {
         e.preventDefault();
+        
+        // Buscar o item que estava sendo arrastado
         const dragging = integratedList.querySelector('.dragging');
         if (!dragging) return;
         
         const columnName = dragging.dataset.column;
-        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        const targetSectionRow = lastTargetSection || getTargetSectionFromCoordinates(e.clientX, e.clientY);
         
         if (!targetSectionRow || !columnName) return;
         
-        // 🎯 DETECTAR SE MUDOU DE SEÇÃO (visível ↔ oculta) - SEM TÍTULOS
+        // 🎯 DETECTAR SE MUDOU DE SEÇÃO (visível ↔ oculta)
         const targetSection = targetSectionRow.closest('.integrated-section');
         const isTargetVisible = targetSection?.classList.contains('visible-section');
         const wasVisible = visibleColumns.has(columnName);
         
-        console.log('🔄 [CROSS-SECTION] Drop:', columnName, 'wasVisible:', wasVisible, 'isTargetVisible:', isTargetVisible);
+        console.log('🔄 [DROP] Movendo:', columnName, 'para seção:', isTargetVisible ? 'visível' : 'oculta');
+        
+        // 🎯 SEMPRE SALVAR ORDEM PRIMEIRO (baseada na posição atual no DOM)
+        await saveOrderFromIntegratedList();
         
         // Se mudou de seção, atualizar visibilidade
         if (isTargetVisible !== wasVisible) {
             if (isTargetVisible) {
                 visibleColumns.add(columnName);
-                console.log('✅ [CROSS-SECTION] Coluna tornou-se visível:', columnName);
+                console.log('✅ [DROP] Coluna tornou-se visível:', columnName);
             } else {
                 visibleColumns.delete(columnName);
-                console.log('❌ [CROSS-SECTION] Coluna tornou-se oculta:', columnName);
+                console.log('❌ [DROP] Coluna tornou-se oculta:', columnName);
             }
             
-            // Salvar mudanças
+            // Salvar mudanças de visibilidade
             Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
             debouncedAutoSave();
             await autoSaveCurrentPreset();
             
-            // Reconstruir interface
+            // 🎯 RECONSTRUIR INTERFACE MANTENDO A ORDEM SALVA
             setupTable();
             renderTable();
             await buildIntegratedColumnsList();
-        } else {
-            // Mesma seção: apenas salvar ordem
-            await saveOrderFromIntegratedList();
         }
         
-        // 🎯 LIMPAR FEEDBACK VISUAL
-        document.querySelectorAll('.integrated-section-row').forEach(row => {
-            row.classList.remove('drag-target');
-        });
+        // 🎯 LIMPAR FEEDBACK VISUAL E ESTADO
+        clearTimeout(dragOverDebounce);
+        dragOverDebounce = null;
+        lastTargetSection = null;
         document.querySelectorAll('.drop-indicator').forEach(indicator => {
             indicator.remove();
         });
+        
+        console.log('🎯 [DROP] Drop finalizado para:', columnName);
     });
 }
 
@@ -1939,24 +2011,81 @@ function getTargetSectionFromCoordinates(clientX, clientY) {
     return closestSection;
 }
 
-// 🎯 FUNÇÃO SIMPLIFICADA PARA DRAG-AND-DROP 
+// 🎯 FUNÇÃO OTIMIZADA PARA DETECTAR GAPS ENTRE INTEGRATED-COLUMN-ITEM
 function getDragAfterElementHorizontal(sectionRow, mouseX, mouseY) {
     const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
     if (draggableElements.length === 0) return null;
     
-    // 🎯 SIMPLES: Encontrar elemento mais próximo e decidir posição
+    // 🎯 ORGANIZAR ELEMENTOS POR LINHA (suporte a layout quebrado)
+    const elementsByLine = organizeElementsByLine(draggableElements);
+    
+    // 🎯 ENCONTRAR LINHA DO MOUSE
+    const targetLine = findLineAtMouseY(elementsByLine, mouseY);
+    if (!targetLine) {
+        console.log('🎯 [GAP-DETECTION] Mouse fora das linhas de elementos');
+        return null;
+    }
+    
+    console.log(`🎯 [GAP-DETECTION] Mouse na linha com ${targetLine.elements.length} elementos`);
+    
+    // 🎯 DETECTAR GAPS APENAS ENTRE INTEGRATED-COLUMN-ITEM NA LINHA ATUAL
+    const gaps = [];
+    
+    // Gap antes do primeiro elemento da linha
+    if (targetLine.elements.length > 0) {
+        const firstBox = targetLine.elements[0].getBoundingClientRect();
+        gaps.push({
+            x: firstBox.left - 10, // 10px antes do primeiro item
+            width: 20, // 20px de área sensível
+            insertBefore: targetLine.elements[0],
+            position: 'before-first-in-line'
+        });
+    }
+    
+    // Gaps entre elementos adjacentes na mesma linha
+    for (let i = 0; i < targetLine.elements.length - 1; i++) {
+        const currentBox = targetLine.elements[i].getBoundingClientRect();
+        const nextBox = targetLine.elements[i + 1].getBoundingClientRect();
+        
+        // Só criar gap se há espaço real entre os elementos (margin/padding)
+        const gapWidth = nextBox.left - currentBox.right;
+        if (gapWidth > 2) { // Mínimo 2px de gap real
+            gaps.push({
+                x: currentBox.right,
+                width: gapWidth,
+                insertBefore: targetLine.elements[i + 1],
+                position: `between-${i}-${i+1}`,
+                elements: [targetLine.elements[i], targetLine.elements[i + 1]]
+            });
+        }
+    }
+    
+    // Gap após o último elemento da linha
+    if (targetLine.elements.length > 0) {
+        const lastBox = targetLine.elements[targetLine.elements.length - 1].getBoundingClientRect();
+        gaps.push({
+            x: lastBox.right,
+            width: 20, // 20px de área sensível
+            insertBefore: null,
+            position: 'after-last-in-line'
+        });
+    }
+    
+    // 🎯 ENCONTRAR QUAL GAP CONTÉM O MOUSE
+    for (const gap of gaps) {
+        if (mouseX >= gap.x && mouseX <= gap.x + gap.width) {
+            console.log(`🎯 [GAP-DETECTION] Mouse no gap: ${gap.position}`);
+            return gap.insertBefore;
+        }
+    }
+    
+    // 🎯 FALLBACK: Elemento mais próximo na linha
     let closestElement = null;
     let closestDistance = Infinity;
     
-    draggableElements.forEach(element => {
+    targetLine.elements.forEach(element => {
         const box = element.getBoundingClientRect();
-        const centerX = box.left + (box.width / 2);
-        const centerY = box.top + (box.height / 2);
-        
-        const distance = Math.sqrt(
-            Math.pow(mouseX - centerX, 2) + 
-            Math.pow(mouseY - centerY, 2)
-        );
+        const distance = Math.abs(mouseX - (box.left + box.width / 2));
         
         if (distance < closestDistance) {
             closestDistance = distance;
@@ -1964,22 +2093,95 @@ function getDragAfterElementHorizontal(sectionRow, mouseX, mouseY) {
         }
     });
     
-    if (!closestElement) return null;
-    
-    // Se mouse está à esquerda do centro do elemento mais próximo, inserir antes dele
-    const box = closestElement.getBoundingClientRect();
-    const centerX = box.left + (box.width / 2);
-    
-    if (mouseX < centerX) {
-        console.log(`🎯 [DROP-SIMPLE] Inserir ANTES de "${closestElement.dataset.column}"`);
-        return closestElement;
+    if (closestElement) {
+        const box = closestElement.getBoundingClientRect();
+        const centerX = box.left + (box.width / 2);
+        
+        if (mouseX < centerX) {
+            console.log(`🎯 [FALLBACK] Inserir ANTES de "${closestElement.dataset.column}"`);
+            return closestElement;
         } else {
-        console.log(`🎯 [DROP-SIMPLE] Inserir DEPOIS de "${closestElement.dataset.column}"`);
-        return closestElement.nextElementSibling;
+            console.log(`🎯 [FALLBACK] Inserir DEPOIS de "${closestElement.dataset.column}"`);
+            return closestElement.nextElementSibling;
+        }
     }
+    
+    return null;
 }
 
-// 🎯 FUNÇÃO SIMPLES PARA INDICADOR VISUAL DE DROP
+// 🎯 FUNÇÕES AUXILIARES PARA SUPORTE A MÚLTIPLAS LINHAS
+
+// Organizar elementos por linha baseado na posição Y
+function organizeElementsByLine(elements) {
+    const lines = [];
+    const tolerance = 5; // Tolerância de 5px para considerar mesma linha
+    
+    elements.forEach(element => {
+        const box = element.getBoundingClientRect();
+        const elementCenterY = box.top + box.height / 2;
+        
+        // Procurar linha existente com Y similar
+        let foundLine = lines.find(line => 
+            Math.abs(line.centerY - elementCenterY) <= tolerance
+        );
+        
+        if (foundLine) {
+            foundLine.elements.push(element);
+        } else {
+            // Criar nova linha
+            lines.push({
+                centerY: elementCenterY,
+                top: box.top,
+                bottom: box.bottom,
+                elements: [element]
+            });
+        }
+    });
+    
+    // Ordenar linhas por posição Y e elementos dentro da linha por posição X
+    lines.forEach(line => {
+        line.elements.sort((a, b) => {
+            const aBox = a.getBoundingClientRect();
+            const bBox = b.getBoundingClientRect();
+            return aBox.left - bBox.left;
+        });
+    });
+    
+    lines.sort((a, b) => a.centerY - b.centerY);
+    
+    return lines;
+}
+
+// Encontrar linha que contém a posição Y do mouse
+function findLineAtMouseY(elementsByLine, mouseY) {
+    const tolerance = 20; // Tolerância de 20px acima/abaixo da linha
+    
+    for (const line of elementsByLine) {
+        if (mouseY >= line.top - tolerance && mouseY <= line.bottom + tolerance) {
+            return line;
+        }
+    }
+    
+    // Fallback: linha mais próxima
+    if (elementsByLine.length > 0) {
+        let closestLine = elementsByLine[0];
+        let closestDistance = Math.abs(mouseY - elementsByLine[0].centerY);
+        
+        elementsByLine.forEach(line => {
+            const distance = Math.abs(mouseY - line.centerY);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestLine = line;
+            }
+        });
+        
+        return closestLine;
+    }
+    
+    return null;
+}
+
+// 🎯 FUNÇÃO OTIMIZADA PARA INDICADOR VISUAL BASEADO EM GAPS
 function updateDropIndicator(sectionRow, mouseX, mouseY) {
     // Remover indicadores existentes
     document.querySelectorAll('.drop-indicator').forEach(indicator => {
@@ -1989,53 +2191,98 @@ function updateDropIndicator(sectionRow, mouseX, mouseY) {
     const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
     if (draggableElements.length === 0) return;
     
-    // 🎯 ABORDAGEM SIMPLES: Encontrar elemento mais próximo do mouse
-    let closestElement = null;
-    let closestDistance = Infinity;
-    let insertBefore = false;
+    // 🎯 USAR MESMA LÓGICA DE ORGANIZAÇÃO POR LINHA
+    const elementsByLine = organizeElementsByLine(draggableElements);
+    const targetLine = findLineAtMouseY(elementsByLine, mouseY);
+    if (!targetLine) return;
     
-    draggableElements.forEach(element => {
-        const box = element.getBoundingClientRect();
-        const elementCenterX = box.left + (box.width / 2);
-        const elementCenterY = box.top + (box.height / 2);
-        
-        // Distância do mouse ao centro do elemento
-        const distance = Math.sqrt(
-            Math.pow(mouseX - elementCenterX, 2) + 
-            Math.pow(mouseY - elementCenterY, 2)
-        );
-        
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestElement = element;
-            // Se mouse está à esquerda do centro, inserir antes; senão, depois
-            insertBefore = mouseX < elementCenterX;
-        }
-    });
+    // 🎯 DETECTAR GAPS APENAS ENTRE INTEGRATED-COLUMN-ITEM NA LINHA ATUAL
+    const gaps = [];
     
-    if (!closestElement) return;
-    
-    // Determinar posição do indicador
-    const box = closestElement.getBoundingClientRect();
-    const sectionRect = sectionRow.getBoundingClientRect();
-    
-    let indicatorX;
-    if (insertBefore) {
-        indicatorX = box.left - 4; // 4px antes do elemento
-    } else {
-        indicatorX = box.right + 4; // 4px depois do elemento
+    // Gap antes do primeiro elemento da linha
+    if (targetLine.elements.length > 0) {
+        const firstBox = targetLine.elements[0].getBoundingClientRect();
+        gaps.push({
+            x: firstBox.left - 10,
+            width: 20,
+            indicatorX: firstBox.left - 2,
+            height: firstBox.height,
+            top: firstBox.top,
+            position: 'before-first-in-line'
+        });
     }
     
-    // Criar indicador
+    // Gaps entre elementos adjacentes na mesma linha
+    for (let i = 0; i < targetLine.elements.length - 1; i++) {
+        const currentBox = targetLine.elements[i].getBoundingClientRect();
+        const nextBox = targetLine.elements[i + 1].getBoundingClientRect();
+        
+        // Só criar gap se há espaço real entre os elementos
+        const gapWidth = nextBox.left - currentBox.right;
+        if (gapWidth > 2) {
+            gaps.push({
+                x: currentBox.right,
+                width: gapWidth,
+                indicatorX: currentBox.right + gapWidth / 2,
+                height: Math.max(currentBox.height, nextBox.height),
+                top: Math.min(currentBox.top, nextBox.top),
+                position: `between-${i}-${i+1}`
+            });
+        }
+    }
+    
+    // Gap após o último elemento da linha
+    if (targetLine.elements.length > 0) {
+        const lastBox = targetLine.elements[targetLine.elements.length - 1].getBoundingClientRect();
+        gaps.push({
+            x: lastBox.right,
+            width: 20,
+            indicatorX: lastBox.right + 2,
+            height: lastBox.height,
+            top: lastBox.top,
+            position: 'after-last-in-line'
+        });
+    }
+    
+    // 🎯 ENCONTRAR QUAL GAP CONTÉM O MOUSE
+    let activeGap = null;
+    for (const gap of gaps) {
+        if (mouseX >= gap.x && mouseX <= gap.x + gap.width) {
+            activeGap = gap;
+            break;
+        }
+    }
+    
+    // 🎯 FALLBACK: Gap mais próximo na linha
+    if (!activeGap && gaps.length > 0) {
+        let closestGap = gaps[0];
+        let closestDistance = Math.abs(mouseX - (gaps[0].x + gaps[0].width / 2));
+        
+        gaps.forEach(gap => {
+            const gapCenterX = gap.x + gap.width / 2;
+            const distance = Math.abs(mouseX - gapCenterX);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestGap = gap;
+            }
+        });
+        
+        activeGap = closestGap;
+    }
+    
+    if (!activeGap) return;
+    
+    // 🎯 CRIAR INDICADOR NO GAP ATIVO
+    const sectionRect = sectionRow.getBoundingClientRect();
     const indicator = document.createElement('div');
     indicator.className = 'drop-indicator show';
-    indicator.style.left = (indicatorX - sectionRect.left) + 'px';
-    indicator.style.top = (box.top - sectionRect.top) + 'px';
-    indicator.style.height = box.height + 'px';
+    indicator.style.left = (activeGap.indicatorX - sectionRect.left) + 'px';
+    indicator.style.top = (activeGap.top - sectionRect.top) + 'px';
+    indicator.style.height = activeGap.height + 'px';
     
     sectionRow.appendChild(indicator);
     
-    console.log(`🎯 [DROP-SIMPLE] Próximo a "${closestElement.dataset.column}", ${insertBefore ? 'antes' : 'depois'}`);
+    console.log(`🎯 [GAP-INDICATOR] Indicador no gap: ${activeGap.position} na linha`);
 }
 
 // Salvar nova ordem da lista integrada
