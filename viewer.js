@@ -5,20 +5,36 @@
 
 // REMOVIDO: Presets hardcoded de alunos - agora vem do siaa-config.json
 
-// Função para obter presets baseado no modo atual
-function getCurrentPresets() {
+// ===== V17 PresetManager Class =====
+class PresetManager {
+    constructor() {
+        this.version = 'V17-PresetManager';
+    }
+
+    // V17: Obter presets baseado no modo atual
+    getCurrentPresets() {
+        return this._getCurrentPresetsOriginal();
+    }
+
+    _getCurrentPresetsOriginal() {
     return getConfigPresets(currentViewMode);
 }
 
-// REMOVIDO: Preset defaults hardcoded - agora vem do siaa-config.json
+    // V17: Obter defaults baseado no modo atual
+    getCurrentPresetDefaults() {
+        return this._getCurrentPresetDefaultsOriginal();
+    }
 
-// Função para obter defaults baseado no modo atual
-function getCurrentPresetDefaults() {
+    _getCurrentPresetDefaultsOriginal() {
     return getConfigPresets(currentViewMode);
 }
 
-// Função para obter configuração de preset
-function getPresetConfig(presetKey, headers) {
+    // V17: Obter configuração de preset
+    getPresetConfig(presetKey, headers) {
+        return this._getPresetConfigOriginal(presetKey, headers);
+    }
+
+    _getPresetConfigOriginal(presetKey, headers) {
     const configPreset = getConfigPreset(presetKey, currentViewMode);
     
     if (!configPreset) {
@@ -53,22 +69,553 @@ function getPresetConfig(presetKey, headers) {
     return config;
 }
 
-// Função para carregar customizações salvas do preset
-async function loadPresetCustomizations(presetKey) {
-    const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
-    const saved = await Storage.get([storageKey]);
-    const customization = saved[storageKey];
-    
-    if (customization && customization.viewMode === currentViewMode) {
-        console.log(`📦 Carregando customizações salvas para preset ${presetKey} (modo: ${currentViewMode})`);
+    // V17: Carregar personalizações de preset
+    async loadPresetCustomizations(presetKey) {
+        return this._loadPresetCustomizationsOriginal(presetKey);
+    }
+
+    async _loadPresetCustomizationsOriginal(presetKey) {
+        try {
+            // 🔧 CORREÇÃO: Usar chave específica do modo atual
+            const storageKey = `siaa_preset_override_${currentViewMode}_${presetKey}`;
+            const result = await Storage.get([storageKey]);
+            console.log(`🔍 Carregando customizações de: ${storageKey}`, result[storageKey] ? '✅ Encontrado' : '❌ Não encontrado');
+            return result[storageKey] || null;
+        } catch (error) {
+            console.error('❌ Erro ao carregar personalização do preset:', error);
+    return null;
+        }
+    }
+
+    // V17: Obter overrides built-in
+    async getBuiltinOverrides() {
+        return this._getBuiltinOverridesOriginal();
+    }
+
+    async _getBuiltinOverridesOriginal() {
+        const result = await chrome.storage.local.get(['builtin_overrides']);
+        return result.builtin_overrides || {};
+    }
+
+    // V17: Definir overrides built-in
+    async setBuiltinOverrides(map) {
+        return this._setBuiltinOverridesOriginal(map);
+    }
+
+    async _setBuiltinOverridesOriginal(map) {
+        await chrome.storage.local.set({ builtin_overrides: map });
+    }
+
+    // V17: Estatísticas para debug
+    getStats() {
         return {
-            order: customization.order || [],
-            visible: customization.visible || [],
-            widths: customization.widths || {}
+            version: this.version,
+            currentViewMode: typeof currentViewMode !== 'undefined' ? currentViewMode : 'unknown',
+            chromeStorageAvailable: typeof chrome?.storage?.local !== 'undefined'
         };
     }
+}
+
+// Instância global do PresetManager V17
+const presetManagerV17 = new PresetManager();
+
+// ===== V18 DataManager Class (Implementação Corrigida) =====
+class DataManager {
+    constructor() {
+        this.version = 'V18-DataManager-Fixed';
+    }
+
+    // V18: Parsing de CSV (função mais simples, sem dependências)
+    parseCSV(csvContent) {
+        return this._parseCSVOriginal(csvContent);
+    }
+
+    _parseCSVOriginal(csvContent) {
+        const lines = csvContent.split('\n');
+        if (lines.length < 2) return [];
+        
+        const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const values = this._parseCSVLine(line);
+            if (values.length === headers.length) {
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                data.push(row);
+            }
+        }
+        
+        return data;
+    }
+
+    // V18: Helper para parsing de linha CSV
+    _parseCSVLine(line) {
+        const values = [];
+        let currentValue = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                if (inQuotes && line[i + 1] === '"') {
+                    currentValue += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                values.push(currentValue.trim());
+                currentValue = '';
+            } else {
+                currentValue += char;
+            }
+        }
+        
+        values.push(currentValue.trim());
+        return values;
+    }
+
+    // V18: Mostrar dados na interface (função simples, sem dependências)
+    showData() {
+        this._showDataOriginal();
+    }
+
+    _showDataOriginal() {
+        if (typeof elements !== 'undefined') {
+            if (elements.loadingMessage) {
+                elements.loadingMessage.style.display = 'none';
+            }
+            if (elements.noDataMessage) {
+                elements.noDataMessage.style.display = 'none';
+            }
+            if (elements.tableWrapper) {
+                elements.tableWrapper.style.display = 'block';
+            }
+        }
+    }
+
+    // V18: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            dataCount: typeof allData !== 'undefined' ? allData.length : 0,
+            elementsAvailable: typeof elements !== 'undefined'
+        };
+    }
+}
+
+// Instância global do DataManager V18
+const dataManagerV18 = new DataManager();
+
+// ===== V19 CopyManager Class (Com DIRETRIZ 7 e 8) =====
+class CopyManager {
+    constructor() {
+        this.version = 'V19-CopyManager';
+    }
+
+    // V19: Copiar tabela visível (DIRETRIZ 8: implementação defensiva)
+    async copyVisibleTable() {
+        
+        // DIRETRIZ 8: Validação defensiva das dependências
+        if (typeof columnOrder === 'undefined' || typeof allData === 'undefined' || 
+            typeof visibleColumns === 'undefined' || typeof filteredData === 'undefined') {
+            console.warn('⚠️ V19 - Dependências não disponíveis para copyVisibleTable');
+            return false;
+        }
+        
+        return this._copyVisibleTableOriginal();
+    }
+
+    async _copyVisibleTableOriginal() {
+    try {
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+            
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+        if (!visibleHeaders.length) {
+            alert('Não há colunas visíveis para copiar.');
+                return false;
+        }
+            
+        const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
+            // Fallback Total/Total Matriculados
+            if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+            if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+            return row[h] ?? '';
+        }))];
+        
+            // Formato de TABELA HTML para cópia
+            const tableHeaders = visibleHeaders.map(header => `<th>${header}</th>`).join('');
+            const tableRows = filteredData.map(row => {
+                const cells = visibleHeaders.map(header => {
+                    const cellValue = row[header] || '';
+                    return `<td>${String(cellValue).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+                }).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+            
+            const htmlTable = `<table border="1" style="border-collapse: collapse;">
+                <thead><tr>${tableHeaders}</tr></thead>
+                <tbody>${tableRows}</tbody>
+            </table>`;
+            
+            // Tentar copiar como HTML primeiro, depois como texto
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([htmlTable], { type: 'text/html' }),
+                        'text/plain': new Blob([rows.map(row => row.join('\t')).join('\n')], { type: 'text/plain' })
+                    })
+                ]);
+            } catch (error) {
+                // Fallback para texto simples se HTML não funcionar
+                await navigator.clipboard.writeText(rows.map(row => row.join('\t')).join('\n'));
+            }
+            return true;
+            
+        } catch (error) {
+            console.error('❌ V19 - Erro ao copiar tabela:', error);
+            return false;
+        }
+    }
+
+    // V19: Copiar coluna específica (DIRETRIZ 8: implementação defensiva)
+    async copyColumn(columnName, withDuplicates = true) {
+        
+        // DIRETRIZ 8: Validação defensiva
+        if (typeof filteredData === 'undefined') {
+            console.warn('⚠️ V19 - filteredData não disponível para copyColumn');
+            return false;
+        }
+        
+        return this._copyColumnOriginal(columnName, withDuplicates);
+    }
+
+    async _copyColumnOriginal(columnName, withDuplicates = true) {
+    try {
+        const values = filteredData.map(row => {
+            // Fallback Total/Total Matriculados
+            if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
+            if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
+            return row[columnName] ?? '';
+            });
+            
+            const finalValues = withDuplicates ? values : [...new Set(values)];
+            const content = finalValues.join('\n');
+            
+            await navigator.clipboard.writeText(content);
+            return true;
+            
+        } catch (error) {
+            console.error('❌ V19 - Erro ao copiar coluna:', error);
+            return false;
+        }
+    }
+
+    // V19: Construir lista de colunas para cópia (DIRETRIZ 8: implementação defensiva)
+    buildCopyColumnsList() {
+        // DIRETRIZ 8: Validação defensiva do DOM e dependências
+        const withRepetitionContainer = document?.getElementById('copyColumnsWithRepetition');
+        const withoutRepetitionContainer = document?.getElementById('copyColumnsWithoutRepetition');
+        
+        if (!withRepetitionContainer || !withoutRepetitionContainer) {
+            console.warn('⚠️ V19 - Contêineres de cópia não encontrados');
+            return false;
+        }
+        
+        if (typeof columnOrder === 'undefined' || typeof allData === 'undefined' || 
+            typeof visibleColumns === 'undefined') {
+            console.warn('⚠️ V19 - Dependências não disponíveis para buildCopyColumnsList');
+            return false;
+        }
+        
+        return this._buildNewCopyColumnsStructure();
+    }
+
+    _buildCopyColumnsListOriginal(copyColumnsList) {
+        try {
+            // Nova estrutura com contêineres separados
+            return this._buildNewCopyColumnsStructure();
+        } catch (error) {
+            console.error('❌ V19 - Erro em _buildCopyColumnsListOriginal:', error);
+            return false;
+        }
+    }
+
+    _buildNewCopyColumnsStructure() {
+    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
     
-    return null;
+        // Obter contêineres
+        const withRepetitionContainer = document.getElementById('copyColumnsWithRepetition');
+        const withoutRepetitionContainer = document.getElementById('copyColumnsWithoutRepetition');
+        
+        if (!withRepetitionContainer || !withoutRepetitionContainer) {
+            console.warn('⚠️ Contêineres de cópia não encontrados');
+            return false;
+        }
+        
+        // Limpar contêineres
+        withRepetitionContainer.innerHTML = '';
+        withoutRepetitionContainer.innerHTML = '';
+        
+        // Gerar botões para cada coluna visível
+        visibleHeaders.forEach(columnName => {
+            // Botão para "Com Repetições"
+                const btnWithRepetition = document.createElement('button');
+            btnWithRepetition.className = 'copy-column-btn';
+            btnWithRepetition.textContent = columnName;
+            btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
+            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
+            btnWithRepetition.style.cssText = `
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                line-height: 1.3;
+            `;
+                btnWithRepetition.addEventListener('click', async () => {
+                await copyColumn(columnName, true);
+                document.getElementById('copyDataDropdown').style.display = 'none';
+                    console.log(`📄 Copiado: ${columnName} (com repetição)`);
+                });
+                
+            // Botão para "Sem Repetições"  
+                const btnWithoutRepetition = document.createElement('button');
+            btnWithoutRepetition.className = 'copy-column-btn';
+            btnWithoutRepetition.textContent = columnName;
+            btnWithoutRepetition.title = `Copiar coluna "${columnName}" apenas com valores únicos (sem repetições)`;
+            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
+            btnWithoutRepetition.style.cssText = `
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                line-height: 1.3;
+            `;
+                btnWithoutRepetition.addEventListener('click', async () => {
+                await copyColumn(columnName, false);
+                    document.getElementById('copyDataDropdown').style.display = 'none';
+                    console.log(`📄 Copiado: ${columnName} (sem repetição)`);
+                });
+                
+            // Adicionar aos contêineres
+            withRepetitionContainer.appendChild(btnWithRepetition);
+            withoutRepetitionContainer.appendChild(btnWithoutRepetition);
+            
+            // 🎯 Força aplicação dos estilos após inserção no DOM
+            setTimeout(() => {
+                btnWithRepetition.style.fontSize = '15px';
+                btnWithRepetition.style.fontWeight = '700';
+                btnWithoutRepetition.style.fontSize = '15px';
+                btnWithoutRepetition.style.fontWeight = '700';
+            }, 10);
+        });
+        
+        console.log(`📋 Contêineres de cópia criados: ${visibleHeaders.length} colunas cada`);
+            return true;
+    }
+
+    // V19: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            clipboardAvailable: typeof navigator?.clipboard?.writeText === 'function',
+            dependenciesAvailable: {
+                columnOrder: typeof columnOrder !== 'undefined',
+                allData: typeof allData !== 'undefined',
+                visibleColumns: typeof visibleColumns !== 'undefined',
+                filteredData: typeof filteredData !== 'undefined'
+            }
+        };
+    }
+}
+
+// Instância global do CopyManager V19
+const copyManagerV19 = new CopyManager();
+
+// ===== V20 UIManager Class (Com DIRETRIZES 7 e 8) =====
+class UIManager {
+    constructor() {
+        this.version = 'V20-UIManager';
+    }
+
+    // V20: Atualizar contadores no header (DIRETRIZ 8: implementação defensiva)
+    async updateHeaderCounters() {
+        
+        // DIRETRIZ 8: Validação defensiva das dependências
+        if (typeof Storage === 'undefined' || typeof parseCSV !== 'function') {
+            console.warn('⚠️ V20 - Dependências (Storage/parseCSV) não disponíveis para updateHeaderCounters');
+            return false;
+        }
+        
+        return this._updateHeaderCountersOriginal();
+    }
+
+    async _updateHeaderCountersOriginal() {
+        try {
+            // Obter dados de ofertas e alunos do storage
+            const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
+            
+            // Contar ofertas
+            let ofertasCount = 0;
+            if (storage.siaa_data_csv) {
+                const ofertasData = parseCSV(storage.siaa_data_csv);
+                ofertasCount = ofertasData.length;
+            }
+            
+            // Contar alunos
+            let alunosCount = 0;
+            if (storage.siaa_students_csv) {
+                const alunosData = parseCSV(storage.siaa_students_csv);
+                alunosCount = alunosData.length;
+            }
+            
+            // DIRETRIZ 8: Validação defensiva do DOM
+            if (typeof elements !== 'undefined') {
+                if (elements.totalOfertas) {
+                    elements.totalOfertas.textContent = ofertasCount.toLocaleString();
+                }
+                if (elements.totalAlunos) {
+                    elements.totalAlunos.textContent = alunosCount.toLocaleString();
+                }
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ V20 - Erro ao atualizar contadores:', error);
+            return false;
+        }
+    }
+
+    // V20: Mostrar mensagem sem dados (DIRETRIZ 8: implementação defensiva)
+    showNoData() {
+        
+        // DIRETRIZ 8: Validação defensiva do DOM
+        if (typeof elements === 'undefined') {
+            console.warn('⚠️ V20 - elements não disponível para showNoData');
+            return false;
+        }
+        
+        return this._showNoDataOriginal();
+    }
+
+    _showNoDataOriginal() {
+        try {
+            if (elements.loadingMessage) {
+                elements.loadingMessage.style.display = 'none';
+            }
+            if (elements.noDataMessage) {
+                elements.noDataMessage.style.display = 'block';
+            }
+            if (elements.tableWrapper) {
+                elements.tableWrapper.style.display = 'none';
+            }
+            
+            // Atualizar mensagem baseada no modo atual
+            const noDataElement = document?.getElementById('noDataMessage');
+            if (noDataElement && typeof currentViewMode !== 'undefined') {
+                if (currentViewMode === 'alunos') {
+                    noDataElement.innerHTML = '<p>Nenhum dado de alunos encontrado. Capture dados primeiro.</p>';
+                } else {
+                    noDataElement.innerHTML = '<p>Nenhum dado de ofertas encontrado. Capture dados primeiro.</p>';
+                }
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ V20 - Erro ao mostrar mensagem sem dados:', error);
+            return false;
+        }
+    }
+
+    // V20: Atualizar visibilidade das colunas (DIRETRIZ 8: implementação defensiva)
+    updateColumnVisibility() {
+        
+        // DIRETRIZ 8: Validação defensiva das dependências
+        if (typeof columnOrder === 'undefined' || typeof visibleColumns === 'undefined') {
+            console.warn('⚠️ V20 - Dependências (columnOrder/visibleColumns) não disponíveis');
+            return false;
+        }
+        
+        return this._updateColumnVisibilityOriginal();
+    }
+
+    _updateColumnVisibilityOriginal() {
+        try {
+            const table = document?.getElementById('dataTable');
+            if (!table) {
+                console.warn('⚠️ V20 - Tabela dataTable não encontrada');
+                return false;
+            }
+            
+            const headers = columnOrder;
+            
+            headers.forEach((header, index) => {
+                const isVisible = visibleColumns.has(header);
+                const className = isVisible ? '' : 'hidden-column';
+                
+                // Atualizar cabeçalho (todas as linhas do thead)
+                const headerCells = table.querySelectorAll(`thead tr th:nth-child(${index + 1})`);
+                headerCells.forEach(cell => {
+                    cell.className = className;
+                });
+                
+                // Atualizar células do corpo (todas as linhas do tbody)
+                const bodyCells = table.querySelectorAll(`tbody tr td:nth-child(${index + 1})`);
+                bodyCells.forEach(cell => {
+                    cell.className = className;
+                });
+            });
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ V20 - Erro ao atualizar visibilidade:', error);
+            return false;
+        }
+    }
+
+    // V20: Estatísticas para debug
+    getStats() {
+        return {
+            version: this.version,
+            domAvailable: typeof document !== 'undefined',
+            elementsAvailable: typeof elements !== 'undefined',
+            dependenciesAvailable: {
+                Storage: typeof Storage !== 'undefined',
+                parseCSV: typeof parseCSV === 'function',
+                currentViewMode: typeof currentViewMode !== 'undefined',
+                columnOrder: typeof columnOrder !== 'undefined',
+                visibleColumns: typeof visibleColumns !== 'undefined'
+            }
+        };
+    }
+}
+
+// Instância global do UIManager V20
+const uiManagerV20 = new UIManager();
+
+// V17: Redirecionamento para PresetManager
+function getCurrentPresets() {
+    return presetManagerV17.getCurrentPresets();
+}
+
+// REMOVIDO: Preset defaults hardcoded - agora vem do siaa-config.json
+
+// V17: Redirecionamento para PresetManager
+function getCurrentPresetDefaults() {
+    return presetManagerV17.getCurrentPresetDefaults();
+}
+
+
+// V17: Redirecionamento para PresetManager
+async function loadPresetCustomizations(presetKey) {
+    return presetManagerV17.loadPresetCustomizations(presetKey);
 }
 
 // Overrides em memória para o preset selecionado via botão Salvar
@@ -129,162 +676,35 @@ function getPresetDefault(presetKey, headers) {
 }
 
 // Função para atualizar contadores do header
+// V20: Redirecionamento para UIManager
 async function updateHeaderCounters() {
-    try {
-        // Obter dados de ofertas e alunos do storage
-        const storage = await Storage.get(['siaa_data_csv', 'siaa_students_csv']);
-        
-        // Contar ofertas
-        let ofertasCount = 0;
-        if (storage.siaa_data_csv) {
-            const ofertasData = parseCSV(storage.siaa_data_csv);
-            ofertasCount = ofertasData.length;
-        }
-        
-        // Contar alunos
-        let alunosCount = 0;
-        if (storage.siaa_students_csv) {
-            const alunosData = parseCSV(storage.siaa_students_csv);
-            alunosCount = alunosData.length;
-        }
-        
-        // Atualizar elementos do DOM
-        if (elements.totalOfertas) {
-            elements.totalOfertas.textContent = ofertasCount;
-        }
-        if (elements.totalAlunos) {
-            elements.totalAlunos.textContent = alunosCount;
-        }
-        
-        console.log('📊 Contadores atualizados:', { ofertas: ofertasCount, alunos: alunosCount });
-        
-    } catch (error) {
-        console.error('❌ Erro ao atualizar contadores:', error);
-        // Definir valores padrão em caso de erro
-        if (elements.totalOfertas) elements.totalOfertas.textContent = '0';
-        if (elements.totalAlunos) elements.totalAlunos.textContent = '0';
-    }
+    return uiManagerV20.updateHeaderCounters();
 }
 
-// Função para copiar tabela visível (extraída da implementação anterior)
+// Função original mantida como legacy
+
+// V19: Redirecionamento para CopyManager
 async function copyVisibleTable() {
-    try {
-        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
-        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-        if (!visibleHeaders.length) {
-            alert('Não há colunas visíveis para copiar.');
-            return;
-        }
-        const rows = [visibleHeaders, ...filteredData.map(row => visibleHeaders.map(h => {
-            // Fallback Total/Total Matriculados
-            if (h === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
-            if (h === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
-            return row[h] ?? '';
-        }))];
-        
-        // Constrói texto tabular (TSV) para fallback
-        const tsv = rows.map(r => r.map(cell => String(cell).replace(/\t/g,' ').replace(/\r?\n/g,' ')).join('\t')).join('\n');
-
-        // Constrói HTML table para preservar células em apps que suportam text/html
-        const escapeHtml = (s) => String(s)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-        const htmlHead = '<table><thead><tr>' + visibleHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
-        const htmlBody = '<tbody>' + filteredData.map(row => {
-            const tds = visibleHeaders.map(h => {
-                let v;
-                if (h === 'Total Matriculados') v = row['Total Matriculados'] ?? row['Total'] ?? '';
-                else if (h === 'Total') v = row['Total'] ?? row['Total Matriculados'] ?? '';
-                else v = row[h] ?? '';
-                return `<td>${escapeHtml(v)}</td>`;
-            }).join('');
-            return `<tr>${tds}</tr>`;
-        }).join('') + '</tbody></table>';
-        const html = htmlHead + htmlBody;
-
-        if (window.ClipboardItem) {
-            const item = new ClipboardItem({
-                'text/html': new Blob([html], { type: 'text/html' }),
-                'text/plain': new Blob([tsv], { type: 'text/plain' })
-            });
-            await navigator.clipboard.write([item]);
-        } else {
-            await navigator.clipboard.writeText(tsv);
-        }
-        
-        showNotification('✅ Tabela copiada com sucesso!', 'success');
-    } catch (e) {
-        console.error('Falha ao copiar:', e);
-        alert('Não foi possível copiar para a área de transferência.');
-    }
+    return copyManagerV19.copyVisibleTable();
 }
+
+// Função original mantida como legacy
 
 // Função para copiar coluna individual
+// V19: Redirecionamento para CopyManager
 async function copyColumn(columnName, withDuplicates = true) {
-    try {
-        const values = filteredData.map(row => {
-            // Fallback Total/Total Matriculados
-            if (columnName === 'Total Matriculados') return row['Total Matriculados'] ?? row['Total'] ?? '';
-            if (columnName === 'Total') return row['Total'] ?? row['Total Matriculados'] ?? '';
-            return row[columnName] ?? '';
-        }).filter(val => val !== ''); // Remove valores vazios
-        
-        let finalValues = values;
-        if (!withDuplicates) {
-            finalValues = [...new Set(values)]; // Remove duplicatas
-        }
-        
-        const text = finalValues.join('\n');
-        await navigator.clipboard.writeText(text);
-        
-        const typeText = withDuplicates ? 'com repetições' : 'sem repetições';
-        showNotification(`✅ Coluna "${columnName}" copiada ${typeText}! (${finalValues.length} valores)`, 'success');
-    } catch (e) {
-        console.error('Falha ao copiar coluna:', e);
-        alert('Não foi possível copiar para a área de transferência.');
-    }
+    return copyManagerV19.copyColumn(columnName, withDuplicates);
 }
 
+// Função original mantida como legacy
+
 // Função para construir lista de colunas no dropdown de cópia
+// V19: Redirecionamento para CopyManager
 function buildCopyColumnsList() {
-    const copyColumnsList = document.getElementById('copyColumnsList');
-    if (!copyColumnsList) return;
-    
-    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
-    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-    
-    copyColumnsList.innerHTML = '';
-    
-    visibleHeaders.forEach(columnName => {
-        const item = document.createElement('div');
-        item.className = 'copy-column-item';
-        
-        item.innerHTML = `
-            <span class="copy-column-name" title="${columnName}">${columnName}</span>
-            <button class="copy-column-btn" data-column="${columnName}" data-duplicates="true" title="Copiar com repetições">📋 Com</button>
-            <button class="copy-column-btn" data-column="${columnName}" data-duplicates="false" title="Copiar sem repetições">🔗 Sem</button>
-        `;
-        
-        // Event listeners para os botões
-        item.querySelectorAll('.copy-column-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const column = btn.dataset.column;
-                const withDuplicates = btn.dataset.duplicates === 'true';
-                await copyColumn(column, withDuplicates);
-                document.getElementById('copyDataDropdown').style.display = 'none';
-            });
-        });
-        
-        copyColumnsList.appendChild(item);
-    });
-    
-    if (visibleHeaders.length === 0) {
-        copyColumnsList.innerHTML = '<div style="padding:8px;color:#666;font-size:11px;text-align:center;">Nenhuma coluna visível</div>';
-    }
+    return copyManagerV19.buildCopyColumnsList();
 }
+
+// Função original mantida como legacy
 
 // Sistema de storage universal (funciona em extensão e browser)
 const Storage = {
@@ -521,6 +941,10 @@ async function finishDataLoading() {
         
         // Headers e configurações iniciais
         const headers = Object.keys(allData[0]);
+    
+    // 🔧 CORREÇÃO: Carregar preset específico do modo após ter dados
+    console.log('🎛️ Carregando preset específico do modo atual...');
+    await loadModeSpecificPreset();
 
     // Compatibilidade: alinhar aliases 'Total' ↔ 'Total Matriculados'
     (function reconcileTotalHeaders() {
@@ -580,16 +1004,18 @@ async function finishDataLoading() {
     }
 
     setupTable();
+    
+    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
+    // updateColumnVisibility();
+    
+    // Restaurar estado dos filtros imediatamente após setupTable para preservar valores visuais
+    restoreFilterState();
+    
     setupFilters();
     await setupColumnToggle();
     await loadPresetsList();
     await loadPresetsSelect();
     applyFilters();
-    
-    // CORREÇÃO: Aplicar visibilidade das colunas após renderizar a tabela
-    setTimeout(() => {
-        updateColumnVisibility();
-    }, 100);
     
     // Mostrar dados (esconder dialog)
     showData();
@@ -606,105 +1032,26 @@ async function finishDataLoading() {
 }
 
 // Mostrar dados na tabela (esconder dialog)
+// V18: Redirecionamento para DataManager
 function showData() {
-    if (elements.loadingMessage) {
-        elements.loadingMessage.style.display = 'none';
-    }
-    if (elements.noDataMessage) {
-        elements.noDataMessage.style.display = 'none';
-    }
-    if (elements.tableWrapper) {
-        elements.tableWrapper.style.display = 'block';
-    }
+    return dataManagerV18.showData();
 }
 
 // Mostrar mensagem de nenhum dado (dinâmica baseada no modo)
+// V20: Redirecionamento para UIManager
 function showNoData() {
-    elements.loadingMessage.style.display = 'none';
-    elements.noDataMessage.style.display = 'block';
-    elements.tableWrapper.style.display = 'none';
-    
-    // Atualizar mensagem baseada no modo atual
-    const noDataElement = document.getElementById('noDataMessage');
-    if (noDataElement) {
-        if (currentViewMode === 'alunos') {
-            noDataElement.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; color: #666;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🎓</div>
-                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Nenhum dado de alunos disponível</h3>
-                    <p style="margin-bottom: 20px; line-height: 1.6;">
-                        Não há dados de alunos capturados ainda.<br>
-                        Para capturar dados de alunos:
-                    </p>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        <strong>📋 Como capturar dados de alunos:</strong><br><br>
-                        <strong>1️⃣ Acesse o SIAA e faça login</strong><br>
-                        <strong>2️⃣ Navegue até:</strong><br>
-                        &nbsp;&nbsp;• <strong>Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br>
-                        &nbsp;&nbsp;• <strong>Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
-                        <strong>3️⃣ Use a extensão para capturar</strong><br>
-                        <strong>4️⃣ Os dados aparecerão automaticamente aqui</strong><br><br>
-                        <small style="color: #e67e22;">💡 <strong>Importante:</strong> Ambas as seções precisam estar acessíveis para captura completa dos dados de alunos</small>
-                    </div>
-                </div>
-            `;
-        } else {
-            noDataElement.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; color: #666;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">📊</div>
-                    <h3 style="margin-bottom: 15px; color: #2c3e50;">Nenhum dado de ofertas disponível</h3>
-                    <p style="margin-bottom: 20px; line-height: 1.6;">
-                        Não há dados de ofertas capturados ainda.<br>
-                        Para capturar dados de ofertas:
-                    </p>
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        <strong>📋 Como capturar dados de ofertas:</strong><br><br>
-                        <strong>1️⃣ Acesse o SIAA e faça login</strong><br>
-                        <strong>2️⃣ Navegue até:</strong><br>
-                        &nbsp;&nbsp;• <strong>Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br>
-                        &nbsp;&nbsp;• <strong>Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
-                        <strong>3️⃣ Use a extensão para capturar</strong><br>
-                        <strong>4️⃣ Os dados aparecerão automaticamente aqui</strong><br><br>
-                        <small style="color: #e67e22;">💡 <strong>Importante:</strong> Ambas as seções precisam estar acessíveis para captura completa (ofertas + alunos)</small>
-                    </div>
-                </div>
-            `;
-        }
-    }
-    
-    // Limpar elementos de estatísticas
-    if (elements.filteredRecords) elements.filteredRecords.textContent = '0';
-    if (elements.sidebarLastUpdate) elements.sidebarLastUpdate.textContent = 'Sem dados';
+    return uiManagerV20.showNoData();
 }
+
+// Função original mantida como legacy
 
 // Parsear CSV
+// V18: Redirecionamento para DataManager
 function parseCSV(csvContent) {
-    const lines = csvContent.split('\n');
-    if (lines.length < 2) return [];
-    
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = parseCSVLine(line);
-        
-        if (values.length === headers.length) {
-            const row = {};
-            headers.forEach((header, index) => {
-                row[header] = values[index] || '';
-            });
-            
-
-            
-            data.push(row);
-        }
-    }
-    
-    return data;
+    return dataManagerV18.parseCSV(csvContent);
 }
+
+// Função original mantida como legacy
 
 
 
@@ -744,11 +1091,26 @@ function setupTable() {
     if (allData.length === 0) return;
     
     if (columnOrder.length === 0) columnOrder = Object.keys(allData[0]);
-    const headers = columnOrder;
+    
+    // Usar apenas colunas visíveis na ordem correta
+    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0]);
+    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
+    
+    console.log('🔍 [DEBUG-HEADERS] setupTable() iniciado');
+    console.log('🔍 [DEBUG-HEADERS] columnOrder:', columnOrder);
+    console.log('🔍 [DEBUG-HEADERS] visibleColumns:', Array.from(visibleColumns));
+    console.log('🔍 [DEBUG-HEADERS] allHeaders:', allHeaders);
+    console.log('🔍 [DEBUG-HEADERS] visibleHeaders calculados:', visibleHeaders);
+    console.log('🔍 [DEBUG-HEADERS] Total headers visíveis:', visibleHeaders.length);
+    
     elements.tableHead.innerHTML = '';
     
     const headerRow = document.createElement('tr');
-    headers.forEach(header => {
+    let headerCount = 0;
+    
+    visibleHeaders.forEach((header, index) => {
+        console.log(`🔍 [DEBUG-HEADERS] Processando header ${index + 1}/${visibleHeaders.length}: "${header}"`);
+        headerCount++;
         const th = document.createElement('th');
         th.textContent = header;
         th.dataset.column = header;
@@ -791,7 +1153,7 @@ function setupTable() {
         // Drag-and-drop para cabeçalhos da tabela
         th.setAttribute('draggable', 'true');
         th.addEventListener('dragstart', (e) => {
-            dragSrcIndex = headers.indexOf(header);
+            dragSrcIndex = visibleHeaders.indexOf(header);
             th.style.opacity = '0.5';
             e.dataTransfer.effectAllowed = 'move';
         });
@@ -804,7 +1166,7 @@ function setupTable() {
         });
         th.addEventListener('drop', async (e) => {
             e.preventDefault();
-            const dropIndex = headers.indexOf(header);
+            const dropIndex = visibleHeaders.indexOf(header);
             if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
             
             // Reorganizar columnOrder
@@ -818,16 +1180,24 @@ function setupTable() {
             // Atualizar interface
             setupTable();
             await setupColumnToggle(); // Recriar a sidebar na nova ordem
-            updateColumnVisibility();
+            // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
             renderTable();
         });
 
         headerRow.appendChild(th);
+        console.log(`🔍 [DEBUG-HEADERS] Header "${header}" criado e adicionado ao DOM`);
     });
+    
+    console.log(`🔍 [DEBUG-HEADERS] Total headers criados: ${headerCount}`);
+    console.log(`🔍 [DEBUG-HEADERS] headerRow.children.length: ${headerRow.children.length}`);
     
     // Segunda linha: inputs de filtro por coluna
     const filterRow = document.createElement('tr');
-    headers.forEach(header => {
+    let filterCount = 0;
+    
+    visibleHeaders.forEach((header, index) => {
+        console.log(`🔍 [DEBUG-HEADERS] Criando filtro ${index + 1}/${visibleHeaders.length}: "${header}"`);
+        filterCount++;
         const th = document.createElement('th');
         th.dataset.column = header;
         th.style.cursor = 'default';
@@ -844,18 +1214,17 @@ function setupTable() {
         }
         input.addEventListener('click', (e) => {
             e.stopPropagation();
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado
         });
         input.addEventListener('input', debounce(() => {
             const val = input.value || '';
             setCurrentColumnFilter(header, val);
             toggleFilterActiveStyles(header, th, input);
             applyFilters();
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado
         }, 250));
         input.addEventListener('focus', () => {
-            // Apenas abre o dropdown; não aplica destaque se não houver valor
-            showColumnFilterDropdown(input, header);
+            // 🚫 Dropdown removido conforme solicitado - apenas foco
         });
         input.addEventListener('blur', () => {
             // Garante que estilos reflitam se há valor ou não
@@ -863,10 +1232,21 @@ function setupTable() {
         });
         th.appendChild(input);
         filterRow.appendChild(th);
+        console.log(`🔍 [DEBUG-HEADERS] Filtro "${header}" criado e adicionado`);
     });
     
+    console.log(`🔍 [DEBUG-HEADERS] Total filtros criados: ${filterCount}`);
+    console.log(`🔍 [DEBUG-HEADERS] filterRow.children.length: ${filterRow.children.length}`);
+    
+    console.log('🔍 [DEBUG-HEADERS] Adicionando headerRow ao tableHead...');
     elements.tableHead.appendChild(headerRow);
+    console.log(`🔍 [DEBUG-HEADERS] headerRow adicionado. tableHead.children: ${elements.tableHead.children.length}`);
+    
+    console.log('🔍 [DEBUG-HEADERS] Adicionando filterRow ao tableHead...');
     elements.tableHead.appendChild(filterRow);
+    console.log(`🔍 [DEBUG-HEADERS] filterRow adicionado. tableHead.children: ${elements.tableHead.children.length}`);
+    
+    console.log('🔍 [DEBUG-HEADERS] setupTable() concluído ✅');
 }
 
 // Aplicar estilos ativos ao cabeçalho/input conforme estado do filtro
@@ -990,7 +1370,10 @@ async function setupColumnToggle() {
             Storage.set({ viewer_column_visibility: [...visibleColumns] });
             debouncedAutoSave(); // Salvar estados automaticamente
             await autoSaveCurrentPreset(); // Salvar customização do preset atual
-            updateColumnVisibility();
+            
+            // 🔧 CORRIGIDO: Reconstruir tabela para refletir mudanças de visibilidade
+            setupTable();
+            renderTable();
         });
         
         const span = document.createElement('span');
@@ -1057,29 +1440,84 @@ async function setupColumnToggle() {
             // Atualizar interface
             setupTable();
             await setupColumnToggle(); // Recriar a sidebar na nova ordem
-            updateColumnVisibility();
+            // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
             renderTable();
         });
     });
 }
 
 // Atualizar visibilidade das colunas
+// V20: Redirecionamento para UIManager
 function updateColumnVisibility() {
-    const table = document.getElementById('dataTable');
-    const headers = columnOrder;
-    
-    headers.forEach((header, index) => {
-        const isVisible = visibleColumns.has(header);
-        const className = isVisible ? '' : 'hidden-column';
+    return uiManagerV20.updateColumnVisibility();
+}
+
+// Função original mantida como legacy
+
+// 🪟 Configurar janelas flutuantes arrastáveis
+function setupDraggableWindows() {
+    const windows = [
+        { id: 'columnConfigDropdown', name: '📊 Organizar Colunas' },
+        { id: 'copyDataDropdown', name: '📋 Copiar Dados' }
+    ];
+
+    windows.forEach(windowConfig => {
+        const windowElement = document.getElementById(windowConfig.id);
+        const windowHeader = windowElement?.querySelector('.window-header');
         
-        // Atualizar cabeçalho (todas as linhas do thead)
-        const headerCells = table.querySelectorAll(`thead th[data-column="${header}"]`);
-        headerCells.forEach(cell => { cell.className = className; });
-        
-        // Atualizar células do corpo
-        const cells = table.querySelectorAll(`td:nth-child(${index + 1})`);
-        cells.forEach(cell => {
-            cell.className = className;
+        if (!windowElement || !windowHeader) return;
+
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        windowHeader.addEventListener('mousedown', (e) => {
+            // Não iniciar drag se clicou no botão fechar
+            if (e.target.classList.contains('window-close')) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            const rect = windowElement.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            
+            windowElement.style.transition = 'none';
+            document.body.style.userSelect = 'none';
+            
+            console.log(`🪟 Iniciando drag da janela: ${windowConfig.name}`);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            const newLeft = initialLeft + deltaX;
+            const newTop = initialTop + deltaY;
+            
+            // Limitar para não sair da tela
+            const maxLeft = window.innerWidth - windowElement.offsetWidth;
+            const maxTop = window.innerHeight - windowElement.offsetHeight;
+            
+            const constrainedLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            const constrainedTop = Math.max(0, Math.min(newTop, maxTop));
+            
+            windowElement.style.left = constrainedLeft + 'px';
+            windowElement.style.top = constrainedTop + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            windowElement.style.transition = '';
+            document.body.style.userSelect = '';
+            
+            console.log(`🪟 Drag finalizado da janela: ${windowConfig.name}`);
         });
     });
 }
@@ -1091,6 +1529,9 @@ function setupEventListeners() {
     elements.presetSelect.addEventListener('change', loadSelectedPreset);
     elements.exportBtn.addEventListener('click', exportFilteredData);
     
+    // 🪟 Tornar janelas flutuantes arrastáveis
+    setupDraggableWindows();
+    
     // Dropdown de configuração no header
     const configBtn = document.getElementById('columnConfigBtn');
     const configDropdown = document.getElementById('columnConfigDropdown');
@@ -1098,19 +1539,22 @@ function setupEventListeners() {
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (configBtn && configDropdown) {
         const toggle = async () => {
-            const rect = configBtn.getBoundingClientRect();
-            const dropdownWidth = 350; // Largura fixa aumentada
-            
-            // Posicionar o dropdown para crescer para a esquerda
-            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
-            configDropdown.style.left = leftPosition + 'px';
-            configDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
-            configDropdown.style.width = dropdownWidth + 'px';
-            
             const willOpen = configDropdown.style.display === 'none' || !configDropdown.style.display;
-            configDropdown.style.display = willOpen ? 'block' : 'none';
+            
             if (willOpen) {
-                await buildVisibilityAndOrderLists();
+                // 🪟 Posicionar janela flutuante no centro da tela (layout horizontal)
+                const centerX = Math.max(50, (window.innerWidth - 600) / 2); // Centralizado para 600px de largura
+                const centerY = Math.max(100, (window.innerHeight - 250) / 2); // Centralizado para altura menor
+                
+                configDropdown.style.left = centerX + 'px';
+                configDropdown.style.top = centerY + 'px';
+                configDropdown.style.display = 'block';
+                
+                await buildIntegratedColumnsList();
+                console.log('🪟 Janela "Organizar Colunas" aberta em posição flutuante');
+            } else {
+                configDropdown.style.display = 'none';
+                console.log('🪟 Janela "Organizar Colunas" fechada');
             }
         };
         configBtn.addEventListener('click', (e) => {
@@ -1128,19 +1572,22 @@ function setupEventListeners() {
     const copyDropdown = document.getElementById('copyDataDropdown');
     if (copyDataBtn && copyDropdown) {
         const toggleCopyDropdown = () => {
-            const rect = copyDataBtn.getBoundingClientRect();
-            const dropdownWidth = 280;
-            
-            // Posicionar o dropdown para crescer para a esquerda
-            const leftPosition = Math.round(rect.right + window.scrollX - dropdownWidth);
-            copyDropdown.style.left = leftPosition + 'px';
-            copyDropdown.style.top = Math.round(rect.bottom + window.scrollY + 6) + 'px';
-            copyDropdown.style.width = dropdownWidth + 'px';
-            
             const willOpen = copyDropdown.style.display === 'none' || !copyDropdown.style.display;
-            copyDropdown.style.display = willOpen ? 'block' : 'none';
+            
             if (willOpen) {
+                // 🪟 Posicionar janela flutuante no centro-esquerda da tela
+                const centerX = Math.max(50, (window.innerWidth - 380) / 2 - 200); // Centro-esquerda
+                const centerY = Math.max(100, (window.innerHeight - 300) / 2); // Centralizado verticalmente
+                
+                copyDropdown.style.left = centerX + 'px';
+                copyDropdown.style.top = centerY + 'px';
+                copyDropdown.style.display = 'block';
+                
                 buildCopyColumnsList();
+                console.log('🪟 Janela "Copiar Dados" aberta em posição flutuante');
+            } else {
+                copyDropdown.style.display = 'none';
+                console.log('🪟 Janela "Copiar Dados" fechada');
             }
         };
         
@@ -1162,6 +1609,15 @@ function setupEventListeners() {
         if (copyTableBtn) {
             copyTableBtn.addEventListener('click', async () => {
                 await copyVisibleTable();
+                copyDropdown.style.display = 'none';
+            });
+        }
+        
+        // Event listener para baixar tabela em CSV
+        const downloadTableBtn = document.getElementById('downloadTableBtn');
+        if (downloadTableBtn) {
+            downloadTableBtn.addEventListener('click', async () => {
+                await downloadVisibleTableAsCSV();
                 copyDropdown.style.display = 'none';
             });
         }
@@ -1252,131 +1708,662 @@ function updateDataActionButtonsUI() {
     }
 }
 
-// Construir listas de Visibilidade e Ordem no menu header
-async function buildVisibilityAndOrderLists() {
-    const visibilityList = document.getElementById('visibilityList');
-    const orderList = document.getElementById('orderList');
-    if (!visibilityList || !orderList) return;
+// Construir lista integrada de colunas (visibilidade + ordem)
+async function buildIntegratedColumnsList() {
+    const integratedList = document.getElementById('integratedColumnsList');
+    if (!integratedList) return;
 
-    visibilityList.innerHTML = '';
-    orderList.innerHTML = '';
+    integratedList.innerHTML = '';
 
-    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
 
-    // Visibilidade
-    headers.forEach(header => {
-        const label = document.createElement('label');
+    // 🎯 AUTO-MOVIMENTO: Separar colunas visíveis (topo) das ocultas (baixo)
+    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
+    const hiddenHeaders = allHeaders.filter(header => !visibleColumns.has(header));
+    const orderedHeaders = [...visibleHeaders, ...hiddenHeaders];
+
+    console.log('🔄 [AUTO-MOVIMENTO] Colunas visíveis (topo):', visibleHeaders);
+    console.log('🔄 [AUTO-MOVIMENTO] Colunas ocultas (baixo):', hiddenHeaders);
+
+    // 🎯 LAYOUT HORIZONTAL: Criar seção de colunas visíveis (MINIMALISTA)
+    if (visibleHeaders.length > 0) {
+        const visibleSection = document.createElement('div');
+        visibleSection.className = 'integrated-section visible-section';
+        
+        const visibleRow = document.createElement('div');
+        visibleRow.className = 'integrated-section-row visible-row';
+        
+        visibleHeaders.forEach(header => {
+            const item = createColumnItem(header, true);
+            visibleRow.appendChild(item);
+        });
+        
+        visibleSection.appendChild(visibleRow);
+        integratedList.appendChild(visibleSection);
+    }
+
+    // 🎯 LAYOUT HORIZONTAL: Criar seção de colunas ocultas (MINIMALISTA)
+    if (hiddenHeaders.length > 0) {
+        const hiddenSection = document.createElement('div');
+        hiddenSection.className = 'integrated-section hidden-section';
+        
+        const hiddenRow = document.createElement('div');
+        hiddenRow.className = 'integrated-section-row hidden-row';
+        
+        hiddenHeaders.forEach(header => {
+            const item = createColumnItem(header, false);
+            hiddenRow.appendChild(item);
+        });
+        
+        hiddenSection.appendChild(hiddenRow);
+        integratedList.appendChild(hiddenSection);
+    }
+
+    // 🎯 Função auxiliar para criar item de coluna
+    function createColumnItem(header, isVisible) {
+        const item = document.createElement('div');
+        item.className = 'integrated-column-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.column = header;
+
+        // 🎯 Estado da interação simplificada
+        let isDragging = false;
+
+        // Checkbox visual (sem event listener próprio)
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
+        checkbox.className = 'integrated-column-checkbox';
         checkbox.checked = visibleColumns.has(header);
-        checkbox.addEventListener('change', async () => {
+        
+        // 🎯 Função para toggle de visibilidade
+        const toggleVisibility = async () => {
+            const wasChecked = checkbox.checked;
+            checkbox.checked = !wasChecked;
+            
+            console.log('🖱️ [HYBRID] Toggle:', header, '→', checkbox.checked);
+            
             if (checkbox.checked) {
                 visibleColumns.add(header);
-                // Feedback visual positivo
-                label.classList.add('checked');
-                setTimeout(() => { label.classList.remove('checked'); }, 500);
             } else {
                 visibleColumns.delete(header);
-                // Feedback visual negativo
-                label.classList.add('unchecked');
-                setTimeout(() => { label.classList.remove('unchecked'); }, 500);
             }
+            
+            // Atualizar visual do item e indicador
+            item.classList.toggle('column-visible', checkbox.checked);
+            statusIndicator.setAttribute('aria-label', checkbox.checked ? 'Visível' : 'Oculta');
+            
             Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
-            debouncedAutoSave(); // Salvar estados automaticamente
-            await autoSaveCurrentPreset(); // Salvar customização do preset atual
-            updateColumnVisibility();
-            rebuildOrderList(orderList, headers);
-        });
-        const span = document.createElement('span');
-        span.textContent = header;
-        label.appendChild(checkbox);
-        label.appendChild(span);
-        visibilityList.appendChild(label);
-    });
+            debouncedAutoSave();
+            await autoSaveCurrentPreset();
+            
+            // Reconstruir tabela
+            setupTable();
+            renderTable();
+            
+            // 🎯 AUTO-MOVIMENTO: Reconstruir lista para mostrar nova ordenação
+            await buildIntegratedColumnsList();
+        };
 
-    // Ordem (somente visíveis)
-    rebuildOrderList(orderList, headers);
+        // Nome da coluna
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'integrated-column-name';
+        nameSpan.textContent = header;
 
-    const onDragOver = (e) => {
-        e.preventDefault();
-        const dragging = orderList.querySelector('.dragging');
-        const afterElement = getDragAfterElement(orderList, e.clientY);
-        if (!dragging) return;
-        if (afterElement == null) {
-            orderList.appendChild(dragging);
-        } else {
-            orderList.insertBefore(dragging, afterElement);
-        }
-    };
-    orderList.addEventListener('dragover', onDragOver);
-}
+        // Indicador visual sutil (sem emoji)
+        const statusIndicator = document.createElement('span');
+        statusIndicator.className = 'integrated-column-indicator';
+        statusIndicator.setAttribute('aria-label', checkbox.checked ? 'Visível' : 'Oculta');
 
-function rebuildOrderList(orderList, headers) {
-    orderList.innerHTML = '';
-    const visibleOnly = headers.filter(h => visibleColumns.has(h));
-    visibleOnly.forEach((header, idx) => {
-        const item = document.createElement('div');
-        item.textContent = `${idx + 1}. ${header}`;
-        item.setAttribute('draggable', 'true');
-        item.className = 'order-item';
-        item.addEventListener('dragstart', () => { 
+        // 🎯 DRAG & DROP: Configurar eventos de arrastar
+        item.addEventListener('dragstart', (e) => {
+            isDragging = true;
             item.classList.add('dragging');
-        });
-        item.addEventListener('dragend', () => { 
-            item.classList.remove('dragging'); 
-            saveOrderFromOrderList();
-            // Feedback visual de sucesso
-            item.style.background = 'rgba(34, 197, 94, 0.1)';
-            item.style.borderColor = '#22c55e';
+            
+            // 🎯 FANTASMA: Criar elemento fantasma que será usado pelo browser
+            const ghost = document.createElement('div');
+            ghost.style.cssText = `
+                position: absolute;
+                top: -1000px;
+                left: -1000px;
+                width: ${item.offsetWidth + 20}px;
+                height: ${item.offsetHeight}px;
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+                border: 2px solid #3b82f6;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                color: #1e40af;
+                z-index: 10000;
+                pointer-events: none;
+                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+                transform: rotate(3deg);
+                font-size: 13px;
+            `;
+            ghost.innerHTML = `📦 ${header}`;
+            document.body.appendChild(ghost);
+            
+            // 🎯 Configurar o fantasma para seguir o mouse
+            e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', item.dataset.column);
+            
+            // 🎯 OCULTAR COMPLETAMENTE O ITEM ORIGINAL (sem espaçador)
             setTimeout(() => {
-                item.style.background = '';
-                item.style.borderColor = '';
-            }, 800);
+                item.style.display = 'none';
+            }, 0);
+            
+            // 🎯 Limpar fantasma temporário após o drag iniciar
+            setTimeout(() => {
+                if (document.body.contains(ghost)) {
+                    document.body.removeChild(ghost);
+                }
+            }, 100);
+            
+            console.log('🖱️ [DRAG] Drag iniciado:', header);
         });
-        orderList.appendChild(item);
+
+        item.addEventListener('dragend', () => { 
+            isDragging = false;
+            item.classList.remove('dragging'); 
+            
+            // 🎯 RESTAURAR VISUAL do item original
+            item.style.display = '';
+            item.style.visibility = '';
+            item.style.opacity = '';
+            item.style.transform = '';
+            
+            // Salvar nova ordem
+                saveOrderFromIntegratedList();
+            console.log('🖱️ [DRAG] Drag finalizado:', header);
+        });
+
+        // 🎯 CLIQUE: Toggle de visibilidade ao clicar no item
+        item.addEventListener('click', (e) => {
+            // Só processar clique se não foi um drag
+            if (isDragging) {
+                console.log('🖱️ [CLICK] Clique ignorado - foi drag');
+                return;
+            }
+            
+        e.preventDefault();
+            e.stopPropagation();
+            toggleVisibility();
+            console.log('🖱️ [CLICK] Toggle visibilidade:', header);
+        });
+
+        // Aplicar estado visual inicial
+        item.classList.toggle('column-visible', checkbox.checked);
+
+        item.appendChild(checkbox);
+        item.appendChild(nameSpan);
+        item.appendChild(statusIndicator);
+        
+        return item; // Retornar item ao invés de adicionar diretamente
+    }
+
+    // 🎯 EVENTOS DE DROP PARA LAYOUT HORIZONTAL + CROSS-SECTION
+    let lastTargetSection = null;
+    let dragOverDebounce = null;
+    
+    integratedList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = integratedList.querySelector('.dragging');
+        if (!dragging) return;
+        
+        // 🎯 DEBOUNCE: Evitar piscar com throttling
+        if (dragOverDebounce) {
+            clearTimeout(dragOverDebounce);
+        }
+        
+        dragOverDebounce = setTimeout(() => {
+        // 🎯 DETECTAR SEÇÃO DE DESTINO baseada na posição do mouse
+        const targetSectionRow = getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        if (!targetSectionRow) return;
+        
+            // 🎯 SÓ ATUALIZAR SE MUDOU DE SEÇÃO (elimina piscar)
+            if (targetSectionRow !== lastTargetSection) {
+                lastTargetSection = targetSectionRow;
+                console.log('🎯 [DRAGOVER] Mudou para seção:', targetSectionRow.className);
+            }
+            
+            // 🎯 LINHA AZUL DE DESTINO: Sempre atualizar posição
+        updateDropIndicator(targetSectionRow, e.clientX, e.clientY);
+        
+            // 🎯 MOVER FISICAMENTE O ELEMENTO NO DOM
+        const afterElement = getDragAfterElementHorizontal(targetSectionRow, e.clientX, e.clientY);
+        
+        if (afterElement == null) {
+                // Inserir no final da seção
+                if (dragging.parentNode !== targetSectionRow) {
+            targetSectionRow.appendChild(dragging);
+                    console.log('🎯 [DRAGOVER] Movido para final da seção');
+                }
+        } else {
+                // Inserir antes do elemento específico
+                if (dragging.nextElementSibling !== afterElement) {
+            targetSectionRow.insertBefore(dragging, afterElement);
+                    console.log('🎯 [DRAGOVER] Movido antes de:', afterElement.dataset.column);
+        }
+            }
+        }, 10); // 10ms debounce para evitar piscar
+    });
+    
+    // 🎯 EVENTO DE DROP PARA ATUALIZAR VISIBILIDADE ENTRE SEÇÕES
+    integratedList.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        
+        // Buscar o item que estava sendo arrastado
+        const dragging = integratedList.querySelector('.dragging');
+        if (!dragging) return;
+        
+        const columnName = dragging.dataset.column;
+        const targetSectionRow = lastTargetSection || getTargetSectionFromCoordinates(e.clientX, e.clientY);
+        
+        if (!targetSectionRow || !columnName) return;
+        
+        // 🎯 DETECTAR SE MUDOU DE SEÇÃO (visível ↔ oculta)
+        const targetSection = targetSectionRow.closest('.integrated-section');
+        const isTargetVisible = targetSection?.classList.contains('visible-section');
+        const wasVisible = visibleColumns.has(columnName);
+        
+        console.log('🔄 [DROP] Movendo:', columnName, 'para seção:', isTargetVisible ? 'visível' : 'oculta');
+        
+        // 🎯 SEMPRE SALVAR ORDEM PRIMEIRO (baseada na posição atual no DOM)
+        await saveOrderFromIntegratedList();
+        
+        // Se mudou de seção, atualizar visibilidade
+        if (isTargetVisible !== wasVisible) {
+            if (isTargetVisible) {
+                visibleColumns.add(columnName);
+                console.log('✅ [DROP] Coluna tornou-se visível:', columnName);
+            } else {
+                visibleColumns.delete(columnName);
+                console.log('❌ [DROP] Coluna tornou-se oculta:', columnName);
+            }
+            
+            // Salvar mudanças de visibilidade
+            Storage.set({ viewer_column_visibility: Array.from(visibleColumns) });
+            debouncedAutoSave();
+            await autoSaveCurrentPreset();
+            
+            // 🎯 RECONSTRUIR INTERFACE MANTENDO A ORDEM SALVA
+            setupTable();
+            renderTable();
+            await buildIntegratedColumnsList();
+        }
+        
+        // 🎯 LIMPAR FEEDBACK VISUAL E ESTADO
+        clearTimeout(dragOverDebounce);
+        dragOverDebounce = null;
+        lastTargetSection = null;
+        document.querySelectorAll('.drop-indicator').forEach(indicator => {
+            indicator.remove();
+        });
+        
+        console.log('🎯 [DROP] Drop finalizado para:', columnName);
     });
 }
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.order-item:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
+// 🎯 FUNÇÃO PARA DETECTAR SEÇÃO DE DESTINO BASEADA NAS COORDENADAS
+function getTargetSectionFromCoordinates(clientX, clientY) {
+    const allSectionRows = document.querySelectorAll('.integrated-section-row');
+    
+    for (const sectionRow of allSectionRows) {
+        const rect = sectionRow.getBoundingClientRect();
+        
+        // Verificar se mouse está dentro da área da seção (com margem de tolerância)
+        if (clientY >= rect.top - 10 && clientY <= rect.bottom + 10 &&
+            clientX >= rect.left - 10 && clientX <= rect.right + 10) {
+            return sectionRow;
         }
-    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+    
+    // Se não encontrou seção específica, retornar a mais próxima baseada em Y
+    let closestSection = null;
+    let closestDistance = Infinity;
+    
+    for (const sectionRow of allSectionRows) {
+        const rect = sectionRow.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        const distance = Math.abs(clientY - centerY);
+        
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestSection = sectionRow;
+        }
+    }
+    
+    return closestSection;
 }
 
-async function saveOrderFromOrderList() {
-    const orderList = document.getElementById('orderList');
-    if (!orderList) return;
-    const newOrderVisible = [...orderList.querySelectorAll('.order-item')]
-        .map(el => el.textContent.replace(/^\d+\.\s*/, ''));
-    const headers = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
-    const hidden = headers.filter(h => !newOrderVisible.includes(h));
-    const newOrder = [...newOrderVisible, ...hidden];
-    if (newOrder.length) {
-        columnOrder = newOrder;
-        Storage.set({ viewer_column_order: columnOrder });
-        debouncedAutoSave(); // Salvar estados automaticamente
-        await autoSaveCurrentPreset(); // Salvar customização do preset atual
-        setupTable();
-        updateColumnVisibility();
-        renderTable();
-        // Reconstroi para refletir ordem após salvar
-        await buildVisibilityAndOrderLists();
+// 🎯 FUNÇÃO OTIMIZADA PARA DETECTAR GAPS ENTRE INTEGRATED-COLUMN-ITEM
+function getDragAfterElementHorizontal(sectionRow, mouseX, mouseY) {
+    const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
+    if (draggableElements.length === 0) return null;
+    
+    // 🎯 ORGANIZAR ELEMENTOS POR LINHA (suporte a layout quebrado)
+    const elementsByLine = organizeElementsByLine(draggableElements);
+    
+    // 🎯 ENCONTRAR LINHA DO MOUSE
+    const targetLine = findLineAtMouseY(elementsByLine, mouseY);
+    if (!targetLine) {
+        console.log('🎯 [GAP-DETECTION] Mouse fora das linhas de elementos');
+        return null;
+    }
+    
+    console.log(`🎯 [GAP-DETECTION] Mouse na linha com ${targetLine.elements.length} elementos`);
+    
+    // 🎯 DETECTAR GAPS APENAS ENTRE INTEGRATED-COLUMN-ITEM NA LINHA ATUAL
+    const gaps = [];
+    
+    // Gap antes do primeiro elemento da linha
+    if (targetLine.elements.length > 0) {
+        const firstBox = targetLine.elements[0].getBoundingClientRect();
+        gaps.push({
+            x: firstBox.left - 10, // 10px antes do primeiro item
+            width: 20, // 20px de área sensível
+            insertBefore: targetLine.elements[0],
+            position: 'before-first-in-line'
+        });
+    }
+    
+    // Gaps entre elementos adjacentes na mesma linha
+    for (let i = 0; i < targetLine.elements.length - 1; i++) {
+        const currentBox = targetLine.elements[i].getBoundingClientRect();
+        const nextBox = targetLine.elements[i + 1].getBoundingClientRect();
+        
+        // Só criar gap se há espaço real entre os elementos (margin/padding)
+        const gapWidth = nextBox.left - currentBox.right;
+        if (gapWidth > 2) { // Mínimo 2px de gap real
+            gaps.push({
+                x: currentBox.right,
+                width: gapWidth,
+                insertBefore: targetLine.elements[i + 1],
+                position: `between-${i}-${i+1}`,
+                elements: [targetLine.elements[i], targetLine.elements[i + 1]]
+            });
+        }
+    }
+    
+    // Gap após o último elemento da linha
+    if (targetLine.elements.length > 0) {
+        const lastBox = targetLine.elements[targetLine.elements.length - 1].getBoundingClientRect();
+        gaps.push({
+            x: lastBox.right,
+            width: 20, // 20px de área sensível
+            insertBefore: null,
+            position: 'after-last-in-line'
+        });
+    }
+    
+    // 🎯 ENCONTRAR QUAL GAP CONTÉM O MOUSE
+    for (const gap of gaps) {
+        if (mouseX >= gap.x && mouseX <= gap.x + gap.width) {
+            console.log(`🎯 [GAP-DETECTION] Mouse no gap: ${gap.position}`);
+            return gap.insertBefore;
+        }
+    }
+    
+    // 🎯 FALLBACK: Elemento mais próximo na linha
+    let closestElement = null;
+    let closestDistance = Infinity;
+    
+    targetLine.elements.forEach(element => {
+        const box = element.getBoundingClientRect();
+        const distance = Math.abs(mouseX - (box.left + box.width / 2));
+        
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestElement = element;
+        }
+    });
+    
+    if (closestElement) {
+    const box = closestElement.getBoundingClientRect();
+    const centerX = box.left + (box.width / 2);
+    
+    if (mouseX < centerX) {
+            console.log(`🎯 [FALLBACK] Inserir ANTES de "${closestElement.dataset.column}"`);
+        return closestElement;
+        } else {
+            console.log(`🎯 [FALLBACK] Inserir DEPOIS de "${closestElement.dataset.column}"`);
+        return closestElement.nextElementSibling;
     }
 }
 
+    return null;
+}
+
+// 🎯 FUNÇÕES AUXILIARES PARA SUPORTE A MÚLTIPLAS LINHAS
+
+// Organizar elementos por linha baseado na posição Y
+function organizeElementsByLine(elements) {
+    const lines = [];
+    const tolerance = 5; // Tolerância de 5px para considerar mesma linha
+    
+    elements.forEach(element => {
+        const box = element.getBoundingClientRect();
+        const elementCenterY = box.top + box.height / 2;
+        
+        // Procurar linha existente com Y similar
+        let foundLine = lines.find(line => 
+            Math.abs(line.centerY - elementCenterY) <= tolerance
+        );
+        
+        if (foundLine) {
+            foundLine.elements.push(element);
+        } else {
+            // Criar nova linha
+            lines.push({
+                centerY: elementCenterY,
+                top: box.top,
+                bottom: box.bottom,
+                elements: [element]
+            });
+        }
+    });
+    
+    // Ordenar linhas por posição Y e elementos dentro da linha por posição X
+    lines.forEach(line => {
+        line.elements.sort((a, b) => {
+            const aBox = a.getBoundingClientRect();
+            const bBox = b.getBoundingClientRect();
+            return aBox.left - bBox.left;
+        });
+    });
+    
+    lines.sort((a, b) => a.centerY - b.centerY);
+    
+    return lines;
+}
+
+// Encontrar linha que contém a posição Y do mouse
+function findLineAtMouseY(elementsByLine, mouseY) {
+    const tolerance = 20; // Tolerância de 20px acima/abaixo da linha
+    
+    for (const line of elementsByLine) {
+        if (mouseY >= line.top - tolerance && mouseY <= line.bottom + tolerance) {
+            return line;
+        }
+    }
+    
+    // Fallback: linha mais próxima
+    if (elementsByLine.length > 0) {
+        let closestLine = elementsByLine[0];
+        let closestDistance = Math.abs(mouseY - elementsByLine[0].centerY);
+        
+        elementsByLine.forEach(line => {
+            const distance = Math.abs(mouseY - line.centerY);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestLine = line;
+            }
+        });
+        
+        return closestLine;
+    }
+    
+    return null;
+}
+
+// 🎯 FUNÇÃO OTIMIZADA PARA INDICADOR VISUAL BASEADO EM GAPS
+function updateDropIndicator(sectionRow, mouseX, mouseY) {
+    // Remover indicadores existentes
+    document.querySelectorAll('.drop-indicator').forEach(indicator => {
+        indicator.remove();
+    });
+    
+    const draggableElements = [...sectionRow.querySelectorAll('.integrated-column-item:not(.dragging)')];
+    if (draggableElements.length === 0) return;
+    
+    // 🎯 USAR MESMA LÓGICA DE ORGANIZAÇÃO POR LINHA
+    const elementsByLine = organizeElementsByLine(draggableElements);
+    const targetLine = findLineAtMouseY(elementsByLine, mouseY);
+    if (!targetLine) return;
+    
+    // 🎯 DETECTAR GAPS APENAS ENTRE INTEGRATED-COLUMN-ITEM NA LINHA ATUAL
+    const gaps = [];
+    
+    // Gap antes do primeiro elemento da linha
+    if (targetLine.elements.length > 0) {
+        const firstBox = targetLine.elements[0].getBoundingClientRect();
+        gaps.push({
+            x: firstBox.left - 10,
+            width: 20,
+            indicatorX: firstBox.left - 2,
+            height: firstBox.height,
+            top: firstBox.top,
+            position: 'before-first-in-line'
+        });
+    }
+    
+    // Gaps entre elementos adjacentes na mesma linha
+    for (let i = 0; i < targetLine.elements.length - 1; i++) {
+        const currentBox = targetLine.elements[i].getBoundingClientRect();
+        const nextBox = targetLine.elements[i + 1].getBoundingClientRect();
+        
+        // Só criar gap se há espaço real entre os elementos
+        const gapWidth = nextBox.left - currentBox.right;
+        if (gapWidth > 2) {
+            gaps.push({
+                x: currentBox.right,
+                width: gapWidth,
+                indicatorX: currentBox.right + gapWidth / 2,
+                height: Math.max(currentBox.height, nextBox.height),
+                top: Math.min(currentBox.top, nextBox.top),
+                position: `between-${i}-${i+1}`
+            });
+        }
+    }
+    
+    // Gap após o último elemento da linha
+    if (targetLine.elements.length > 0) {
+        const lastBox = targetLine.elements[targetLine.elements.length - 1].getBoundingClientRect();
+        gaps.push({
+            x: lastBox.right,
+            width: 20,
+            indicatorX: lastBox.right + 2,
+            height: lastBox.height,
+            top: lastBox.top,
+            position: 'after-last-in-line'
+        });
+    }
+    
+    // 🎯 ENCONTRAR QUAL GAP CONTÉM O MOUSE
+    let activeGap = null;
+    for (const gap of gaps) {
+        if (mouseX >= gap.x && mouseX <= gap.x + gap.width) {
+            activeGap = gap;
+            break;
+        }
+    }
+    
+    // 🎯 FALLBACK: Gap mais próximo na linha
+    if (!activeGap && gaps.length > 0) {
+        let closestGap = gaps[0];
+        let closestDistance = Math.abs(mouseX - (gaps[0].x + gaps[0].width / 2));
+        
+        gaps.forEach(gap => {
+            const gapCenterX = gap.x + gap.width / 2;
+            const distance = Math.abs(mouseX - gapCenterX);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestGap = gap;
+            }
+        });
+        
+        activeGap = closestGap;
+    }
+    
+    if (!activeGap) return;
+    
+    // 🎯 CRIAR INDICADOR NO GAP ATIVO
+    const sectionRect = sectionRow.getBoundingClientRect();
+    const indicator = document.createElement('div');
+    indicator.className = 'drop-indicator show';
+    indicator.style.left = (activeGap.indicatorX - sectionRect.left) + 'px';
+    indicator.style.top = (activeGap.top - sectionRect.top) + 'px';
+    indicator.style.height = activeGap.height + 'px';
+    
+    sectionRow.appendChild(indicator);
+    
+    console.log(`🎯 [GAP-INDICATOR] Indicador no gap: ${activeGap.position} na linha`);
+}
+
+// Salvar nova ordem da lista integrada
+async function saveOrderFromIntegratedList() {
+    const integratedList = document.getElementById('integratedColumnsList');
+    if (!integratedList) return;
+    
+    const newOrder = [...integratedList.querySelectorAll('.integrated-column-item')]
+        .map(el => el.dataset.column);
+    
+    if (newOrder.length) {
+        // Atualizar ordem global (incluindo colunas não visíveis)
+        const oldOrder = [...columnOrder];
+        columnOrder = newOrder;
+        
+        // Verificar se houve mudança nas colunas visíveis
+        const oldVisibleOrder = oldOrder.filter(h => visibleColumns.has(h));
+        const newVisibleOrder = newOrder.filter(h => visibleColumns.has(h));
+        
+        const visibleOrderChanged = JSON.stringify(oldVisibleOrder) !== JSON.stringify(newVisibleOrder);
+        
+        Storage.set({ viewer_column_order: columnOrder });
+        debouncedAutoSave();
+        await autoSaveCurrentPreset();
+        
+        // Só reconstruir tabela se ordem de colunas VISÍVEIS mudou
+        if (visibleOrderChanged) {
+        setupTable();
+            // updateColumnVisibility(); // DESABILITADO: setupTable() já cria apenas colunas visíveis
+        renderTable();
+        }
+    }
+}
+
+
 // Função auxiliar para verificar se um valor corresponde a múltiplos termos separados por ponto e vírgula
+// 🔍 Função para normalizar acentos e caracteres especiais
+function normalizeAccents(str) {
+    return str
+        .normalize('NFD') // Decompor caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, '') // Remover marcas diacríticas
+        .toLowerCase();
+}
+
 function matchesMultipleValues(valueToCheck, filterTerm) {
     if (!filterTerm || !filterTerm.trim()) return true;
     
     const value = String(valueToCheck || '').toLowerCase();
     const filterStr = String(filterTerm).toLowerCase();
+    
+    // 🎯 NORMALIZAÇÃO COMPLETA: Remover acentos + hífens para comparação
+    const normalizeForSearch = (str) => normalizeAccents(str.replace(/-/g, ''));
+    const valueNormalized = normalizeForSearch(value);
+    const filterNormalized = normalizeForSearch(filterStr);
     
     // Se contém ponto e vírgula, trata como múltiplos valores (OR)
     if (filterStr.includes(';')) {
@@ -1384,11 +2371,14 @@ function matchesMultipleValues(valueToCheck, filterTerm) {
             .map(term => term.trim())
             .filter(term => term.length > 0);
         
-        // Retorna true se qualquer um dos termos for encontrado
-        return terms.some(term => value.includes(term));
+        // Retorna true se qualquer um dos termos for encontrado (original + normalizado)
+        return terms.some(term => {
+            const termNormalized = normalizeForSearch(term);
+            return value.includes(term) || valueNormalized.includes(termNormalized);
+        });
     } else {
-        // Comportamento original: busca simples por inclusão
-        return value.includes(filterStr);
+        // Busca simples: original + normalizada (sem acentos + sem hífens)
+        return value.includes(filterStr) || valueNormalized.includes(filterNormalized);
     }
 }
 
@@ -1478,7 +2468,14 @@ function renderTable() {
     
     console.log('✅ Renderizando', filteredData.length, 'registros');
     
-    const headers = columnOrder;
+    // Usar apenas colunas visíveis na ordem correta
+    const allHeaders = columnOrder.length ? columnOrder : Object.keys(allData[0] || {});
+    const visibleHeaders = allHeaders.filter(header => visibleColumns.has(header));
+    
+    console.log('🔍 [DEBUG-HEADERS] renderTable() iniciado');
+    console.log('🔍 [DEBUG-HEADERS] renderTable() - visibleHeaders:', visibleHeaders);
+    console.log('🔍 [DEBUG-HEADERS] renderTable() - Total colunas visíveis:', visibleHeaders.length);
+    
     elements.tableBody.innerHTML = '';
     
     filteredData.forEach(row => {
@@ -1487,7 +2484,7 @@ function renderTable() {
         const isInactive = (row['Descrição'] || '').toUpperCase().startsWith('INATIV');
         if (isInactive) tr.classList.add('inactive-row');
 
-        headers.forEach(header => {
+        visibleHeaders.forEach(header => {
             const td = document.createElement('td');
 
             // Fallback entre 'Total Matriculados' e 'Total'
@@ -1812,15 +2809,15 @@ function closeActiveDropdown() {
     activeDropdown = null;
 }
 
-// Fechar dropdown ao clicar fora
-document.addEventListener('mousedown', (e) => {
-    if (!activeDropdown) return;
-    const isInside = activeDropdown.contains(e.target);
-    const isInput = e.target.classList && e.target.classList.contains('column-filter-input');
-    if (!isInside && !isInput) {
-        closeActiveDropdown();
-    }
-});
+// 🚫 Event listener do dropdown removido conforme solicitado
+// document.addEventListener('mousedown', (e) => {
+//     if (!activeDropdown) return;
+//     const isInside = activeDropdown.contains(e.target);
+//     const isInput = e.target.classList && e.target.classList.contains('column-filter-input');
+//     if (!isInside && !isInput) {
+//         closeActiveDropdown();
+//     }
+// });
 
 // Redefinir colunas para o padrão
 async function resetColumns() {
@@ -1877,12 +2874,12 @@ async function resetColumns() {
     // Atualizar interface
     setupTable();
     await setupColumnToggle();
-    updateColumnVisibility();
+    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
     renderTable();
     // Sincronizar menu se aberto
     const configDropdown = document.getElementById('columnConfigDropdown');
     if (configDropdown && configDropdown.style.display === 'block') {
-        await buildVisibilityAndOrderLists();
+        await buildIntegratedColumnsList();
     }
     
     // Feedback visual
@@ -1910,12 +2907,22 @@ async function resetColumns() {
 
 // Função para salvar automaticamente as customizações do preset atual
 async function autoSaveCurrentPreset() {
+    console.log(`🔍 [AUTOSAVE] Iniciando salvamento automático...`);
+    console.log(`🔍 [AUTOSAVE] currentPresetSelection: "${currentPresetSelection}"`);
+    console.log(`🔍 [AUTOSAVE] currentViewMode: "${currentViewMode}"`);
+    
     if (!currentPresetSelection || !currentPresetSelection.startsWith('__builtin__')) {
+        console.log(`⚠️ [AUTOSAVE] Ignorando salvamento - preset não é builtin`);
         return; // Só salva presets builtin
     }
     
+    if (!allData || allData.length === 0) {
+        console.log(`⚠️ [AUTOSAVE] Ignorando salvamento - sem dados`);
+        return;
+    }
+    
     const key = currentPresetSelection.replace('__builtin__','');
-    const headers = Object.keys(allData[0] || {});
+    const headers = Object.keys(allData[0]);
     const normalizedOrder = columnOrder.filter(h => headers.includes(h));
     const rest = headers.filter(h => !normalizedOrder.includes(h));
     
@@ -1926,14 +2933,21 @@ async function autoSaveCurrentPreset() {
         order: [...normalizedOrder, ...rest],
         visible: Array.from(visibleColumns).filter(h => headers.includes(h)),
         widths: { ...columnWidths },
-        viewMode: currentViewMode, // Garantir separação
+        viewMode: currentViewMode,
         timestamp: Date.now()
     };
+    
+    console.log(`💾 [AUTOSAVE] Salvando em: ${storageKey}`);
+    console.log(`💾 [AUTOSAVE] Dados:`, {
+        orderCount: customization.order.length,
+        visibleCount: customization.visible.length,
+        viewMode: customization.viewMode
+    });
     
     // Salvar no storage com chave específica do modo
     await Storage.set({ [storageKey]: customization });
     
-    console.log(`💾 Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
+    console.log(`✅ [AUTOSAVE] Customização do preset ${key} salva automaticamente para modo ${currentViewMode}`);
 }
 
 // DEPRECADO: Salvar preset: sobrescreve em memória o preset fixo selecionado
@@ -2032,12 +3046,12 @@ async function applyBuiltInPreset(presetKey) {
 
     setupTable();
     await setupColumnToggle();
-    updateColumnVisibility();
+    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
     renderTable();
 
     const configDropdown = document.getElementById('columnConfigDropdown');
     if (configDropdown && configDropdown.style.display === 'block') {
-        await buildVisibilityAndOrderLists();
+        await buildIntegratedColumnsList();
     }
     if (elements.presetSelect && currentPresetSelection) {
         elements.presetSelect.value = currentPresetSelection;
@@ -2074,7 +3088,7 @@ async function loadPreset(presetName) {
     // Atualizar interface
     setupTable();
     await setupColumnToggle();
-    updateColumnVisibility();
+    // 🔧 REMOVIDO: updateColumnVisibility() - setupTable() já cria apenas colunas visíveis
     renderTable();
     
     console.log(`📥 Preset "${presetName}" carregado`);
@@ -2589,14 +3603,14 @@ function setupAddCourseModal() {
         modal.style.display = 'block';
         codeInput.focus();
         codeInput.value = '';
-        nameInput.value = '';
+        // Não mais necessário limpar nameInput - campo removido
     });
 
     // Fechar modal
     const closeModal = () => {
         modal.style.display = 'none';
         codeInput.value = '';
-        nameInput.value = '';
+        // Não mais necessário limpar nameInput - campo removido
     };
 
     closeBtn?.addEventListener('click', closeModal);
@@ -2623,12 +3637,6 @@ function setupAddCourseModal() {
         }
     });
 
-    nameInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            saveBtn?.click();
-        }
-    });
-
     // Salvar curso
     saveBtn?.addEventListener('click', async () => {
         const code = codeInput.value.trim();
@@ -2646,14 +3654,15 @@ function setupAddCourseModal() {
             return;
         }
 
-        const name = nameInput.value.trim() || `Curso ${code}`;
+        // Nome será capturado automaticamente pelo popup, usando código como fallback
+        const name = `Curso ${code}`;
 
         try {
             await addCourseToStorage(code, name);
             closeModal();
             
             // Mostrar sucesso
-            showNotification(`✅ Curso ${code} adicionado com sucesso!`, 'success');
+            showNotification(`✅ Curso ${code} adicionado! O nome será capturado automaticamente pelo popup.`, 'success');
             
         } catch (error) {
             console.error('Erro ao adicionar curso:', error);
@@ -3083,13 +4092,13 @@ function restoreFilterState() {
     // Aplicar estilos visuais aos filtros de colunas ativos do modo atual
     const table = document.querySelector('#csvTable');
     if (table) {
-        const headers = table.querySelectorAll('thead th');
-        headers.forEach(th => {
-            const headerText = th.textContent.trim();
+        const filterHeaders = table.querySelectorAll('thead tr:last-child th');
+        filterHeaders.forEach(th => {
+            const headerText = th.dataset.column;
             const input = th.querySelector('input[type="text"]');
             const filterValue = getCurrentColumnFilters()[headerText];
             
-            if (input) {
+            if (input && headerText) {
                 if (filterValue) {
                     input.value = filterValue;
                     toggleFilterActiveStyles(headerText, th, input);
@@ -3127,9 +4136,16 @@ function setupViewModeToggle() {
     switchToOfertasBtn.addEventListener('click', async () => {
         console.log('🔄 Switch para ofertas clicado');
         if (currentViewMode !== 'ofertas') {
+            // Ocultar tabela temporariamente para evitar piscada
+            const table = document.getElementById('dataTable');
+            if (table) table.style.visibility = 'hidden';
+            
             // Salvar estado atual antes de trocar
             saveCurrentFilterState();
             await switchToOffersMode();
+            
+            // Mostrar tabela novamente
+            if (table) table.style.visibility = 'visible';
         }
     });
     
@@ -3137,9 +4153,16 @@ function setupViewModeToggle() {
     switchToAlunosBtn.addEventListener('click', async () => {
         console.log('🔄 Switch para alunos clicado');
         if (currentViewMode !== 'alunos') {
+            // Ocultar tabela temporariamente para evitar piscada
+            const table = document.getElementById('dataTable');
+            if (table) table.style.visibility = 'hidden';
+            
             // Salvar estado atual antes de trocar
             saveCurrentFilterState();
             await switchToStudentsMode();
+            
+            // Mostrar tabela novamente
+            if (table) table.style.visibility = 'visible';
         }
     });
     
@@ -3290,9 +4313,6 @@ async function switchToStudentsMode(save = true) {
     // Carregar preset específico do modo alunos
     await loadModeSpecificPreset();
     
-    // Restaurar estado dos filtros específicos para alunos
-    restoreFilterState();
-    
     console.log('👥 Modo alterado para: Alunos');
 }
 
@@ -3356,9 +4376,6 @@ async function switchToOffersMode(save = true) {
         
         // Garantir que a tabela seja exibida
         showData();
-        
-        // Restaurar estado dos filtros específicos para ofertas
-        restoreFilterState();
     }
     
     console.log('📊 Modo alterado para: Ofertas');
@@ -3410,20 +4427,12 @@ async function loadStudentData() {
         console.log('🗂️ Colunas detectadas:', window.currentColumns);
         console.log('🔄 Configurando dados para renderização...');
         
-        // Recarregar presets para modo alunos
-        await loadPresetsSelect();
-        
-        // Aplicar preset padrão para alunos (Preset 1)
-        await applyBuiltInPreset('PRESET_1_BASICO');
-        
-        // Atualizar selector de preset para mostrar o preset selecionado
-        elements.presetSelect.value = '__builtin__PRESET_1_BASICO';
-        
         // Atualizar contadores do header
         await updateHeaderCounters();
 
         // Configurar tabela e filtros para dados de alunos
-        finishDataLoading();
+        // finishDataLoading() já vai aplicar o preset correto e configurar tudo
+        await finishDataLoading();
         
         console.log('✅ Dados de alunos configurados e renderizados');
         
@@ -3446,12 +4455,73 @@ async function loadStudentData() {
     }
 }
 
+// 💾 Função para baixar tabela visível como arquivo CSV
+async function downloadVisibleTableAsCSV() {
+    try {
+        if (!allData || allData.length === 0) {
+            showNotification('⚠️ Nenhum dado disponível para download', 'error');
+            return;
+        }
+
+        if (!filteredData || filteredData.length === 0) {
+            showNotification('⚠️ Nenhum dado filtrado disponível para download', 'error');
+            return;
+        }
+
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : Object.keys(allData[0]);
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
+        
+        // Criar CSV com cabeçalhos e dados filtrados
+        const csvContent = [
+            visibleHeaders.join(','), // Cabeçalhos
+            ...filteredData.map(row => 
+                visibleHeaders.map(header => {
+                    const value = row[header] || '';
+                    // Escapar aspas e adicionar aspas se necessário
+                    return value.toString().includes(',') || value.toString().includes('"') 
+                        ? `"${value.toString().replace(/"/g, '""')}"` 
+                        : value;
+                }).join(',')
+            )
+        ].join('\n');
+
+        // Criar e baixar arquivo
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            
+            // Nome do arquivo com timestamp
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+            const fileName = `siaa_dados_${currentViewMode}_${timestamp}.csv`;
+            link.setAttribute('download', fileName);
+            
+            // Simular clique para download
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`💾 Arquivo "${fileName}" baixado com sucesso!`, 'success');
+            console.log(`💾 Download CSV concluído: ${filteredData.length} registros, ${visibleHeaders.length} colunas`);
+        } else {
+            throw new Error('Download não suportado neste navegador');
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao baixar CSV:', error);
+        showNotification('❌ Erro ao baixar arquivo CSV: ' + error.message, 'error');
+    }
+}
+
 // ===== FUNCIONALIDADE DE MANUTENÇÃO DE DADOS =====
 
 // Configurar botões de manutenção de dados
 function setupDataMaintenanceButtons() {
     const clearDuplicatesBtn = document.getElementById('clearDuplicatesBtn');
-    const resetDataBtn = document.getElementById('resetDataBtn');
+    const clearAllDataBtn = document.getElementById('clearAllDataBtn');
     
     if (clearDuplicatesBtn) {
         clearDuplicatesBtn.addEventListener('click', async () => {
@@ -3459,12 +4529,56 @@ function setupDataMaintenanceButtons() {
         });
     }
     
-    if (resetDataBtn) {
-        resetDataBtn.addEventListener('click', async () => {
-            if (confirm('🗑️ ATENÇÃO: Esta ação irá REMOVER TODOS OS DADOS armazenados!\n\nSerão deletados:\n• Todos os dados de ofertas\n• Todos os dados de alunos\n• Todos os cursos manuais\n• Todas as configurações\n\nEsta ação NÃO PODE ser desfeita!\n\nTem certeza que deseja continuar?')) {
-                await resetAllData();
+    if (clearAllDataBtn) {
+        clearAllDataBtn.addEventListener('click', async () => {
+            const confirmed = confirm(`🗑️ ATENÇÃO: Esta ação irá REMOVER dados específicos!
+
+Serão deletados PERMANENTEMENTE:
+• 📊 Todos os dados de ofertas disciplinares
+• 👥 Todos os dados de alunos
+• ⚙️ Todos os presets personalizados
+
+MANTIDOS (não serão afetados):
+• 🎛️ Configurações de colunas (ordem, visibilidade, largura)
+• 📋 Cursos manuais adicionados
+• 🎨 Configurações de tema e interface
+
+⚠️ Esta ação NÃO PODE ser desfeita!
+
+Tem certeza que deseja continuar?`);
+            
+            if (confirmed) {
+                await clearSpecificData();
             }
         });
+    }
+}
+
+// Função para limpar apenas dados específicos (ofertas, alunos e presets)
+async function clearSpecificData() {
+    try {
+        showNotification('🔄 Limpando dados específicos...', 'info');
+        
+        // Chaves específicas a serem removidas
+        const keysToRemove = [
+            'siaa_data_csv',        // Dados de ofertas
+            'siaa_students_csv',    // Dados de alunos
+            'siaa_preset_override'  // Presets personalizados
+        ];
+        
+        // Remover apenas as chaves especificadas
+        await Storage.remove(keysToRemove);
+        
+        showNotification('✅ Dados específicos removidos com sucesso!', 'success');
+        
+        // Recarregar a página para refletir as mudanças
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('❌ Erro ao limpar dados específicos:', error);
+        showNotification('❌ Erro ao limpar dados: ' + error.message, 'error');
     }
 }
 
@@ -3722,33 +4836,109 @@ async function removeDuplicatesFromCSV(csvData, type) {
 
 // Função para mostrar diálogo de duplicatas com seleção manual
 async function showDuplicatesDialog(duplicatesInfo) {
+    // 🔒 Prevenir múltiplas instâncias
+    const existingModal = document.getElementById('duplicatesModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     return new Promise((resolve) => {
-        // Criar modal de duplicatas
+        // Criar modal usando estilo config-dropdown minimalista
         const modal = document.createElement('div');
         modal.id = 'duplicatesModal';
-        modal.className = 'course-modal';
-        modal.style.display = 'flex';
-        
-        const content = document.createElement('div');
-        content.className = 'course-modal-content';
-        content.style.maxWidth = '95vw';
-        content.style.maxHeight = '90vh';
-        content.style.width = '900px';
-        
-        // Header
-        const header = document.createElement('div');
-        header.className = 'course-modal-header';
-        header.innerHTML = `
-            <h3>🔍 Selecionar Duplicatas para Remoção</h3>
-            <button id="closeDuplicatesModal" class="course-modal-close">&times;</button>
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10002;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--font-family);
         `;
         
-        // Body
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: #fff;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-strong);
+            border-radius: var(--border-radius-lg);
+            max-width: 95vw;
+            max-height: 90vh;
+            width: 900px;
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        // Header usando estilo window-header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-light);
+        `;
+        
+        const title = document.createElement('div');
+        title.style.cssText = `
+            font-weight: 500;
+            font-size: 15px;
+            color: var(--color-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.01em;
+        `;
+        title.textContent = '🔍 Selecionar Duplicatas para Remoção';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.id = 'closeDuplicatesModal';
+        closeBtn.style.cssText = `
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: var(--color-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            line-height: 1;
+            transition: var(--transition);
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+            closeBtn.style.color = '#dc2626';
+            closeBtn.style.transform = 'scale(1.05)';
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.background = 'none';
+            closeBtn.style.color = 'var(--color-muted)';
+            closeBtn.style.transform = 'scale(1)';
+        });
+        
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        
+        // Body usando estilo window-content
         const body = document.createElement('div');
-        body.className = 'course-modal-body';
-        body.style.maxHeight = '60vh';
-        body.style.overflowY = 'auto';
-        body.style.padding = '15px';
+        body.style.cssText = `
+            padding: 16px;
+            max-height: 60vh;
+            overflow-y: auto;
+        `;
         
         let bodyContent = `
             <div style="background: rgba(248,250,252,0.6); border: 1px solid rgba(203,213,225,0.4); border-radius: 8px; padding: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
@@ -3843,16 +5033,50 @@ async function showDuplicatesDialog(duplicatesInfo) {
         
         body.innerHTML = bodyContent;
         
-        // Footer
+        // Footer usando estilo window-content minimalista
         const footer = document.createElement('div');
-        footer.className = 'course-modal-footer';
-        footer.innerHTML = `
-            <div style="flex: 1; text-align: left; color: #6c757d; font-size: 14px;">
-                <span id="selectionCount">0 registros selecionados para remoção</span>
-            </div>
-            <button id="cancelDuplicatesBtn" class="course-btn course-btn-secondary">❌ Cancelar</button>
-            <button id="removeDuplicatesBtn" class="course-btn course-btn-primary" style="background: rgba(248,250,252,0.9); color: #475569; border: 1px solid rgba(203,213,225,0.6); box-shadow: 0 2px 8px rgba(239,68,68,0.15), 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid #ef4444;" disabled>🗑️ Remover Selecionados</button>
+        footer.style.cssText = `
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(248,250,252,0.5);
+            border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
         `;
+        
+        const selectionCount = document.createElement('div');
+        selectionCount.id = 'selectionCount';
+        selectionCount.style.cssText = `
+            flex: 1;
+            font-size: 14px;
+            color: var(--color-secondary);
+        `;
+        selectionCount.textContent = '0 registros selecionados para remoção';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelDuplicatesBtn';
+        cancelBtn.className = 'columns-btn compact';
+        cancelBtn.innerHTML = '❌ Cancelar';
+        cancelBtn.style.cssText = `
+            font-size: 14px;
+            padding: 8px 16px;
+        `;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.id = 'removeDuplicatesBtn';
+        removeBtn.className = 'columns-btn primary compact';
+        removeBtn.innerHTML = '🗑️ Remover Selecionados';
+        removeBtn.disabled = true;
+        removeBtn.style.cssText = `
+            font-size: 14px;
+            padding: 8px 16px;
+        `;
+        
+        footer.appendChild(selectionCount);
+        footer.appendChild(cancelBtn);
+        footer.appendChild(removeBtn);
         
         content.appendChild(header);
         content.appendChild(body);
@@ -3922,9 +5146,7 @@ async function showDuplicatesDialog(duplicatesInfo) {
         });
         
         // Event listeners principais
-        const closeBtn = document.getElementById('closeDuplicatesModal');
-        const cancelBtn = document.getElementById('cancelDuplicatesBtn');
-        const removeBtn = document.getElementById('removeDuplicatesBtn');
+        // Elementos já foram criados acima: closeBtn, cancelBtn, removeBtn
         
         const closeModal = () => {
             document.body.removeChild(modal);

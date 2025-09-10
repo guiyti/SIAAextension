@@ -41,7 +41,14 @@
     },
     "web_accessible_resources": [
         {
-            "resources": ["injected.js", "viewer.html", "viewer.js", "siaa-config.json", "xml-processor.js", "config-manager.js"],
+            "resources": [
+                "injected.js", 
+                "viewer.html", 
+                "viewer.js", 
+                "siaa-config.json", 
+                "xml-processor.js", 
+                "config-manager.js"
+            ],
             "matches": ["https://siaa.cruzeirodosul.edu.br/*", "<all_urls>"]
         }
     ]

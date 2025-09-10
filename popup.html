@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIAA Data Extractor</title>
     <style>
+        /* 🎨 Variáveis CSS centralizadas para consistência */
+        :root {
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --color-primary: #1e293b;
+            --color-secondary: #374151;
+            --color-text: #333;
+            --color-muted: #9ca3af;
+            --color-border: rgba(203,213,225,0.4);
+            --color-accent: #ebb55e;
+            --gradient-header: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            --shadow-light: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-medium: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --transition: all 0.2s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,17 +32,17 @@
         body {
             width: 260px;
             min-height: 180px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: var(--font-family);
             background: #f8f9fa;
-            color: #333;
+            color: var(--color-text);
         }
 
         .header {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
-            border: 1px solid rgba(203,213,225,0.4);
+            background: var(--gradient-header);
+            border: 1px solid var(--color-border);
             padding: 12px;
             text-align: center;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-medium);
             backdrop-filter: blur(8px);
         }
 
@@ -36,7 +53,7 @@
             gap: 8px;
             font-size: 16px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--color-primary);
         }
 
         .status {
