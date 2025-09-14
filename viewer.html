@@ -597,8 +597,9 @@
         
         /* 🎯 Largura específica para diálogo Copiar Dados */
         .config-dropdown.copy-dialog {
-            width: 480px; /* Largura aumentada para acomodar botões */
+            width: 450px; /* Largura otimizada para novo layout centralizado */
             max-width: 95vw; /* Máximo 95% da viewport */
+            min-height: 300px; /* Altura mínima para melhor apresentação */
         }
         
         /* Ajuste responsivo para botões da seção principal */
@@ -676,29 +677,142 @@
             max-height: 200px;
             overflow-y: auto;
         }
-        
-        .copy-column-btn {
-            background: rgba(255,255,255,0.9);
+
+        /* 📋 Novo layout da janela de cópia - minimalista e centralizado */
+        .copy-section {
+            background: rgba(248,250,252,0.4);
             border: 1px solid var(--color-border);
-            border-radius: 6px;
-            padding: 12px 14px;
-            color: var(--color-secondary);
-            cursor: pointer;
-            transition: var(--transition);
+            border-radius: var(--border-radius);
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .copy-section-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--color-border);
             text-align: center;
-            min-height: 44px;
+        }
+
+        .copy-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Fonte e peso são aplicados via JavaScript inline para maior precedência */
+            gap: 8px;
         }
-        
-        .copy-column-btn:hover {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+
+        /* Grid para ações rápidas */
+        .copy-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .copy-action-btn {
+            padding: 12px 16px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            background: white;
+            color: var(--color-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-family);
+        }
+
+        .copy-action-btn:hover {
+            background: rgba(59,130,246,0.05);
             border-color: #3b82f6;
-            color: #1e40af;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .copy-action-btn.primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .copy-action-btn.primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        /* Container para cópia de colunas - layout vertical centralizado */
+        .copy-column-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .column-select-row {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .column-dropdown {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            background: white;
+            font-size: 14px;
+            color: var(--color-secondary);
+            font-family: var(--font-family);
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .column-dropdown:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .column-dropdown option {
+            padding: 8px;
+            background: white;
+            color: var(--color-secondary);
+            text-align: left;
+        }
+
+        /* Botões de cópia de coluna */
+        .column-buttons-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .copy-column-btn {
+            padding: 10px 16px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            background: white;
+            color: var(--color-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-family);
+            min-width: 160px;
+        }
+
+        .copy-column-btn:hover:not(:disabled) {
+            background: rgba(34,197,94,0.05);
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .copy-column-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(248,250,252,0.6);
         }
         
         .window-header {
@@ -1903,6 +2017,188 @@
             border-color: #fca5a5;
         }
 
+        /* Estilos para o Modal de Histórico de Alterações */
+        .changes-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--color-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .changes-history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .changes-history-empty h4 {
+            margin: 0 0 8px 0;
+            color: #999;
+        }
+
+        .changes-session {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            background: #fafafa;
+            overflow: hidden;
+        }
+
+        .changes-session-header {
+            background: #f5f5f5;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .changes-session-title {
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .changes-session-summary {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .changes-session-summary span {
+            background: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .changes-session-summary .added {
+            background: #e8f5e8;
+            border-color: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .changes-session-summary .updated {
+            background: #e3f2fd;
+            border-color: #bbdefb;
+            color: #1976d2;
+        }
+
+        .changes-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .change-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            background: #fff;
+        }
+
+        .change-item:last-child {
+            border-bottom: none;
+        }
+
+        .change-item.added {
+            border-left: 4px solid #4caf50;
+        }
+
+        .change-item.updated {
+            border-left: 4px solid #2196f3;
+        }
+
+        .change-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .change-id {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .change-type {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .change-type.added {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .change-type.updated {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .change-details {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .change-field {
+            margin: 4px 0;
+            padding: 6px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #ddd;
+        }
+
+        .change-field.changed {
+            border-left-color: #ff9800;
+            background: #fff8e1;
+        }
+
+        .field-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .field-value {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .field-value.before {
+            color: #d32f2f;
+            text-decoration: line-through;
+        }
+
+        .field-value.after {
+            color: #388e3c;
+            font-weight: 500;
+        }
+
+        .field-value-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 6px;
+            opacity: 0.7;
+        }
+
         /* Estilo para títulos das seções do menu */
         .menu-section-title {
             color: #2c3e50;
@@ -2063,7 +2359,7 @@
                             <div class="window-title">
                                 📊 Organizar Colunas
                             </div>
-                            <button class="window-close" onclick="document.getElementById('columnConfigDropdown').style.display='none'">×</button>
+                            <button class="window-close" id="closeColumnConfigBtn">×</button>
                         </div>
                         <div class="window-content">
                         <div class="config-section">
@@ -2083,38 +2379,37 @@
                             <div class="window-title">
                                 📋 Copiar Dados
                             </div>
-                            <button class="window-close" onclick="document.getElementById('copyDataDropdown').style.display='none'">×</button>
+                            <button class="window-close" id="closeCopyDataBtn">×</button>
                         </div>
                         <div class="window-content">
                         <!-- Seção: Ações Principais -->
-                        <div class="config-section">
-                            <div class="preset-compact-row">
-                                <span class="preset-label">Ações:</span>
-                                <button id="copyTableBtn" class="columns-btn primary compact">📊 Copiar Tabela Visível</button>
-                                <button id="downloadTableBtn" class="columns-btn compact">💾 Baixar Tabela Visível (CSV)</button>
+                        <div class="copy-section">
+                            <div class="copy-section-header">
+                                <span class="copy-section-title">📊 Ações Rápidas</span>
+                            </div>
+                            <div class="copy-actions-grid">
+                                <button id="copyTableBtn" class="copy-action-btn primary">📊 Copiar Tabela Visível</button>
+                                <button id="downloadTableBtn" class="copy-action-btn">💾 Baixar Tabela (CSV)</button>
                             </div>
                         </div>
                         
                         <!-- Seção: Copiar Colunas Separadas -->
-                        <div class="config-section">
-                            <div class="preset-compact-row">
-                                <span class="preset-label" style="color: var(--color-secondary); font-weight: 600;">📋 Copiar Colunas Separadas</span>
+                        <div class="copy-section">
+                            <div class="copy-section-header">
+                                <span class="copy-section-title">📋 Copiar Colunas Individuais</span>
                             </div>
                             
-                            <!-- Contêiner 1: Copiar com Repetições -->
-                            <div class="copy-container">
-                                <div class="copy-container-header">
-                                    <span class="copy-container-title">📄 Copiar Coluna Visível (Com Repetições)</span>
+                            <!-- Layout reorganizado com dropdown e botões centralizados -->
+                            <div class="copy-column-container">
+                                <div class="column-select-row">
+                                    <select id="columnSelect" class="column-dropdown">
+                                        <option value="">Selecione uma coluna...</option>
+                                    </select>
                                 </div>
-                                <div id="copyColumnsWithRepetition" class="copy-columns-grid"></div>
-                            </div>
-                            
-                            <!-- Contêiner 2: Copiar sem Repetições -->
-                            <div class="copy-container">
-                                <div class="copy-container-header">
-                                    <span class="copy-container-title">📄 Copiar sem Repetições (Dados Únicos)</span>
+                                <div class="column-buttons-row">
+                                    <button id="copyWithRepetitionBtn" class="copy-column-btn" disabled>📄 Copiar Com Repetições</button>
+                                    <button id="copyWithoutRepetitionBtn" class="copy-column-btn" disabled>📄 Copiar Sem Repetições</button>
                                 </div>
-                                <div id="copyColumnsWithoutRepetition" class="copy-columns-grid"></div>
                             </div>
                         </div>
                         </div>
@@ -2161,6 +2456,7 @@
                     <button id="exportAllBtn" class="sidebar-export-btn">⬇️ Exportar CSV Completo</button>
                     <button id="importAllBtn" class="sidebar-export-btn">⬆️ Importar CSV Completo</button>
                     <button id="mergeAllBtn" class="sidebar-export-btn">🔁 Importar e Mesclar CSV</button>
+                    <button id="showChangesHistoryBtn" class="sidebar-export-btn">📋 Histórico de Alterações</button>
                     <input id="importFileInput" type="file" accept=".csv" style="display:none;" />
                     <input id="mergeFileInput" type="file" accept=".csv" style="display:none;" />
                 </div>
@@ -2240,6 +2536,29 @@
             <div class="course-modal-footer">
                 <button id="cancelCourseBtn" class="course-btn course-btn-secondary">Cancelar</button>
                 <button id="saveCourseBtn" class="course-btn course-btn-primary">Adicionar Curso</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Histórico de Alterações -->
+    <div id="changesHistoryModal" class="course-modal-overlay" style="display: none;">
+        <div class="course-modal-content" style="max-width: 900px; max-height: 80vh;">
+            <div class="course-modal-header">
+                <h3>📋 Histórico de Alterações</h3>
+                <button id="closeChangesHistoryBtn" class="course-modal-close">&times;</button>
+            </div>
+            <div class="course-modal-body" style="overflow-y: auto; max-height: 60vh;">
+                <div id="changesHistoryContent">
+                    <div class="changes-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Carregando histórico...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="course-modal-footer">
+                <button id="clearChangesHistoryBtn" class="course-btn" style="background: #dc3545; color: white;">🗑️ Limpar Histórico</button>
+                <button id="exportChangesHistoryBtn" class="course-btn course-btn-secondary">📥 Exportar Histórico</button>
+                <button id="closeChangesHistoryBtn2" class="course-btn course-btn-primary">Fechar</button>
             </div>
         </div>
     </div>
