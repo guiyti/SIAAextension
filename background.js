@@ -1,20 +1,12 @@
-// Background Script - Service Worker para Chrome Extension
-// VERSÃO V7 - ExtractionManager + DataDeduplicationHelper + MessageHandler + TabManager
-console.log('🔧 SIAA Data Extractor - Background Script V7 (TabManager) iniciado');
+console.log('🔧 SIAA Data Extractor - Background Script iniciado');
 
-// ========================================
-// EXTRACTION MANAGER V7 (preservado da V6)
-// ========================================
 class ExtractionManager {
     constructor() {
         this.version = 'V7-ExtractionManager';
-        console.log('🎯 ExtractionManager V7 inicializado - preservado da V6');
     }
 
     async executeExtraction(tabId, cursoSelecionado = null) {
-        console.log('⚙️ executeExtraction V7 chamado com cursoSelecionado:', cursoSelecionado);
         try {
-            console.log('🚀 Iniciando extração V7 via chrome.scripting para tab:', tabId);
         
         // Verificar se a aba é válida
         const tab = await chrome.tabs.get(tabId);
@@ -27,72 +19,57 @@ class ExtractionManager {
             throw new Error('Navegue para a página inicial do SIAA (home.jsf)');
         }
         
-        // Notificar início da extração
-            console.log('📡 V7 - Enviando mensagem de progresso...');
         chrome.runtime.sendMessage({
             action: 'extractionProgress',
                 message: 'Preparando extração V7 (TabManager)...'
             }).catch(err => console.log('ℹ️ V7 - Popup pode estar fechado:', err));
         
-        // Primeiro injetar o script que define as funções
-            console.log('💉 V7 - Injetando script injected.js...');
         await chrome.scripting.executeScript({
             target: { tabId: tabId },
             files: ['injected.js']
         });
         
-            console.log('✅ V7 - Script injected.js carregado');
         
-        // Aguardar um pouco para garantir que o script foi carregado
         await new Promise(resolve => setTimeout(resolve, 500));
         
-            // Executar a função que foi injetada
-            console.log('🎯 V7 - Executando função exportarTabelaSIAA...');
         const results = await chrome.scripting.executeScript({
             target: { tabId: tabId },
             func: (selectedCourse) => {
                 if (selectedCourse) {
                     window.__SIAA_SELECTED_COURSE = selectedCourse;
                 }
-                    console.log('🔍 V7 - Verificando função exportarTabelaSIAA...');
-                    console.log('📌 V7 - selectedCourse dentro da página:', selectedCourse);
                     
                     if (typeof window.exportarTabelaSIAA === 'function') {
-                        console.log('🚀 V7 - Executando exportarTabelaSIAA...');
                     try {
                         window.exportarTabelaSIAA(selectedCourse || null);
-                            return { success: true, message: 'Função V7 executada com sucesso' };
+                            return { success: true, message: 'Função executada com sucesso' };
                     } catch (execError) {
-                            console.error('❌ V7 - Erro ao executar função:', execError);
                         return { success: false, error: execError.message };
                     }
                 } else {
-                        console.error('❌ V7 - Função exportarTabelaSIAA não encontrada');
                     return { success: false, error: 'Função exportarTabelaSIAA não encontrada' };
                 }
             },
             args: [cursoSelecionado]
         });
         
-            console.log('📊 V7 - Resultado da execução:', results);
         
         const result = results[0]?.result;
         
         if (result && !result.success) {
-                throw new Error(result.error || 'Erro na execução da função V7');
+                throw new Error(result.error || 'Erro na execução da função');
             }
             
-            console.log('✅ V7 - Extração iniciada com sucesso');
-            return { success: true, extractionId: `v7-${Date.now()}` };
+            return { success: true, extractionId: `extraction-${Date.now()}` };
             
         } catch (error) {
-            const errorMsg = `Erro na extração V7: ${error.message}`;
-            console.error('❌', errorMsg);
+            const errorMsg = `Erro na extração: ${error.message}`;
+            console.error(errorMsg);
             
             chrome.runtime.sendMessage({
                 action: 'extractionError',
                 error: errorMsg
-            }).catch(err => console.log('ℹ️ V7 - Popup pode estar fechado:', err));
+            }).catch(() => {});
             
             return { success: false, error: errorMsg };
         }
@@ -106,13 +83,9 @@ class ExtractionManager {
     }
 }
 
-// ========================================
-// DATA DEDUPLICATION HELPER V7 (preservado da V6)
-// ========================================
 class DataDeduplicationHelper {
     constructor() {
         this.version = 'V7-Dedup';
-        console.log('🛡️ DataDeduplicationHelper V7 inicializado - preservado da V6');
     }
 
     // Gerar hash simples para identificar dados únicos
@@ -127,12 +100,9 @@ class DataDeduplicationHelper {
         return Math.abs(hash).toString();
     }
 
-    // Processar dados de ofertas usando ID Oferta como chave única
     processOfertasData(existingCsv, newCsv, timestamp) {
-        console.log('🔍 V8 - Processando dados de ofertas (substituição por ID Oferta)...');
         
         if (!newCsv || !newCsv.trim()) {
-            console.log('⚠️ V8 - Nenhum dado novo para processar');
             return {
                 siaa_data_csv: existingCsv || '',
                 siaa_data_timestamp: timestamp,
@@ -148,7 +118,6 @@ class DataDeduplicationHelper {
         const newLines = cleanNew.split('\n').filter(line => line.trim());
         
         if (newLines.length === 0) {
-            console.log('⚠️ V8 - Nenhuma linha válida nos novos dados');
             return {
                 siaa_data_csv: existingCsv || '',
                 siaa_data_timestamp: timestamp,
@@ -164,11 +133,9 @@ class DataDeduplicationHelper {
         );
 
         if (idOfertaIndex === -1) {
-            console.warn('⚠️ V8 - Coluna ID Oferta não encontrada, usando método de hash tradicional');
             return this.processOfertasDataLegacy(existingCsv, newCsv, timestamp);
         }
 
-        console.log(`📍 V8 - Coluna ID Oferta encontrada no índice: ${idOfertaIndex}`);
 
         // Criar mapa das ofertas existentes por ID Oferta
         const existingOffers = new Map();
@@ -208,7 +175,6 @@ class DataDeduplicationHelper {
             const idOferta = newFields[idOfertaIndex]?.trim();
 
             if (!idOferta) {
-                console.warn(`⚠️ V8 - Linha ${i} sem ID Oferta válido, ignorada`);
                 continue;
             }
 
@@ -234,7 +200,6 @@ class DataDeduplicationHelper {
                         index: existing.index
                     });
                     updatedCount++;
-                    console.log(`🔄 V8 - Oferta ${idOferta} atualizada`);
                 } else {
                     unchangedCount++;
                 }
@@ -254,7 +219,6 @@ class DataDeduplicationHelper {
                     index: -1 // Marca como nova
                 });
                 newCount++;
-                console.log(`➕ V8 - Nova oferta ${idOferta} adicionada`);
             }
         }
 
@@ -271,7 +235,7 @@ class DataDeduplicationHelper {
             this.saveChangesLog(changes, timestamp);
         }
 
-        console.log(`✅ V8 - Processamento concluído: ${newCount} novas, ${updatedCount} atualizadas, ${unchangedCount} inalteradas`);
+        console.log(`✅ Processamento concluído: ${newCount} novas, ${updatedCount} atualizadas, ${unchangedCount} inalteradas`);
         
         return {
             siaa_data_csv: finalCsv,
@@ -346,10 +310,10 @@ class DataDeduplicationHelper {
                 chrome.storage.local.set({ siaa_changes_log: limitedLog }, resolve);
             });
             
-            console.log(`📝 V8 - Log de alterações salvo: ${changes.length} mudanças registradas`);
+            console.log(`📝 Log de alterações salvo: ${changes.length} mudanças registradas`);
             
         } catch (error) {
-            console.error('❌ V8 - Erro ao salvar log de alterações:', error);
+            console.error('❌ Erro ao salvar log de alterações:', error);
         }
     }
 

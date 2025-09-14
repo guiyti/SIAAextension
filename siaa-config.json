@@ -1,5 +1,5 @@
 {
-  "version": "2.0.5",
+  "version": "2.1.1",
   "app": {
     "name": "SIAA Data Extractor",
     "description": "Extrair e visualizar dados acadêmicos do SIAA - Cruzeiro do Sul",
@@ -288,8 +288,8 @@
       "PRESET_3_CURSO": {
         "name": "Por Curso",
         "description": "Informações acadêmicas + Nome do Curso e Campus",
-        "order": ["RGM", "Nome", "E-mail", "Turma", "Turno", "Nome do Curso", "Sigla Campus"],
-        "visible": ["RGM", "Nome", "E-mail", "Turma", "Turno", "Nome do Curso", "Sigla Campus"]
+        "order": ["RGM", "Nome", "E-mail", "Série", "Turno", "Nome do Curso", "Sigla Campus"],
+        "visible": ["RGM", "Nome", "E-mail", "Série", "Turno", "Nome do Curso", "Sigla Campus"]
       },
       "PRESET_COMPLETO": {
         "name": "Todas as Colunas",

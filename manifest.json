@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "SIAA Data Extractor",
-    "version": "2.0.5",
+    "version": "2.1.1",
     "description": "Extrair e visualizar dados acadêmicos do SIAA - Cruzeiro do Sul. Interface responsiva e filtros avançados.",
     "permissions": [
         "activeTab",

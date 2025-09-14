@@ -1,17 +1,9 @@
 // viewer.js
-// Variáveis globais
-
-// REMOVIDO: Presets hardcoded de ofertas - agora vem do siaa-config.json
-
-// REMOVIDO: Presets hardcoded de alunos - agora vem do siaa-config.json
-
-// ===== V17 PresetManager Class =====
 class PresetManager {
     constructor() {
         this.version = 'V17-PresetManager';
     }
 
-    // V17: Obter presets baseado no modo atual
     getCurrentPresets() {
         return this._getCurrentPresetsOriginal();
     }
@@ -20,7 +12,6 @@ class PresetManager {
     return getConfigPresets(currentViewMode);
 }
 
-    // V17: Obter defaults baseado no modo atual
     getCurrentPresetDefaults() {
         return this._getCurrentPresetDefaultsOriginal();
     }
@@ -29,7 +20,6 @@ class PresetManager {
     return getConfigPresets(currentViewMode);
 }
 
-    // V17: Obter configuração de preset
     getPresetConfig(presetKey, headers) {
         return this._getPresetConfigOriginal(presetKey, headers);
     }
@@ -69,7 +59,6 @@ class PresetManager {
     return config;
 }
 
-    // V17: Carregar personalizações de preset
     async loadPresetCustomizations(presetKey) {
         return this._loadPresetCustomizationsOriginal(presetKey);
     }
@@ -87,7 +76,6 @@ class PresetManager {
         }
     }
 
-    // V17: Obter overrides built-in
     async getBuiltinOverrides() {
         return this._getBuiltinOverridesOriginal();
     }
@@ -97,7 +85,6 @@ class PresetManager {
         return result.builtin_overrides || {};
     }
 
-    // V17: Definir overrides built-in
     async setBuiltinOverrides(map) {
         return this._setBuiltinOverridesOriginal(map);
     }
@@ -106,7 +93,6 @@ class PresetManager {
         await chrome.storage.local.set({ builtin_overrides: map });
     }
 
-    // V17: Estatísticas para debug
     getStats() {
         return {
             version: this.version,
@@ -119,7 +105,7 @@ class PresetManager {
 // Instância global do PresetManager V17
 const presetManagerV17 = new PresetManager();
 
-// ===== V18 DataManager Class (Implementação Corrigida) =====
+//18 DataManager Class (Implementação Corrigida) =====
 class DataManager {
     constructor() {
         this.version = 'V18-DataManager-Fixed';
@@ -214,7 +200,7 @@ class DataManager {
 // Instância global do DataManager V18
 const dataManagerV18 = new DataManager();
 
-// ===== V19 CopyManager Class (Com DIRETRIZ 7 e 8) =====
+//19 CopyManager Class (Com DIRETRIZ 7 e 8) =====
 class CopyManager {
     constructor() {
         this.version = 'V19-CopyManager';
@@ -399,7 +385,7 @@ class CopyManager {
 // Instância global do CopyManager V19
 const copyManagerV19 = new CopyManager();
 
-// ===== V20 UIManager Class (Com DIRETRIZES 7 e 8) =====
+//20 UIManager Class (Com DIRETRIZES 7 e 8) =====
 class UIManager {
     constructor() {
         this.version = 'V20-UIManager';

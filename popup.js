@@ -1,6 +1,3 @@
-// ========================================
-// STATE MANAGER V8 (nova classe)
-// ========================================
 class StateManager {
     constructor() {
         this.version = 'V8-StateManager';
@@ -63,13 +60,9 @@ class StateManager {
 // Criar instância do StateManager V8
 const stateManagerV8 = new StateManager();
 
-// ========================================
-// COMMUNICATION MANAGER V9 (versão incremental)
-// ========================================
 class CommunicationManager {
     constructor() {
         this.version = 'V9-CommunicationManager-Incremental';
-        console.log('📡 CommunicationManager V9 incremental inicializado');
     }
 
     async fetchCursosDisponiveis() {
@@ -167,9 +160,6 @@ class CommunicationManager {
 // Criar instância do CommunicationManager V9 (incremental)
 const communicationManagerV9 = new CommunicationManager();
 
-// ========================================
-// UI MANAGER V10 (nova classe)
-// ========================================
 class UIManager {
     constructor() {
         this.version = 'V10-UIManager';
@@ -180,7 +170,6 @@ class UIManager {
         this.progressContainer = document.getElementById('progressContainer');
         this.progressBar = document.getElementById('progressBar');
         
-        console.log('🎨 UIManager V10 inicializado');
     }
 
     updateStatus(text, isActive = false) {
@@ -319,14 +308,10 @@ class UIManager {
 // Criar instância do UIManager V10
 const uiManagerV10 = new UIManager();
 
-// ========================================
-// STORAGE MANAGER V11 (nova classe)
-// ========================================
 class StorageManager {
     constructor() {
         this.version = 'V11-StorageManager';
         
-        console.log('📦 StorageManager V11 inicializado');
     }
 
     async loadCursoMapping() {
@@ -447,15 +432,11 @@ class StorageManager {
 // Criar instância do StorageManager V11
 const storageManagerV11 = new StorageManager();
 
-// ========================================
-// VALIDATION MANAGER V12 (nova classe)
-// ========================================
 class ValidationManager {
     constructor(stateManager) {
         this.stateManager = stateManager;
         this.version = 'V12-ValidationManager';
         
-        console.log('📋 ValidationManager V12 inicializado');
     }
 
     validateCourseSelection() {

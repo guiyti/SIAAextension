@@ -1,14 +1,12 @@
 // Variável global para armazenar mapeamento de código -> nome do curso
 window.__SIAA_CURSO_MAPPING = new Map();
 
-// ===== V13 CourseMapper Class =====
 class CourseMapper {
     constructor() {
         this.version = 'V13-CourseMapper';
         this.mapping = window.__SIAA_CURSO_MAPPING;
     }
 
-    // V13: Extrair e armazenar nomes de cursos do XML grid_curso_ofe
     async extractAndStoreCursoNames(idOfert, periodo) {
         return this._extractAndStoreCursoNamesOriginal(idOfert, periodo);
     }
@@ -39,7 +37,6 @@ class CourseMapper {
         }
     }
 
-    // V13: Obter nome do curso pelo código
     getCursoNomeFromMapping(codigoCurso) {
         return this._getCursoNomeFromMappingOriginal(codigoCurso);
     }
@@ -49,7 +46,6 @@ class CourseMapper {
         return this.mapping.get(codigoCurso.toString()) || '';
     }
 
-    // V13: Debug do mapeamento de cursos
     debugCursoMapping() {
         this._debugCursoMappingOriginal();
     }
@@ -64,7 +60,6 @@ class CourseMapper {
         }
     }
 
-    // V13: Estatísticas para debug
     getStats() {
         return {
             version: this.version,
@@ -77,7 +72,7 @@ class CourseMapper {
 // Instância global do CourseMapper V13
 const courseMapperV13 = new CourseMapper();
 
-// ===== V14 OverlayManager Class =====
+//14 OverlayManager Class =====
 class OverlayManager {
     constructor() {
         this.version = 'V14-OverlayManager';
@@ -236,7 +231,7 @@ class OverlayManager {
 // Instância global do OverlayManager V14
 const overlayManagerV14 = new OverlayManager();
 
-// ===== V15 SIAAConnector Class =====
+//15 SIAAConnector Class =====
 class SIAAConnector {
     constructor() {
         this.version = 'V15-SIAAConnector';
@@ -343,7 +338,7 @@ class SIAAConnector {
 // Instância global do SIAAConnector V15
 const siaaConnectorV15 = new SIAAConnector();
 
-// ===== V16 ExtractionEngine Class =====
+//16 ExtractionEngine Class =====
 class ExtractionEngine {
     constructor() {
         this.version = 'V16-ExtractionEngine';
@@ -375,17 +370,14 @@ const extractionEngineV16 = new ExtractionEngine();
 
 // Função para buscar cursos disponíveis - REMOVIDA (usar XMLProcessor)
 
-// V13: Redirecionamento para CourseMapper
 async function extractAndStoreCursoNames(idOfert, periodo) {
     return courseMapperV13.extractAndStoreCursoNames(idOfert, periodo);
 }
 
-// V13: Redirecionamento para CourseMapper
 function getCursoNomeFromMapping(codigoCurso) {
     return courseMapperV13.getCursoNomeFromMapping(codigoCurso);
 }
 
-// V13: Redirecionamento para CourseMapper
 function debugCursoMapping() {
     return courseMapperV13.debugCursoMapping();
 }
@@ -433,12 +425,10 @@ function createCourseSelectionOverlay(cursos) {
     return overlayManagerV14.createCourseSelectionOverlay(cursos);
 }
 
-// V16: Redirecionamento para ExtractionEngine
 async function exportarTabelaSIAA(cursoSelecionado = null) {
     return extractionEngineV16.exportarTabelaSIAA(cursoSelecionado);
 }
 
-// V16: Redirecionamento para ExtractionEngine
 async function exportarTabelaSIAAOriginal(cursoSelecionado = null) {
     return extractionEngineV16.exportarTabelaSIAAOriginal(cursoSelecionado);
 }
@@ -1070,14 +1060,12 @@ async function exportarTabelaSIAAOriginalLegacy(cursoSelecionado = null) {
 
 // ===== FUNÇÃO AUXILIAR PARA PERÍODO ACADÊMICO =====
 
-// V15: Redirecionamento para SIAAConnector
 async function getCurrentAcademicPeriod() {
     return siaaConnectorV15.getCurrentAcademicPeriod();
 }
 
 // ===== FUNÇÃO AUXILIAR PARA FETCH XML =====
 
-// V15: Redirecionamento para SIAAConnector
 async function fetchXML(url, timeout = 15000) {
     return siaaConnectorV15.fetchXML(url, timeout);
 }

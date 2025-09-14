@@ -187,7 +187,7 @@ SIAA Data Extractor/
 
 ## 📄 **Licença e Versão**
 
-**📅 Versão**: 2.0.5  
+**📅 Versão**: 2.1.1  
 **🏆 Status**: Produção  
 **⚖️ Licença**: MIT  
 **🎯 Compatibilidade**: Chrome 88+  
