@@ -881,29 +881,29 @@ function updateEndpointWarningMessage(status) {
     switch (status) {
         case 'ofertas-only':
             message = `
-                🔒 <strong>XML de Alunos inacessível (wacdrel31)</strong><br><br>
+                🔒 <strong>Dados inacessíveis</strong><br><br>
                 📋 Para habilitar a captura, acesse:<br>
                 <strong>Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
-                <small>⚠️ Ambos XMLs (ofertas + alunos) são obrigatórios para captura</small>
+                <small>⚠️ <strong>Importante:</strong> Ambas aplicações devem estar acessíveis simultaneamente</small>
             `;
             break;
             
         case 'alunos-only':
             message = `
-                🔒 <strong>XML de Ofertas inacessível (wacdcon12)</strong><br><br>
+                🔒 <strong>Dados inacessíveis</strong><br><br>
                 📋 Para habilitar a captura, acesse:<br>
                 <strong>Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br><br>
-                <small>⚠️ Ambos XMLs (ofertas + alunos) são obrigatórios para captura</small>
+                <small>⚠️ <strong>Importante:</strong> Ambas aplicações devem estar acessíveis simultaneamente</small>
             `;
             break;
             
         case 'none':
             message = `
-                🔒 <strong>XMLs inacessíveis (wacdcon12 + wacdrel31)</strong><br><br>
+                🔒 <strong>Dados inacessíveis</strong><br><br>
                 📋 Para habilitar a captura, navegue até:<br>
-                <strong>1. Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br>
+                <strong>1. Acadêmico → Consultas → Consulta De Ofertas Por Curso</strong><br><br>
                 <strong>2. Acadêmico → Relatórios → Relação De Alunos Matriculados Por Curso</strong><br><br>
-                <small>⚠️ <strong>Importante:</strong> Ambos XMLs devem estar acessíveis simultaneamente</small>
+                <small>⚠️ <strong>Importante:</strong> Ambas aplicações devem estar acessíveis simultaneamente</small>
             `;
             break;
             

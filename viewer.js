@@ -321,11 +321,10 @@ class CopyManager {
     // V19: Construir lista de colunas para cópia (DIRETRIZ 8: implementação defensiva)
     buildCopyColumnsList() {
         // DIRETRIZ 8: Validação defensiva do DOM e dependências
-        const withRepetitionContainer = document?.getElementById('copyColumnsWithRepetition');
-        const withoutRepetitionContainer = document?.getElementById('copyColumnsWithoutRepetition');
+        const columnSelect = document?.getElementById('columnSelect');
         
-        if (!withRepetitionContainer || !withoutRepetitionContainer) {
-            console.warn('⚠️ V19 - Contêineres de cópia não encontrados');
+        if (!columnSelect) {
+            console.warn('⚠️ V19 - Dropdown de colunas não encontrado');
             return false;
         }
         
@@ -349,73 +348,37 @@ class CopyManager {
     }
 
     _buildNewCopyColumnsStructure() {
-    const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
-    const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
-    
-        // Obter contêineres
-        const withRepetitionContainer = document.getElementById('copyColumnsWithRepetition');
-        const withoutRepetitionContainer = document.getElementById('copyColumnsWithoutRepetition');
+        const orderedColumns = columnOrder.length > 0 ? columnOrder : (allData[0] ? Object.keys(allData[0]) : []);
+        const visibleHeaders = orderedColumns.filter(h => visibleColumns.has(h));
         
-        if (!withRepetitionContainer || !withoutRepetitionContainer) {
-            console.warn('⚠️ Contêineres de cópia não encontrados');
+        // Debug para identificar problema
+        console.log('🔍 DEBUG columnOrder:', columnOrder);
+        console.log('🔍 DEBUG allData length:', allData?.length);
+        console.log('🔍 DEBUG visibleColumns:', visibleColumns);
+        console.log('🔍 DEBUG orderedColumns:', orderedColumns);
+        console.log('🔍 DEBUG visibleHeaders:', visibleHeaders);
+        
+        // Obter dropdown
+        const columnSelect = document.getElementById('columnSelect');
+        
+        if (!columnSelect) {
+            console.warn('⚠️ Dropdown de colunas não encontrado');
             return false;
         }
         
-        // Limpar contêineres
-        withRepetitionContainer.innerHTML = '';
-        withoutRepetitionContainer.innerHTML = '';
+        // Limpar dropdown (manter apenas a opção padrão)
+        columnSelect.innerHTML = '<option value="">Selecione uma coluna...</option>';
         
-        // Gerar botões para cada coluna visível
+        // Popular dropdown com colunas visíveis
         visibleHeaders.forEach(columnName => {
-            // Botão para "Com Repetições"
-                const btnWithRepetition = document.createElement('button');
-            btnWithRepetition.className = 'copy-column-btn';
-            btnWithRepetition.textContent = columnName;
-            btnWithRepetition.title = `Copiar coluna "${columnName}" com todos os dados (incluindo repetições)`;
-            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
-            btnWithRepetition.style.cssText = `
-                font-size: 15px !important;
-                font-weight: 700 !important;
-                line-height: 1.3;
-            `;
-                btnWithRepetition.addEventListener('click', async () => {
-                await copyColumn(columnName, true);
-                document.getElementById('copyDataDropdown').style.display = 'none';
-                    console.log(`📄 Copiado: ${columnName} (com repetição)`);
-                });
-                
-            // Botão para "Sem Repetições"  
-                const btnWithoutRepetition = document.createElement('button');
-            btnWithoutRepetition.className = 'copy-column-btn';
-            btnWithoutRepetition.textContent = columnName;
-            btnWithoutRepetition.title = `Copiar coluna "${columnName}" apenas com valores únicos (sem repetições)`;
-            // 🎯 Aplicar estilos diretamente para garantir fonte e negrito
-            btnWithoutRepetition.style.cssText = `
-                font-size: 15px !important;
-                font-weight: 700 !important;
-                line-height: 1.3;
-            `;
-                btnWithoutRepetition.addEventListener('click', async () => {
-                await copyColumn(columnName, false);
-                    document.getElementById('copyDataDropdown').style.display = 'none';
-                    console.log(`📄 Copiado: ${columnName} (sem repetição)`);
-                });
-                
-            // Adicionar aos contêineres
-            withRepetitionContainer.appendChild(btnWithRepetition);
-            withoutRepetitionContainer.appendChild(btnWithoutRepetition);
-            
-            // 🎯 Força aplicação dos estilos após inserção no DOM
-            setTimeout(() => {
-                btnWithRepetition.style.fontSize = '15px';
-                btnWithRepetition.style.fontWeight = '700';
-                btnWithoutRepetition.style.fontSize = '15px';
-                btnWithoutRepetition.style.fontWeight = '700';
-            }, 10);
+            const option = document.createElement('option');
+            option.value = columnName;
+            option.textContent = columnName;
+            columnSelect.appendChild(option);
         });
         
-        console.log(`📋 Contêineres de cópia criados: ${visibleHeaders.length} colunas cada`);
-            return true;
+        console.log('📋 Dropdown de colunas populado com', visibleHeaders.length, 'colunas visíveis');
+        return true;
     }
 
     // V19: Estatísticas para debug
@@ -736,6 +699,19 @@ const Storage = {
             Object.entries(data).forEach(([key, value]) => {
                 localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
             });
+        }
+    },
+    
+    async remove(keys) {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            return await chrome.storage.local.remove(keys);
+        } else {
+            // Fallback para localStorage
+            if (Array.isArray(keys)) {
+                keys.forEach(key => localStorage.removeItem(key));
+            } else {
+                localStorage.removeItem(keys);
+            }
         }
     }
 };
@@ -1522,6 +1498,27 @@ function setupDraggableWindows() {
     });
 }
 
+// 🔧 Configurar event listeners dos botões de fechar modais
+function setupModalCloseButtons() {
+    // Botão de fechar janela "Organizar Colunas"
+    const closeColumnConfigBtn = document.getElementById('closeColumnConfigBtn');
+    if (closeColumnConfigBtn) {
+        closeColumnConfigBtn.addEventListener('click', () => {
+            document.getElementById('columnConfigDropdown').style.display = 'none';
+            console.log('🪟 Janela "Organizar Colunas" fechada');
+        });
+    }
+
+    // Botão de fechar janela "Copiar Dados"
+    const closeCopyDataBtn = document.getElementById('closeCopyDataBtn');
+    if (closeCopyDataBtn) {
+        closeCopyDataBtn.addEventListener('click', () => {
+            document.getElementById('copyDataDropdown').style.display = 'none';
+            console.log('🪟 Janela "Copiar Dados" fechada');
+        });
+    }
+}
+
 // Configurar event listeners
 function setupEventListeners() {
     // Botões
@@ -1531,6 +1528,9 @@ function setupEventListeners() {
     
     // 🪟 Tornar janelas flutuantes arrastáveis
     setupDraggableWindows();
+    
+    // 🔧 Configurar botões de fechar modais
+    setupModalCloseButtons();
     
     // Dropdown de configuração no header
     const configBtn = document.getElementById('columnConfigBtn');
@@ -1575,9 +1575,9 @@ function setupEventListeners() {
             const willOpen = copyDropdown.style.display === 'none' || !copyDropdown.style.display;
             
             if (willOpen) {
-                // 🪟 Posicionar janela flutuante no centro-esquerda da tela
-                const centerX = Math.max(50, (window.innerWidth - 380) / 2 - 200); // Centro-esquerda
-                const centerY = Math.max(100, (window.innerHeight - 300) / 2); // Centralizado verticalmente
+                // 🪟 Posicionar janela flutuante no centro da tela com novo layout
+                const centerX = Math.max(50, (window.innerWidth - 450) / 2); // Centralizado horizontalmente
+                const centerY = Math.max(50, (window.innerHeight - 400) / 2); // Centralizado verticalmente
                 
                 copyDropdown.style.left = centerX + 'px';
                 copyDropdown.style.top = centerY + 'px';
@@ -1621,6 +1621,40 @@ function setupEventListeners() {
                 copyDropdown.style.display = 'none';
             });
         }
+
+        // Event listeners para os novos botões de cópia de colunas
+        const columnSelect = document.getElementById('columnSelect');
+        const copyWithRepetitionBtn = document.getElementById('copyWithRepetitionBtn');
+        const copyWithoutRepetitionBtn = document.getElementById('copyWithoutRepetitionBtn');
+
+        if (columnSelect && copyWithRepetitionBtn && copyWithoutRepetitionBtn) {
+            // Habilitar/desabilitar botões conforme seleção do dropdown
+            columnSelect.addEventListener('change', () => {
+                const hasSelection = columnSelect.value !== '';
+                copyWithRepetitionBtn.disabled = !hasSelection;
+                copyWithoutRepetitionBtn.disabled = !hasSelection;
+            });
+
+            // Event listener para copiar com repetições
+            copyWithRepetitionBtn.addEventListener('click', async () => {
+                const selectedColumn = columnSelect.value;
+                if (selectedColumn) {
+                    await copyColumn(selectedColumn, true);
+                    copyDropdown.style.display = 'none';
+                    console.log(`📄 Copiado: ${selectedColumn} (com repetições)`);
+                }
+            });
+
+            // Event listener para copiar sem repetições
+            copyWithoutRepetitionBtn.addEventListener('click', async () => {
+                const selectedColumn = columnSelect.value;
+                if (selectedColumn) {
+                    await copyColumn(selectedColumn, false);
+                    copyDropdown.style.display = 'none';
+                    console.log(`📄 Copiado: ${selectedColumn} (sem repetições)`);
+                }
+            });
+        }
     }
 
     // Limpar filtros (globais de coluna, selects e ordenação)
@@ -1632,9 +1666,10 @@ function setupEventListeners() {
         });
     }
     
-    // Event listener para limpar todos os dados
+    // Event listener para limpar todos os dados (elemento não existe atualmente)
     const clearDataBtn = document.getElementById('clearDataBtn');
-    if (clearDataBtn) {
+    if (clearDataBtn && !clearDataBtn.hasAttribute('data-listener-added')) {
+        clearDataBtn.setAttribute('data-listener-added', 'true');
         clearDataBtn.addEventListener('click', clearAllData);
     }
     
@@ -1652,7 +1687,10 @@ function setupEventListeners() {
     const importFileInput = document.getElementById('importFileInput');
     const mergeAllBtn = document.getElementById('mergeAllBtn');
     const mergeFileInput = document.getElementById('mergeFileInput');
+    const showChangesHistoryBtn = document.getElementById('showChangesHistoryBtn');
+    
     if (exportAllBtn) exportAllBtn.addEventListener('click', exportAllCsvFromStorage);
+    if (showChangesHistoryBtn) showChangesHistoryBtn.addEventListener('click', showChangesHistory);
     if (importAllBtn && importFileInput) {
         importAllBtn.addEventListener('click', () => importFileInput.click());
         importFileInput.addEventListener('change', async (e) => {
@@ -4523,13 +4561,15 @@ function setupDataMaintenanceButtons() {
     const clearDuplicatesBtn = document.getElementById('clearDuplicatesBtn');
     const clearAllDataBtn = document.getElementById('clearAllDataBtn');
     
-    if (clearDuplicatesBtn) {
+    if (clearDuplicatesBtn && !clearDuplicatesBtn.hasAttribute('data-listener-added')) {
+        clearDuplicatesBtn.setAttribute('data-listener-added', 'true');
         clearDuplicatesBtn.addEventListener('click', async () => {
             await clearDuplicatesFromStorage();
         });
     }
     
-    if (clearAllDataBtn) {
+    if (clearAllDataBtn && !clearAllDataBtn.hasAttribute('data-listener-added')) {
+        clearAllDataBtn.setAttribute('data-listener-added', 'true');
         clearAllDataBtn.addEventListener('click', async () => {
             const confirmed = confirm(`🗑️ ATENÇÃO: Esta ação irá REMOVER dados específicos!
 
@@ -5290,4 +5330,279 @@ async function resetAllData() {
         console.error('❌ Erro ao resetar dados:', error);
         showNotification('❌ Erro ao resetar dados', 'error');
     }
+}
+
+// ===== FUNCIONALIDADE DE HISTÓRICO DE ALTERAÇÕES =====
+
+// Mostrar modal de histórico de alterações
+async function showChangesHistory() {
+    const modal = document.getElementById('changesHistoryModal');
+    const content = document.getElementById('changesHistoryContent');
+    
+    if (!modal || !content) {
+        console.error('❌ Modal de histórico não encontrado');
+        return;
+    }
+    
+    // Mostrar modal com loading
+    content.innerHTML = `
+        <div class="changes-loading">
+            <div class="loading-spinner"></div>
+            <p>Carregando histórico...</p>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    try {
+        // Carregar histórico do storage
+        const data = await Storage.get(['siaa_changes_log']);
+        const changesLog = data.siaa_changes_log || [];
+        
+        if (changesLog.length === 0) {
+            content.innerHTML = `
+                <div class="changes-history-empty">
+                    <h4>📋 Nenhum histórico encontrado</h4>
+                    <p>As alterações serão registradas automaticamente nas próximas capturas de dados.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar histórico
+        content.innerHTML = renderChangesHistory(changesLog);
+        
+        // Configurar event listeners dos botões do modal
+        setupChangesHistoryEventListeners();
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar histórico:', error);
+        content.innerHTML = `
+            <div class="changes-history-empty">
+                <h4>❌ Erro ao carregar histórico</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Renderizar HTML do histórico de alterações
+function renderChangesHistory(changesLog) {
+    const reversedLog = [...changesLog].reverse(); // Mais recente primeiro
+    
+    return reversedLog.map(session => {
+        const sessionHtml = `
+            <div class="changes-session">
+                <div class="changes-session-header">
+                    <h4 class="changes-session-title">
+                        📅 ${session.date}
+                    </h4>
+                    <div class="changes-session-summary">
+                        ${session.summary.added > 0 ? `<span class="added">+${session.summary.added} novas</span>` : ''}
+                        ${session.summary.updated > 0 ? `<span class="updated">🔄${session.summary.updated} atualizadas</span>` : ''}
+                    </div>
+                </div>
+                <div class="changes-list">
+                    ${renderSessionChanges(session.changes)}
+                </div>
+            </div>
+        `;
+        return sessionHtml;
+    }).join('');
+}
+
+// Renderizar alterações de uma sessão
+function renderSessionChanges(changes) {
+    return changes.map(change => {
+        const changeClass = change.type === 'added' ? 'added' : 'updated';
+        
+        if (change.type === 'added') {
+            return `
+                <div class="change-item ${changeClass}">
+                    <div class="change-header">
+                        <span class="change-id">ID Oferta: ${change.idOferta}</span>
+                        <span class="change-type ${changeClass}">nova</span>
+                    </div>
+                    <div class="change-details">
+                        <div class="change-field">
+                            <div class="field-name">Nova oferta adicionada</div>
+                            <div class="field-value">${extractMainFields(change.afterFields)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="change-item ${changeClass}">
+                    <div class="change-header">
+                        <span class="change-id">ID Oferta: ${change.idOferta}</span>
+                        <span class="change-type ${changeClass}">atualizada</span>
+                    </div>
+                    <div class="change-details">
+                        ${renderFieldChanges(change.beforeFields, change.afterFields)}
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
+}
+
+// Renderizar diferenças entre campos
+function renderFieldChanges(beforeFields, afterFields) {
+    const headers = [
+        'Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 
+        'Nome Campus', 'Vagas', 'Matriculados', 'Pré-matriculados', 
+        'Total Matriculados', 'Vagas Restantes', 'Sala', 'Hora', 'Nome Professor'
+    ];
+    
+    const changes = [];
+    
+    headers.forEach((header, index) => {
+        const before = beforeFields[index] || '';
+        const after = afterFields[index] || '';
+        
+        if (before !== after) {
+            changes.push(`
+                <div class="change-field changed">
+                    <div class="field-name">${header}</div>
+                    <div class="field-value before">
+                        <span class="field-value-label">antes:</span>${before || '(vazio)'}
+                    </div>
+                    <div class="field-value after">
+                        <span class="field-value-label">agora:</span>${after || '(vazio)'}
+                    </div>
+                </div>
+            `);
+        }
+    });
+    
+    return changes.length > 0 ? changes.join('') : '<div class="change-field"><div class="field-name">Nenhuma mudança detectada</div></div>';
+}
+
+// Extrair campos principais para exibição resumida
+function extractMainFields(fields) {
+    const disciplina = fields[1] || ''; // Nome Disciplina
+    const campus = fields[4] || '';     // Nome Campus
+    const professor = fields[19] || ''; // Nome Professor
+    
+    const parts = [];
+    if (disciplina) parts.push(`📚 ${disciplina}`);
+    if (campus) parts.push(`🏫 ${campus}`);
+    if (professor) parts.push(`👨‍🏫 ${professor}`);
+    
+    return parts.length > 0 ? parts.join(' • ') : 'Dados da oferta';
+}
+
+// Configurar event listeners do modal de histórico
+function setupChangesHistoryEventListeners() {
+    // Botões de fechar
+    document.getElementById('closeChangesHistoryBtn')?.addEventListener('click', () => {
+        document.getElementById('changesHistoryModal').style.display = 'none';
+    });
+    
+    document.getElementById('closeChangesHistoryBtn2')?.addEventListener('click', () => {
+        document.getElementById('changesHistoryModal').style.display = 'none';
+    });
+    
+    // Limpar histórico
+    document.getElementById('clearChangesHistoryBtn')?.addEventListener('click', async () => {
+        const confirmed = confirm('🗑️ Tem certeza que deseja limpar todo o histórico de alterações?\n\nEsta ação não pode ser desfeita.');
+        
+        if (confirmed) {
+            try {
+                await Storage.set({ siaa_changes_log: [] });
+                showNotification('✅ Histórico limpo com sucesso', 'success');
+                
+                // Atualizar conteúdo do modal
+                document.getElementById('changesHistoryContent').innerHTML = `
+                    <div class="changes-history-empty">
+                        <h4>📋 Histórico limpo</h4>
+                        <p>As novas alterações serão registradas automaticamente.</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('❌ Erro ao limpar histórico:', error);
+                showNotification('❌ Erro ao limpar histórico', 'error');
+            }
+        }
+    });
+    
+    // Exportar histórico
+    document.getElementById('exportChangesHistoryBtn')?.addEventListener('click', async () => {
+        try {
+            const data = await Storage.get(['siaa_changes_log']);
+            const changesLog = data.siaa_changes_log || [];
+            
+            if (changesLog.length === 0) {
+                alert('Nenhum histórico para exportar.');
+                return;
+            }
+            
+            // Converter para CSV
+            const csvContent = convertChangesToCSV(changesLog);
+            
+            // Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `siaa-historico-alteracoes-${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('📥 Histórico exportado com sucesso', 'success');
+            
+        } catch (error) {
+            console.error('❌ Erro ao exportar histórico:', error);
+            showNotification('❌ Erro ao exportar histórico', 'error');
+        }
+    });
+}
+
+// Converter histórico para CSV
+function convertChangesToCSV(changesLog) {
+    const headers = [
+        'Data', 'Tipo', 'ID Oferta', 'Campo', 'Valor Anterior', 'Valor Novo'
+    ];
+    
+    const rows = [headers.join(',')];
+    
+    changesLog.forEach(session => {
+        session.changes.forEach(change => {
+            if (change.type === 'added') {
+                rows.push([
+                    `"${session.date}"`,
+                    '"Nova"',
+                    `"${change.idOferta}"`,
+                    '"Oferta Completa"',
+                    '""',
+                    `"${extractMainFields(change.afterFields)}"`
+                ].join(','));
+            } else {
+                const headers = [
+                    'Cód. Disc.', 'Nome Disciplina', 'Carga Horária', 'Sigla Campus', 
+                    'Nome Campus', 'Vagas', 'Matriculados', 'Pré-matriculados', 
+                    'Total Matriculados', 'Vagas Restantes', 'Sala', 'Hora', 'Nome Professor'
+                ];
+                
+                headers.forEach((header, index) => {
+                    const before = change.beforeFields[index] || '';
+                    const after = change.afterFields[index] || '';
+                    
+                    if (before !== after) {
+                        rows.push([
+                            `"${session.date}"`,
+                            '"Atualização"',
+                            `"${change.idOferta}"`,
+                            `"${header}"`,
+                            `"${before}"`,
+                            `"${after}"`
+                        ].join(','));
+                    }
+                });
+            }
+        });
+    });
+    
+    return '\uFEFF' + rows.join('\n');
 } 

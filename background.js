@@ -127,12 +127,12 @@ class DataDeduplicationHelper {
         return Math.abs(hash).toString();
     }
 
-    // Processar dados de ofertas evitando duplicação
+    // Processar dados de ofertas usando ID Oferta como chave única
     processOfertasData(existingCsv, newCsv, timestamp) {
-        console.log('🔍 V7 - Processando dados de ofertas (evitando duplicação)...');
+        console.log('🔍 V8 - Processando dados de ofertas (substituição por ID Oferta)...');
         
         if (!newCsv || !newCsv.trim()) {
-            console.log('⚠️ V7 - Nenhum dado novo para processar');
+            console.log('⚠️ V8 - Nenhum dado novo para processar');
             return {
                 siaa_data_csv: existingCsv || '',
                 siaa_data_timestamp: timestamp,
@@ -140,11 +140,226 @@ class DataDeduplicationHelper {
             };
         }
 
-        // Processar linhas existentes
+        // Limpar BOM e processar linhas
+        const cleanExisting = existingCsv ? existingCsv.replace(/^\uFEFF/, '') : '';
+        const cleanNew = newCsv.replace(/^\uFEFF/, '');
+        
+        const existingLines = cleanExisting ? cleanExisting.split('\n').filter(line => line.trim()) : [];
+        const newLines = cleanNew.split('\n').filter(line => line.trim());
+        
+        if (newLines.length === 0) {
+            console.log('⚠️ V8 - Nenhuma linha válida nos novos dados');
+            return {
+                siaa_data_csv: existingCsv || '',
+                siaa_data_timestamp: timestamp,
+                siaa_data_status: 'no_valid_data'
+            };
+        }
+
+        // Identificar cabeçalho e encontrar índice da coluna ID Oferta
+        const header = newLines[0];
+        const headerFields = this.parseCSVLine(header);
+        const idOfertaIndex = headerFields.findIndex(field => 
+            field.includes('ID Oferta') || field.includes('ID') && field.includes('Oferta')
+        );
+
+        if (idOfertaIndex === -1) {
+            console.warn('⚠️ V8 - Coluna ID Oferta não encontrada, usando método de hash tradicional');
+            return this.processOfertasDataLegacy(existingCsv, newCsv, timestamp);
+        }
+
+        console.log(`📍 V8 - Coluna ID Oferta encontrada no índice: ${idOfertaIndex}`);
+
+        // Criar mapa das ofertas existentes por ID Oferta
+        const existingOffers = new Map();
+        const existingHeader = existingLines.length > 0 ? existingLines[0] : header;
+        
+        // Processar ofertas existentes
+        if (existingLines.length > 1) {
+            const existingHeaderFields = this.parseCSVLine(existingHeader);
+            const existingIdIndex = existingHeaderFields.findIndex(field => 
+                field.includes('ID Oferta') || field.includes('ID') && field.includes('Oferta')
+            );
+
+            if (existingIdIndex !== -1) {
+                for (let i = 1; i < existingLines.length; i++) {
+                    const lineFields = this.parseCSVLine(existingLines[i]);
+                    const idOferta = lineFields[existingIdIndex]?.trim();
+                    if (idOferta) {
+                        existingOffers.set(idOferta, {
+                            line: existingLines[i],
+                            fields: lineFields,
+                            index: i
+                        });
+                    }
+                }
+            }
+        }
+
+        // Processar novas ofertas e registrar alterações
+        const changes = [];
+        let newCount = 0;
+        let updatedCount = 0;
+        let unchangedCount = 0;
+
+        for (let i = 1; i < newLines.length; i++) {
+            const newLine = newLines[i];
+            const newFields = this.parseCSVLine(newLine);
+            const idOferta = newFields[idOfertaIndex]?.trim();
+
+            if (!idOferta) {
+                console.warn(`⚠️ V8 - Linha ${i} sem ID Oferta válido, ignorada`);
+                continue;
+            }
+
+            if (existingOffers.has(idOferta)) {
+                const existing = existingOffers.get(idOferta);
+                
+                // Verificar se houve mudanças
+                if (existing.line !== newLine) {
+                    changes.push({
+                        type: 'updated',
+                        idOferta: idOferta,
+                        before: existing.line,
+                        after: newLine,
+                        beforeFields: existing.fields,
+                        afterFields: newFields,
+                        timestamp: timestamp
+                    });
+                    
+                    // Atualizar no mapa
+                    existingOffers.set(idOferta, {
+                        line: newLine,
+                        fields: newFields,
+                        index: existing.index
+                    });
+                    updatedCount++;
+                    console.log(`🔄 V8 - Oferta ${idOferta} atualizada`);
+                } else {
+                    unchangedCount++;
+                }
+            } else {
+                // Nova oferta
+                changes.push({
+                    type: 'added',
+                    idOferta: idOferta,
+                    after: newLine,
+                    afterFields: newFields,
+                    timestamp: timestamp
+                });
+                
+                existingOffers.set(idOferta, {
+                    line: newLine,
+                    fields: newFields,
+                    index: -1 // Marca como nova
+                });
+                newCount++;
+                console.log(`➕ V8 - Nova oferta ${idOferta} adicionada`);
+            }
+        }
+
+        // Construir CSV final
+        const finalLines = [header];
+        for (const offer of existingOffers.values()) {
+            finalLines.push(offer.line);
+        }
+        
+        const finalCsv = '\uFEFF' + finalLines.join('\n');
+
+        // Salvar log de alterações se houver mudanças
+        if (changes.length > 0) {
+            this.saveChangesLog(changes, timestamp);
+        }
+
+        console.log(`✅ V8 - Processamento concluído: ${newCount} novas, ${updatedCount} atualizadas, ${unchangedCount} inalteradas`);
+        
+        return {
+            siaa_data_csv: finalCsv,
+            siaa_data_timestamp: timestamp,
+            siaa_data_status: 'completed',
+            siaa_data_stats: {
+                new_offers: newCount,
+                updated_offers: updatedCount,
+                unchanged_offers: unchangedCount,
+                total_offers: existingOffers.size,
+                changes_logged: changes.length
+            }
+        };
+    }
+
+    // Método auxiliar para parsing de linhas CSV
+    parseCSVLine(line) {
+        const fields = [];
+        let field = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    field += '"';
+                    i++; // Skip next quote
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                fields.push(field.trim());
+                field = '';
+            } else {
+                field += char;
+            }
+        }
+        
+        fields.push(field.trim());
+        return fields;
+    }
+
+    // Salvar log de alterações
+    async saveChangesLog(changes, timestamp) {
+        try {
+            // Recuperar log existente
+            const result = await new Promise((resolve) => {
+                chrome.storage.local.get(['siaa_changes_log'], resolve);
+            });
+            
+            const existingLog = result.siaa_changes_log || [];
+            
+            // Adicionar novas alterações
+            const logEntry = {
+                timestamp: timestamp,
+                date: new Date(timestamp).toLocaleString('pt-BR'),
+                changes: changes,
+                summary: {
+                    added: changes.filter(c => c.type === 'added').length,
+                    updated: changes.filter(c => c.type === 'updated').length
+                }
+            };
+            
+            existingLog.push(logEntry);
+            
+            // Manter apenas os últimos 50 logs para não sobrecarregar o storage
+            const limitedLog = existingLog.slice(-50);
+            
+            await new Promise((resolve) => {
+                chrome.storage.local.set({ siaa_changes_log: limitedLog }, resolve);
+            });
+            
+            console.log(`📝 V8 - Log de alterações salvo: ${changes.length} mudanças registradas`);
+            
+        } catch (error) {
+            console.error('❌ V8 - Erro ao salvar log de alterações:', error);
+        }
+    }
+
+    // Método legacy para fallback
+    processOfertasDataLegacy(existingCsv, newCsv, timestamp) {
+        console.log('🔄 V8 - Usando método legacy (hash) devido à ausência de ID Oferta');
+        
         const existingLines = existingCsv ? existingCsv.split('\n').filter(line => line.trim()) : [];
         const existingHashes = new Set();
         
-        // Gerar hashes das linhas existentes (exceto cabeçalho)
         existingLines.forEach(line => {
             if (line.trim() && !line.startsWith('PERÍODO')) {
                 const hash = this.generateHash(line.trim());
@@ -152,7 +367,6 @@ class DataDeduplicationHelper {
             }
         });
 
-        // Processar novas linhas
         const newLines = newCsv.split('\n').filter(line => line.trim() && !line.startsWith('PERÍODO'));
         const uniqueNewLines = [];
         let duplicatesFound = 0;
@@ -166,25 +380,19 @@ class DataDeduplicationHelper {
                     existingHashes.add(hash);
                 } else {
                     duplicatesFound++;
-                    console.log('🚫 V7 - Duplicata detectada e ignorada');
                 }
             }
         });
 
-        console.log('📊 V7 - Novas linhas únicas:', uniqueNewLines.length);
-        console.log('📊 V7 - Duplicatas encontradas:', duplicatesFound);
-
-        // Construir CSV final
         let finalCsv = existingCsv || '';
         if (uniqueNewLines.length > 0) {
             finalCsv += (finalCsv ? '\n' : '') + uniqueNewLines.join('\n');
         }
 
-        console.log('✅ V7 - Dados de ofertas processados sem duplicação');
         return {
             siaa_data_csv: finalCsv,
             siaa_data_timestamp: timestamp,
-            siaa_data_status: 'completed',
+            siaa_data_status: 'completed_legacy',
             siaa_data_stats: {
                 new_lines: uniqueNewLines.length,
                 duplicates_prevented: duplicatesFound,
