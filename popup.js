@@ -665,8 +665,8 @@ async function checkEndpointAccess() {
         
         // Fallback para verificação manual de ambos os endpoints
         try {
-            const ofertasUrl = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp';
-            const alunosUrl = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdrel31/comboAno.xml.jsp';
+            const ofertasUrl = 'https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/comboPeriodo.xml.jsp';
+            const alunosUrl = 'https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdrel31/comboAno.xml.jsp';
             
             // Verificar endpoint de ofertas
             const checkOfertas = async () => {

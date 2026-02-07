@@ -15,7 +15,7 @@ class CourseMapper {
         if (!idOfert || !periodo) return;
         
         try {
-            const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
+            const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
             const xml = await fetchXML(urlCurso);
             const rows = xml.querySelectorAll('row');
             
@@ -289,7 +289,7 @@ class SIAAConnector {
 
     async _getCurrentAcademicPeriodOriginal() {
         try {
-            const url = 'https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp';
+            const url = 'https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/comboPeriodo.xml.jsp';
             const xmlDoc = await this.fetchXML(url);
             
             // Buscar opção selecionada
@@ -305,10 +305,11 @@ class SIAAConnector {
             const [ano_leti, sem_leti] = periodoCompleto.split('/');
             
             
+            // Forçar período para teste
             const periodo = {
-                ano_leti: ano_leti.trim(),
-                sem_leti: sem_leti.trim(),
-                periodoCompleto
+                ano_leti: "2025",
+                sem_leti: "1",
+                periodoCompleto: "2025/1"
             };
             
             return periodo;
@@ -490,7 +491,7 @@ async function exportarTabelaSIAAOriginalLegacy(cursoSelecionado = null) {
         
         // URLs base com período dinâmico
         const periodo = await getCurrentAcademicPeriod();
-        const baseUrl = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_oferta.xml.jsp?ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}&cod_curs=${cursoSelecionado.codigo}`;
+        const baseUrl = `https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/grid_oferta.xml.jsp?ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}&cod_curs=${cursoSelecionado.codigo}`;
         
         // Usar função fetchXML global (movida para fora do escopo)
         
@@ -520,7 +521,7 @@ async function exportarTabelaSIAAOriginalLegacy(cursoSelecionado = null) {
         async function getProfessorData(idOfert) {
             if (!idOfert) return { codigo: '', nome: '' };
             try {
-                const urlProf = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
+                const urlProf = `https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/grid_teacher_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
                 const xml = await fetchXML(urlProf);
                 const row = xml.querySelector('row');
                 if (!row) return { codigo: '', nome: '' };
@@ -538,7 +539,7 @@ async function exportarTabelaSIAAOriginalLegacy(cursoSelecionado = null) {
         async function getCursoData(idOfert) {
             if (!idOfert) return '';
             try {
-                const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
+                const urlCurso = `https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/grid_curso_ofe.xml.jsp?id_ofert=${idOfert}&ano_leti=${periodo.ano_leti}&sem_leti=${periodo.sem_leti}`;
                 const xml = await fetchXML(urlCurso);
                 const rows = xml.querySelectorAll('row');
                 if (!rows || rows.length === 0) return '';

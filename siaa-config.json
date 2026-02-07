@@ -8,7 +8,7 @@
   "api": {
     "baseUrl": "https://siaa.cruzeirodosul.edu.br",
     "basePaths": {
-      "ofertas": "/siaa/mod/academico/wacdcon12/",
+      "ofertas": "/siaa_academico/secure/academico/wacdcon12/",
       "alunos": "/siaa_academico/secure/academico/relatorio/wacdrel31/"
     },
     "academicPeriod": {
@@ -31,7 +31,7 @@
   },
   "endpoints": {
     "health": {
-      "ofertas": "https://siaa.cruzeirodosul.edu.br/siaa/mod/academico/wacdcon12/comboPeriodo.xml.jsp",
+      "ofertas": "https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/wacdcon12/comboPeriodo.xml.jsp",
       "alunos": "https://siaa.cruzeirodosul.edu.br/siaa_academico/secure/academico/relatorio/wacdrel31/XML/combo/XMLComboInst.jsp"
     },
     "ofertas": {
